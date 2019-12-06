@@ -1,0 +1,8 @@
+bin/
+.vscode/
+.idea/
+pg_exporter.iml
+go.mod
+go.sum
+vendor/
+pg_exporter
