@@ -35,14 +35,17 @@ var (
 	// prometheus http
 	listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Default(":8848").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
 	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").Envar("PG_EXPORTER_TELEMETRY_PATH").String()
-	logLevel      = kingpin.Flag("log-level", "log-level").Default("Debug").Envar("PG_EXPORTER_LOG_LEVEL").String()
+	logLevel      = kingpin.Flag("log-level", "log-level").Default("Info").Envar("PG_EXPORTER_LOG_LEVEL").String()
 
 	// exporter settings
 	dataSourceName = kingpin.Flag("dsn", "postgres connect string").Default("postgres://:5432/postgres?host=/tmp&sslmode=disable").Envar("PG_EXPORTER_DSN").String()
 	configPath     = kingpin.Flag("config", "Path to config files").Default("pg_exporter.yaml").Envar("PG_EXPORTER_CONFIG_PATH").String()
 	constLabels    = kingpin.Flag("label", "Comma separated list label=value pair").Default("").Envar("PG_EXPORTER_CONST_LABELS").String()
 	disableCache   = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_DISABLE_CACHE").Bool()
-	dumpMetrics    = kingpin.Flag("dump", "dry run and dump metric maps only").Default("false").Bool()
+
+	// action
+	dumpMetrics   = kingpin.Flag("explain", "dry run and explain queries").Default("false").Bool()
+	tryConnection = kingpin.Flag("try", "try given dsn is connectable").Default("false").Bool()
 
 	// database auto discovery
 	//searchDatabases  = kingpin.Flag("search-database", "Set this to enable auto database discovery").Default("false").Envar("PG_EXPORTER_SEARCH_DATABASES").Bool()
@@ -71,75 +74,91 @@ const (
 *                                       Exporter                                               *
 \**********************************************************************************************/
 // Exporter implement prometheus.Collector interface
+// exporter contains one or more (auto-discover-database) servers that can scrape metrics with Query
 type Exporter struct {
-	Server       *Server
-	Query        []Query
-	dsn          string
-	configPath   string
-	excludedDB   []string
-	labels       prometheus.Labels
-	disableCache bool
+	// config params provided from ExporterOpt
+	dsn               string            // primary dsn
+	configPath        string            // config file path /directory
+	disableCache      bool              // always execute query when been scrapped
+	autoDiscovery     bool              // discovery other database on primary server
+	excludedDatabases []string          // excluded database for auto discovery
+	constLabels       prometheus.Labels // prometheus const k=v labels
 
-	// internal metrics
-	pgUp       prometheus.Gauge
-	totalCount prometheus.Counter
-	errorCount prometheus.Counter
-	duration   prometheus.Gauge
-	error      prometheus.Gauge
+	// internal states
+	server  *Server            // primary server
+	servers map[string]*Server // auto discovered servers (except primary & excluded database)
+	queries []Query            // metrics query definition
+
+	// exporter level metrics
+	pgUp        prometheus.Gauge   // primary target server is alive ?
+	serverCount prometheus.Gauge   // total active target servers
+	duration    prometheus.Gauge   // last scrape duration
+	error       prometheus.Gauge   // last scrape error
+	errorCount  prometheus.Counter // error scrape count
+	totalCount  prometheus.Counter // total scrape count
 }
 
+/**************************************************************\
+* Exporter Options
+\**************************************************************/
+
 // ExporterOpt configures Exporter
-type ExporterOpt func(*Exporter)
+type ExporterOpt func(*Exporter) error
 
 // WithConfig add config path to Exporter
-func WithConfig(filename string) ExporterOpt {
-	return func(e *Exporter) {
-		e.configPath = filename
+func WithConfig(configPath string) ExporterOpt {
+	return func(e *Exporter) error {
+		if e.configPath == "" {
+			log.Warnf("run without config")
+		} else {
+			log.Debugf("loading config file %s", e.configPath)
+		}
+		e.configPath = configPath
+		return nil
 	}
 }
 
 // WithConstLabels add const label to exporter. 0 length label returns nil
 func WithConstLabels(s string) ExporterOpt {
-	return func(e *Exporter) {
-		e.labels = parseConstLabels(s)
+	return func(e *Exporter) error {
+		e.constLabels = parseConstLabels(s)
+		return nil
 	}
 }
 
 // WithCacheDisabled set cache param to exporter
 func WithCacheDisabled(disableCache bool) ExporterOpt {
-	return func(e *Exporter) {
+	return func(e *Exporter) error {
 		e.disableCache = disableCache
+		return nil
 	}
 }
 
-// NewExporter returns a new pg exporter instance for given dsn
+// NewExporter construct a PG Exporter instance for given dsn
 func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 	e = &Exporter{dsn: dsn}
 	for _, opt := range opts {
-		opt(e)
+		if err = opt(e); err != nil {
+			return nil, err
+		}
 	}
 
-	if e.configPath == "" {
-		log.Warnf("config file path not set, something wrong?")
-	} else {
-		log.Debugf("loading config file %s", e.configPath)
-	}
-	if e.Query, err = LoadQueryConfig(e.configPath); err != nil {
+	if e.queries, err = LoadQueryConfig(e.configPath); err != nil {
 		return nil, fmt.Errorf("fail loading config file %s: %w", e.configPath, err)
 	}
-	log.Debugf("exporter init with %d queries load", len(e.Query))
+	log.Debugf("exporter init with %d queries load", len(e.queries))
 
 	// TODO: multi server discovery
 	// note here the server is still not connected. it will trigger connecting when being scrapped
-	if e.Server, err = NewServer(
+	if e.server, err = NewServer(
 		dsn,
-		WithServerConstLabel(e.labels),
+		WithServerConstLabel(e.constLabels),
 		WithServerCacheDisabled(e.disableCache),
 	); err != nil {
 		return nil, fmt.Errorf("fail connecting to server %s:%w", shadowDSN(dsn), err)
 	}
-	if err = e.Server.Planning(e.Query); err != nil {
-		return nil, fmt.Errorf("fail planning queries for server %s: %w", shadowDSN(e.Server.dsn), err)
+	if err = e.server.Plan(e.queries); err != nil {
+		return nil, fmt.Errorf("fail Plan queries for server %s: %w", shadowDSN(e.server.dsn), err)
 	}
 	e.setupInternalMetrics()
 	return
@@ -147,7 +166,7 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 
 // Close will close all server in this exporter
 func (e *Exporter) Close() {
-	if e.Server != nil {
+	if e.server != nil {
 		e.Close()
 	}
 }
@@ -158,35 +177,35 @@ func (e *Exporter) setupInternalMetrics() {
 		Namespace:   "pg",
 		Name:        "up",
 		Help:        "Whether the last scrape of metrics from PostgreSQL was able to connect to the server (1 for yes, 0 for no).",
-		ConstLabels: e.labels,
+		ConstLabels: e.constLabels,
 	})
 	e.totalCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   "pg",
 		Subsystem:   "exporter",
 		Name:        "scrapes_total",
 		Help:        "Total number of times PostgresSQL was scraped for metrics.",
-		ConstLabels: e.labels,
+		ConstLabels: e.constLabels,
 	})
 	e.errorCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   "pg",
 		Subsystem:   "exporter",
 		Name:        "scrapes_error",
 		Help:        "Total number of times PostgresSQL was scraped for metrics.",
-		ConstLabels: e.labels,
+		ConstLabels: e.constLabels,
 	})
 	e.duration = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   "pg",
 		Subsystem:   "exporter",
 		Name:        "last_scrape_duration",
 		Help:        "Duration of the last scrape of metrics from PostgresSQL.",
-		ConstLabels: e.labels,
+		ConstLabels: e.constLabels,
 	})
 	e.error = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   "pg",
 		Subsystem:   "exporter",
 		Name:        "last_scrape_error",
 		Help:        "Whether the last scrape of metrics from PostgreSQL resulted in an error (1 for error, 0 for success).",
-		ConstLabels: e.labels,
+		ConstLabels: e.constLabels,
 	})
 }
 
@@ -195,8 +214,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	// TODO: multi server support
 	scrapeStart := time.Now()
 	// only fatal error will be reported here (or skip via skip_error option)
-	if err := e.Server.Scrape(ch); err != nil {
-		log.Errorf("fail scraping metrics from server %s: %s", shadowDSN(e.Server.dsn), err.Error())
+	if err := e.server.Scrape(ch); err != nil {
+		log.Errorf("fail scraping metrics from server %s: %s", shadowDSN(e.server.dsn), err.Error())
 		e.pgUp.Set(0)
 		e.error.Set(1)
 		e.errorCount.Add(1)
@@ -217,14 +236,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 // Describe implement prometheus.Collector
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-	e.Server.Describe(ch)
+	e.server.Describe(ch)
 }
 
 // DumpQueries will print all registered queries
 func (e *Exporter) Dump() {
 	// TODO: Multiple Server
-	if e.Server != nil {
-		e.Server.Dump()
+	if e.server != nil {
+		e.server.Dump()
 	}
 }
 
@@ -232,10 +251,10 @@ func (e *Exporter) Dump() {
 *                                       Server                                                 *
 \**********************************************************************************************/
 
-// Server represent a connectable pg-protocol-v3 backend
+// Server represent a postgres connection, with additional fact, conf, runtime info
 type Server struct {
+	*sql.DB               // database instance
 	dsn        string     // data source name
-	db         *sql.DB    // database instance
 	scrapeLock sync.Mutex // scrape lock avoid concurrent call
 
 	// postgres fact gather from server
@@ -289,14 +308,14 @@ func NewServer(dsn string, opts ...ServerOpt) (s *Server, err error) {
 
 // Connect will issue a connection to server
 func (s *Server) Connect() (err error) {
-	if s.db, err = sql.Open("postgres", s.dsn); err != nil {
+	if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
 		return
 	}
-	s.db.SetMaxIdleConns(1)
-	s.db.SetMaxOpenConns(1)
+	s.DB.SetMaxIdleConns(1)
+	s.DB.SetMaxOpenConns(1)
 
 	var pgVersion PostgresVersion
-	err = s.db.QueryRow(`SHOW server_version_num;`).Scan(&pgVersion)
+	err = s.DB.QueryRow(`SHOW server_version_num;`).Scan(&pgVersion)
 	if err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
@@ -304,7 +323,7 @@ func (s *Server) Connect() (err error) {
 
 	var isStandby bool
 	var datname string
-	err = s.db.QueryRow(`SELECT current_catalog, pg_is_in_recovery();`).Scan(&datname, &isStandby)
+	err = s.DB.QueryRow(`SELECT current_catalog, pg_is_in_recovery();`).Scan(&datname, &isStandby)
 	if err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
@@ -316,32 +335,35 @@ func (s *Server) Connect() (err error) {
 
 // Close will close internal sql.DB connection
 func (s *Server) Close() {
-	_ = s.db.Close()
+	_ = s.DB.Close()
 }
 
-// Planning will register queries that option fit server's fact
-func (s *Server) Planning(queries []Query) error {
+// Plan will register queries that option fit server's fact
+func (s *Server) Plan(queries []Query) error {
 	// connect database and fetch version
 	queryInstances := make(map[string]*QueryInstance, 0)
 	querySequence := make([]string, 0)
 	for i, query := range queries {
 		// check version compatibility
 		if !query.VersionCompatible(s.version) {
-			log.Infof("query %s is not planned for server %s, query version not compatible with %v", query.Namespace, shadowDSN(s.dsn), s.version)
+			log.Infof("query %s is not planned for server %s, query version not compatible with %v", query.Name, shadowDSN(s.dsn), s.version)
 			continue
 		}
 		// skip primary query on primary instance
 		if query.SkipPrimary && !s.standby {
-			log.Infof("query %s is not planned for server %s, query version not compatible with %v", query.Namespace, shadowDSN(s.dsn), s.version)
+			log.Infof("query %s is not planned for server %s, query version not compatible with %v", query.Name, shadowDSN(s.dsn), s.version)
 			continue
 		}
 		// skip standby query on standby instance
 		if query.SkipStandby && s.standby {
-			log.Infof("query %s is not planned for server %s, query version not compatible with %v", query.Namespace, shadowDSN(s.dsn), s.version)
+			log.Infof("query %s is not planned for server %s, query version not compatible with %v", query.Name, shadowDSN(s.dsn), s.version)
 			continue
 		}
-		queryInstances[query.Namespace] = queries[i].SpawnInstance(WithQueryInstanceConstLabels(s.labels))
-		querySequence = append(querySequence, query.Namespace)
+		queryInstances[query.Name] = queries[i].SpawnInstance(
+			WithLabels(s.labels),
+			WithServer(s),
+		)
+		querySequence = append(querySequence, query.Name)
 	}
 	s.instances = queryInstances
 	s.queries = querySequence
@@ -356,7 +378,7 @@ func (s *Server) Scrape(ch chan<- prometheus.Metric) (err error) {
 	defer s.scrapeLock.Unlock()
 
 	// lazy connection
-	if s.db == nil {
+	if s.DB == nil {
 		log.Infof("establish new connection to %s", shadowDSN(s.dsn))
 		if err = s.Connect(); err != nil {
 			log.Infof("fail establishing new connection to %s: %s", shadowDSN(s.dsn), err.Error())
@@ -366,7 +388,7 @@ func (s *Server) Scrape(ch chan<- prometheus.Metric) (err error) {
 
 	// for each query: check cache and do query if necessary
 	for _, queryName := range s.queries {
-		if err := s.instances[queryName].Scrape(ch, s.db, s.disableCache); err != nil {
+		if err := s.instances[queryName].Scrape(ch, s.DB, s.disableCache); err != nil {
 			// continue if query have skip_error option
 			if s.instances[queryName].Query.SkipError {
 				log.Warnf("scrape server %s query %s failed, skip: %w", shadowDSN(s.dsn), queryName, err)
@@ -389,9 +411,7 @@ func (s *Server) Describe(ch chan<- *prometheus.Desc) {
 	defer s.scrapeLock.Unlock()
 
 	for _, instance := range s.instances {
-		for _, desc := range instance.Descriptors {
-			ch <- desc
-		}
+		instance.Describe(ch)
 	}
 }
 
@@ -404,7 +424,7 @@ func (s *Server) Dump() {
 		for _, m := range instance.Query.MetricNames {
 			column := instance.Query.GetColumn(m)
 			if column != nil {
-				fmt.Printf("  - %-60s\t# %s\n", fmt.Sprintf("%s_%s{%s}", queryName, column.Name, lableString), column.Description)
+				fmt.Printf("  - %-60s\t# %s\n", fmt.Sprintf("%s_%s{%s}", queryName, column.Name, lableString), column.Desc)
 			}
 		}
 	}
@@ -416,9 +436,9 @@ func (s *Server) Dump() {
 
 // Query hold the information of how to fetch metric from database and parse them
 type Query struct {
-	Namespace string   `yaml:"namespace"` // metrics namespace
-	SQL       string   `yaml:"queries"`   // SQL command to fetch metrics
-	Columns   []Column `yaml:"columns"`   // result column array
+	Name    string   `yaml:"name"`    // metrics namespace
+	SQL     string   `yaml:"queries"` // SQL command to fetch metrics
+	Columns []Column `yaml:"columns"` // result column array
 
 	// control query behavior
 	MinVersion   PostgresVersion `yaml:"min_version"`   // minimal supported version
@@ -439,10 +459,10 @@ type Query struct {
 
 // Column holds information about metric column
 type Column struct {
-	Name        string      `yaml:"name"`
-	Index       int         `yaml:"-"`
-	Usage       ColumnUsage `yaml:"usage"`
-	Description string      `yaml:"description"`
+	Name string `yaml:"name"`
+	//Index int         `yaml:"-"`
+	Usage ColumnUsage `yaml:"usage"`
+	Desc  string      `yaml:"description"`
 }
 
 // GetColumn return Column struct of given column name, or nil if not found
@@ -480,85 +500,141 @@ func (q *Query) SpawnInstance(opts ...QueryInstanceOpt) *QueryInstance {
 // QueryInstance holds runtime information of a Query running on a Server
 // Including metric cache, descriptors, and some constant labels
 type QueryInstance struct {
-	Query       *Query
-	Descriptors map[string]*prometheus.Desc // maps column index to descriptor
-	Cache       []prometheus.Metric         // cached metrics
-	CacheLock   sync.RWMutex
-	Labels      prometheus.Labels
-	LastScrape  time.Time
+	*Query
+	labels      prometheus.Labels           // const labels from server, set on init
+	descriptors map[string]*prometheus.Desc // maps column index to descriptor, build on init
+
+	// runtime information
+	server     *Server
+	lock       sync.RWMutex        // access lock
+	result     []prometheus.Metric // cached metrics
+	err        error
+	lastScrape time.Time // real execution will fresh this
 }
 
 // QueryInstanceOpt configures QueryInstance
 type QueryInstanceOpt func(*QueryInstance)
 
-// WithQueryInstanceConstLabels is different from server const label, it is shared not copied
-func WithQueryInstanceConstLabels(labels prometheus.Labels) QueryInstanceOpt {
+// WithLabels set the labels for query instance
+func WithLabels(labels prometheus.Labels) QueryInstanceOpt {
 	return func(q *QueryInstance) {
-		q.Labels = labels
+		q.labels = labels
+	}
+}
+
+// WithServer inject a server into query instance
+func WithServer(s *Server) QueryInstanceOpt {
+	return func(q *QueryInstance) {
+		q.server = s
 	}
 }
 
 // NewQueryInstance will generate query instance from query, and optional const labels
 func NewQueryInstance(q *Query, opts ...QueryInstanceOpt) *QueryInstance {
 	qi := &QueryInstance{
-		Query: q,
-		Cache: make([]prometheus.Metric, 0),
+		Query:  q,
+		result: make([]prometheus.Metric, 0),
 	}
-
-	// configure query instance
 	for _, opt := range opts {
 		opt(qi)
 	}
 
-	// generate descriptors
-	descriptors := make(map[string]*prometheus.Desc, 0)
-	for _, metricName := range q.MetricNames {
-		metricColumn := q.GetColumn(metricName)
-		if metricColumn == nil {
-			log.Warnf("query %s column %s not found in config", q.Namespace, metricName)
-			continue
-		}
-		descriptors[metricColumn.Name] = prometheus.NewDesc(
-			fmt.Sprintf("%s_%s", q.Namespace, metricColumn.Name),
-			metricColumn.Description, q.LabelNames, qi.Labels,
-		)
-	}
-	qi.Descriptors = descriptors
+	qi.makeDescMap()
 	return qi
+}
+
+// Describe implement prometheus.Collector
+func (q *QueryInstance) Describe(ch chan<- *prometheus.Desc) {
+	q.sendDescriptors(ch)
+}
+
+// Collect implement prometheus.Collector
+func (q *QueryInstance) Collect(ch chan<- prometheus.Metric) {
+	if q.err = q.Execute(); q.err != nil {
+		log.Errorf("%s", q.err.Error())
+		return
+	}
+	q.err = nil
+	q.SendMetrics(ch)
+}
+
+// SendMetrics will send cached result to ch
+func (q *QueryInstance) SendMetrics(ch chan<- prometheus.Metric) {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	for _, metric := range q.result {
+		ch <- metric
+	}
 }
 
 // Scrape will fetch metrics from given db
 func (q *QueryInstance) Scrape(ch chan<- prometheus.Metric, db *sql.DB, disableCache bool) (err error) {
 	if disableCache || q.CacheExpire() {
-		if err = q.Execute(db); err != nil {
+		if err = q.Execute(); err != nil {
 			return err
 		}
 	}
 	// read cache and send
-	q.CacheLock.RLock()
-	defer q.CacheLock.RUnlock()
-	for _, metric := range q.Cache {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	for _, metric := range q.result {
 		ch <- metric
 	}
 	return nil
 }
 
-// Execute will run this query to given source and transform result into metrics
-func (q *QueryInstance) Execute(db *sql.DB) error {
-	q.CacheLock.Lock()
-	defer q.CacheLock.Unlock()
-	q.Cache = q.Cache[:0] // reset cache
+// makeDescMap will generate descriptor map from Query
+func (q *QueryInstance) makeDescMap() {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	descriptors := make(map[string]*prometheus.Desc, 0)
+	for _, metricName := range q.MetricNames {
+		metricColumn := q.GetColumn(metricName)
+		if metricColumn == nil {
+			log.Warnf("query %s column %s not found in config", q.Name, metricName)
+			continue
+		}
+		descriptors[metricColumn.Name] = prometheus.NewDesc(
+			fmt.Sprintf("%s_%s", q.Name, metricColumn.Name),
+			metricColumn.Desc, q.LabelNames, q.labels,
+		)
+	}
+	q.descriptors = descriptors
+}
 
-	rows, err := db.Query(q.Query.SQL)
+func (q *QueryInstance) sendDescriptors(ch chan<- *prometheus.Desc) {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	for _, desc := range q.descriptors {
+		ch <- desc
+	}
+}
+
+// Execute will run this query to given source, transform result into metrics and stored in cache
+func (q *QueryInstance) Execute(dbs ...*sql.DB) error {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	q.result = q.result[:0] // reset cache
+
+	var db *sql.DB
+	if len(dbs) > 0 && dbs[0] != nil {
+		db = dbs[0]
+	} else if q.server != nil && q.server.DB != nil {
+		db = q.server.DB
+	} else {
+		return fmt.Errorf("query %s does not have a valid db runner", q.Name)
+	}
+
+	rows, err := db.Query(q.SQL)
 	if err != nil {
-		return fmt.Errorf("query %s failed: %w", q.Query.Namespace, err)
+		return fmt.Errorf("query %s failed: %w", q.Name, err)
 	}
 	defer rows.Close() // nolint: errcheck
 
-	// get result metadata
+	// get result metadata for dynamic name lookup, prepare line cache
 	columnNames, err := rows.Columns()
 	if err != nil {
-		return fmt.Errorf("query %s fail retriving rows meta: %w", q.Query.Namespace, err)
+		return fmt.Errorf("query %s fail retriving rows meta: %w", q.Name, err)
 	}
 	columnIndexes := make(map[string]int, len(columnNames)) // column name to index
 	for i, n := range columnNames {
@@ -570,13 +646,12 @@ func (q *QueryInstance) Execute(db *sql.DB) error {
 	for i := range colData {
 		colArgs[i] = &colData[i]
 	}
-
 	// warn if column count not match
-	if len(columnNames) != len(q.Query.Columns) {
-		log.Warnf("query %s result column %d not match config %d", q.Query.Namespace, len(columnNames), len(q.Query.Columns))
+	if len(columnNames) != len(q.Columns) {
+		log.Warnf("query %s column count not match, result %d ≠ config %d", q.Name, len(columnNames), len(q.Columns))
 	}
 
-	//var metrics = make([]prometheus.Metric, 0)
+	// scan loop, for each row, extract labels first, then for each metric column, generate a new metric
 	for rows.Next() {
 		err = rows.Scan(colArgs...)
 		if err != nil {
@@ -585,46 +660,46 @@ func (q *QueryInstance) Execute(db *sql.DB) error {
 
 		// get labels, sequence matters, empty string for null or bad labels
 		// labelSequence -> labelName -> columnName -> columnIndex -> columnData -> labelValue
-		labels := make([]string, len(q.Query.LabelNames))
-		for i, labelName := range q.Query.LabelNames {
-			if dataIndex, found := columnIndexes[labelName]; found { // the label column is found in result
+		labels := make([]string, len(q.LabelNames))
+		for i, labelName := range q.LabelNames {
+			if dataIndex, found := columnIndexes[labelName]; found {
 				labels[i], _ = castString(colData[dataIndex])
-			} else {
-				log.Warnf("missing label %s.%s", q.Query.Namespace, labelName)
+			} else { //if label column is not found in result, we just warn and send a empty string
+				log.Warnf("missing label %s.%s", q.Name, labelName)
 				labels[i] = ""
 			}
 		}
 
-		// get metrics, append to list, omit if column not exist
-		for _, metricName := range q.Query.MetricNames {
+		// get metrics, warn if column not exist
+		for _, metricName := range q.MetricNames {
 			if dataIndex, found := columnIndexes[metricName]; found { // the metric column is found in result
 				metric, _ := castFloat64(colData[dataIndex])
-				metricColumn := q.Query.GetColumn(metricName)
+				metricColumn := q.GetColumn(metricName)
 				if metricColumn == nil {
-					log.Warnf("missing %s.%s in config", q.Query.Namespace, metricName)
+					log.Warnf("missing %s.%s in config", q.Name, metricName)
 					continue
 				}
 				usage := prometheus.GaugeValue // default
 				if metricColumn.Usage == ColumnCounter {
 					usage = prometheus.CounterValue
 				}
-				if desc, found := q.Descriptors[metricColumn.Name]; found {
-					q.Cache = append(q.Cache, prometheus.MustNewConstMetric(desc, usage, metric, labels...))
+				if desc, found := q.descriptors[metricColumn.Name]; found {
+					q.result = append(q.result, prometheus.MustNewConstMetric(desc, usage, metric, labels...))
 				} else {
 					log.Warnf("metric column %s does not have corresponding descriptor", metricColumn.Name)
 				}
 			} else {
-				log.Debugf("missing %s.%s in result", q.Query.Namespace, metricName)
+				log.Debugf("missing %s.%s in result", q.Name, metricName)
 			}
 		}
 	}
-	q.LastScrape = time.Now()
+	q.lastScrape = time.Now()
 	return nil
 }
 
 // CacheExpire report whether this instance needs actual execution
 func (q *QueryInstance) CacheExpire() bool {
-	if time.Now().Sub(q.LastScrape) > q.Query.CacheSeconds {
+	if time.Now().Sub(q.lastScrape) > q.CacheSeconds {
 		return true
 	}
 	return false
@@ -664,7 +739,7 @@ func ParseQueryConfig(content []byte) (res []Query, err error) {
 	for index, query := range queriesConfig { // array of one-entry map
 		for ns, query := range query {
 			res[index] = Query{
-				Namespace:    ns,
+				Name:         ns,
 				SQL:          query.Query,
 				ClusterLevel: query.Options.ClusterLevel,
 				SkipPrimary:  query.Options.SkipPrimary,
@@ -696,10 +771,10 @@ func ParseQueryConfig(content []byte) (res []Query, err error) {
 					}
 					columnIndex[colName] = colIndex
 					columns[colIndex] = Column{
-						Name:        colName,
-						Index:       colIndex,
-						Usage:       colUsage,
-						Description: columnConfig.Description,
+						Name: colName,
+						//Index: colIndex,
+						Usage: colUsage,
+						Desc:  columnConfig.Description,
 					}
 				}
 			}
@@ -858,7 +933,8 @@ func main() {
 
 	var exporter *Exporter
 	var err error
-	if exporter, err = NewExporter(*dataSourceName,
+	if exporter, err = NewExporter(
+		*dataSourceName,
 		WithConfig(*configPath),
 		WithConstLabels(*constLabels),
 		WithCacheDisabled(*disableCache),
