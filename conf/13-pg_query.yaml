@@ -1,0 +1,102 @@
+#-------------------------------------------------------------#
+# pg_query
+# require pg_stat_statements
+#-------------------------------------------------------------#
+
+pg_query:
+  query: |
+    SELECT datname,
+           queryid AS query,
+           sum(calls)               AS calls,
+           sum(total_time)          AS total_time,
+           sum(min_time)            AS min_time,
+           sum(max_time)            AS max_time,
+           sum(mean_time)           AS mean_time,
+           sum(stddev_time)         AS stddev_time,
+           sum(rows)                AS rows,
+           sum(shared_blks_hit)     AS shared_blks_hit,
+           sum(shared_blks_read)    AS shared_blks_read,
+           sum(shared_blks_dirtied) AS shared_blks_dirtied,
+           sum(shared_blks_written) AS shared_blks_written,
+           sum(local_blks_hit)      AS local_blks_hit,
+           sum(local_blks_read)     AS local_blks_read,
+           sum(local_blks_dirtied)  AS local_blks_dirtied,
+           sum(local_blks_written)  AS local_blks_written,
+           sum(temp_blks_read)      AS temp_blks_read,
+           sum(temp_blks_written)   AS temp_blks_written,
+           sum(blk_read_time)       AS blk_read_time,
+           sum(blk_write_time)      AS blk_write_time
+    FROM pg_stat_statements s, LATERAL (SELECT datname FROM pg_database db WHERE db.oid = s.dbid) d
+    GROUP BY datname, queryid
+    ORDER BY calls DESC, total_time DESC LIMIT 20;
+
+  ttl: 10
+  tags: [cluster, pg_stat_statements]
+  min_version: 100000
+  max_version: 130000
+  skip_errors: true
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name
+    - query:
+        usage: LABEL
+        description: query identifier, bigint
+    - calls:
+        usage: COUNTER
+        description: times been executed
+    - total_time:
+        usage: COUNTER
+        description: Total time spent in the statement, in µs
+    - min_time:
+        usage: GAUGE
+        description: Minimum time spent in the statement, in µs
+    - max_time:
+        usage: GAUGE
+        description: Maximum time spent in the statement, in µs
+    - mean_time:
+        usage: GAUGE
+        description: Mean time spent in the statement, in µs
+    - stddev_time:
+        usage: GAUGE
+        description: Population standard deviation of time spent in the statement, in µs
+    - rows:
+        usage: COUNTER
+        description: rows retrieved or affected by the statement
+    - shared_blks_hit:
+        usage: COUNTER
+        description: shared block cache hits by the statement
+    - shared_blks_read:
+        usage: COUNTER
+        description: shared blocks read by the statement
+    - shared_blks_dirtied:
+        usage: COUNTER
+        description: shared blocks dirtied by the statement
+    - shared_blks_written:
+        usage: COUNTER
+        description: shared blocks written by the statement
+    - local_blks_hit:
+        usage: COUNTER
+        description: local block cache hits by the statement
+    - local_blks_read:
+        usage: COUNTER
+        description: local blocks read by the statement
+    - local_blks_dirtied:
+        usage: COUNTER
+        description: local blocks dirtied by the statement
+    - local_blks_written:
+        usage: COUNTER
+        description: local blocks written by the statement
+    - temp_blks_read:
+        usage: COUNTER
+        description: temp blocks read by the statement
+    - temp_blks_written:
+        usage: COUNTER
+        description: temp blocks written by the statement
+    - blk_read_time:
+        usage: COUNTER
+        description: time spent reading blocks, in µs (if track_io_timing is enabled)
+    - blk_write_time:
+        usage: COUNTER
+        description: time spent writing blocks, in µs (if track_io_timing is enabled)
+

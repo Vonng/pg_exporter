@@ -1,0 +1,49 @@
+#-------------------------------------------------------------#
+# pg_index
+# note that database with tremendous of tables may suffer from
+# this query. Use sampling filter or just disable it in that case
+#-------------------------------------------------------------#
+
+pg_index:
+  query: |
+    SELECT CURRENT_CATALOG AS datname,
+           schemaname      AS nspname,
+           indexrelname    AS relname,
+           idx_scan,
+           idx_tup_read,
+           idx_tup_fetch,
+           idx_blks_read,
+           idx_blks_hit
+    FROM pg_stat_user_indexes psui,
+         LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio
+         WHERE psio.indexrelid = psui.indexrelid) p2;
+  ttl: 10
+  tags: []
+  min_version: 100000
+  max_version: 130000
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this relation
+    - nspname:
+        usage: LABEL
+        description: schema name of this relation
+    - relname:
+        usage: LABEL
+        description: relation name of this relation
+    - idx_scan:
+        usage: COUNTER
+        description: index scans initiated on this index
+    - idx_tup_read:
+        usage: COUNTER
+        description: index entries returned by scans on this index
+    - idx_tup_fetch:
+        usage: COUNTER
+        description: live table rows fetched by simple index scans using this index
+    - idx_blks_read:
+        usage: COUNTER
+        description: blocks been read from disk of this index
+    - idx_blks_hit:
+        usage: COUNTER
+        description: blocks hit from cache of this index
+

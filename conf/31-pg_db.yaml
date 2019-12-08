@@ -1,0 +1,97 @@
+#-------------------------------------------------------------#
+# pg_db
+# note this query will return different number of columns
+# e.g: checksum_failures , checksum_last_failure is provided in 12
+#-------------------------------------------------------------#
+pg_db:
+  query: |
+    SELECT d.*, c.*
+    FROM pg_stat_database d,
+         LATERAL (SELECT confl_tablespace, confl_lock, confl_snapshot, confl_bufferpin, confl_deadlock
+                  FROM pg_stat_database_conflicts pdc WHERE pdc.datname = d.datname) c
+    WHERE d.datname NOT IN ('postgres','template0','template1');
+
+  ttl: 10
+  tags: [cluster]
+  min_version: 100000
+  max_version: 130000
+  metrics:
+    - datid:
+        usage: DISCARD
+        description: Name of the database
+    - datname:
+        usage: LABEL
+        description: Name of the database
+    - numbackends:
+        usage: GAUGE
+        description: backends currently connected to this database
+    - xact_commit:
+        usage: COUNTER
+        description: transactions in this database that have been committed
+    - xact_rollback:
+        usage: COUNTER
+        description: transactions in this database that have been rolled back
+    - blks_read:
+        usage: COUNTER
+        description: blocks read from disk in this database
+    - blks_hit:
+        usage: COUNTER
+        description: blocks found in pg buffer
+    - tup_returned:
+        usage: COUNTER
+        description: rows returned by queries in this database
+    - tup_fetched:
+        usage: COUNTER
+        description: rows fetched by queries in this database
+    - tup_inserted:
+        usage: COUNTER
+        description: rows inserted by queries in this database
+    - tup_updated:
+        usage: COUNTER
+        description: rows updated by queries in this database
+    - tup_deleted:
+        usage: COUNTER
+        description: rows deleted by queries in this database
+    - conflicts:
+        usage: GAUGE
+        description: Number of queries canceled due to conflicts with recovery in this database. (slave only)
+    - temp_files:
+        usage: GAUGE
+        description: Number of temporary files created by queries in this database
+    - temp_bytes:
+        usage: GAUGE
+        description: Temporary file byte count
+    - deadlocks:
+        usage: GAUGE
+        description: Number of deadlocks detected in this database
+    - checksum_failures:
+        usage: GAUGE
+        description: Number of data page checksum failures detected in this database
+    - checksum_last_failure:
+        usage: GAUGE
+        description: Time at which the last data page checksum failure was detected
+    - blk_read_time:
+        usage: COUNTER
+        description: Time spent reading data file blocks by backends in this database, in milliseconds
+    - blk_write_time:
+        usage: COUNTER
+        description: Time spent writing data file blocks by backends in this database, in milliseconds
+    - stats_reset:
+        usage: COUNTER
+        description: Time at which these statistics were last reset
+    - confl_tablespace:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to dropped tablespaces
+    - confl_lock:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to lock timeouts
+    - confl_snapshot:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to old snapshots
+    - confl_bufferpin:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to pinned buffers
+    - confl_deadlock:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to deadlocks
+

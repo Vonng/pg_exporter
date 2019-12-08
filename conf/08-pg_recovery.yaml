@@ -1,0 +1,29 @@
+#-------------------------------------------------------------#
+# pg_recovery
+#-------------------------------------------------------------#
+
+pg_recovery:
+  query: |
+    SELECT min_recovery_end_timeline    AS min_timeline,
+           min_recovery_end_lsn - '0/0' AS min_lsn,
+           backup_start_lsn - '0/0'     AS backup_start_lsn,
+           backup_end_lsn - '0/0'       AS backup_end_lsn
+    FROM pg_control_recovery();
+  ttl: 100
+  tags: [cluster]
+  min_version: 100000
+  max_version: 130000
+  metrics:
+    - min_timeline:
+        usage: COUNTER
+        description: pg control recovery min timeline
+    - min_lsn:
+        usage: COUNTER
+        description: pg control recovery min lsn
+    - backup_start_lsn:
+        usage: COUNTER
+        description: pg control recovery backup start lsn
+    - backup_end_lsn:
+        usage: COUNTER
+        description: pg control recovery backup end lsn
+

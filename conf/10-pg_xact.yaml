@@ -1,0 +1,27 @@
+#-------------------------------------------------------------#
+# pg_xact
+#-------------------------------------------------------------#
+pg_xact:
+  query: |
+    WITH snap(v) AS (SELECT txid_current_snapshot()),
+         xset(v) AS  (SELECT txid_snapshot_xip(v) FROM snap),
+         xnum(v) AS (SELECT count(*) from xset),
+         xmin(v) AS (SELECT txid_snapshot_xmin(v) FROM snap),
+         xmax(v) AS (SELECT txid_snapshot_xmin(v) FROM snap)
+    SELECT xmin.v AS xmin, xmax.v AS xmax, xnum.v AS xnum FROM xmin, xmax, xnum;
+
+  ttl: 10
+  tags: [cluster]
+  min_version: 100000
+  max_version: 130000
+  metrics:
+    - xmin:
+        usage: GAUGE
+        description: earliest txid that is still active
+    - xmax:
+        usage: GAUGE
+        description: first as-yet-unassigned txid. txid >= this are invisible.
+    - xnum:
+        usage: GAUGE
+        description: current active transaction count
+

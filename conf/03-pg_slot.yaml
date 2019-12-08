@@ -1,0 +1,51 @@
+#-------------------------------------------------------------#
+# pg_slot
+# replication slots
+#-------------------------------------------------------------#
+
+pg_slot:
+  query: |
+    SELECT slot_name,
+      database                    AS datname,
+      active,
+      xmin::TEXT::BIGINT          AS xmin,
+      catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
+      restart_lsn - '0/0'         AS restart_lsn,
+      confirmed_flush_lsn - '0/0' AS confirm_lsn,
+      CASE WHEN pg_is_in_recovery()
+      THEN pg_last_wal_replay_lsn()
+      ELSE pg_current_wal_lsn() END - restart_lsn
+      AS retained_bytes
+    FROM pg_replication_slots;
+
+  ttl: 10
+  tags: [cluster]
+  min_version: 100000
+  max_version: 130000
+  skip_errors: true
+  metrics:
+    - slot_name:
+        usage: "LABEL"
+        description: "replication slot name"
+    - datname:
+        usage: "LABEL"
+        description: "associated database name, only logical slot have this"
+    - active:
+        usage: "GAUGE"
+        description: "whether the slot is currently being used"
+    - xmin:
+        usage: "GAUGE"
+        description: "oldest txid that this slot needs the database to retain"
+    - catalog_xmin:
+        usage: "GAUGE"
+        description: "oldest txid that this slot needs the database to retain for catalog"
+    - restart_lsn:
+        usage: "COUNTER"
+        description: "lsn that needs retain, wal after that will be kept"
+    - confirm_lsn:
+        usage: "COUNTER"
+        description: "lsn that confirmed by logical standby, null for physical slot"
+    - retained_bytes:
+        usage: "GAUGE"
+        description: "bytes retained for this slot"
+
