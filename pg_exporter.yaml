@@ -1,9 +1,9 @@
 ###############################################################
-# PostgreSQL Metric Queries
+# PostgreSQL/Pgbouncer Metric Queries
 # Author:   Vonng (fengruohang@outlook.com)
 # Desc  :   pg_exporter metrics config files
-# Ver   :   PostgreSQL 10, 11, 12
-# Mtime :   2019-12-05
+# Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+
+# Mtime :   2019-12-09
 ###############################################################
 
 
@@ -116,50 +116,50 @@ pg_repl:
   max_version: 130000
   metrics:
     - pid:
-        usage: "LABEL"
-        description: "unique walsender pid"
+        usage: LABEL
+        description: unique walsender pid
     - client_addr:
-        usage: "LABEL"
-        description: "client address of wal receiver"
+        usage: LABEL
+        description: client address of wal receiver
     - application_name:
-        usage: "LABEL"
-        description: "application name of standby"
+        usage: LABEL
+        description: application name of standby
     - state:
-        usage: "LABEL"
-        description: "replication state: startup|catchup|streaming|backup|stopping"
+        usage: LABEL
+        description: replication state startup|catchup|streaming|backup|stopping
     - lsn:
-        usage: "COUNTER"
-        description: "current log position on this server"
+        usage: COUNTER
+        description: current log position on this server
     - sent_lsn:
-        usage: "COUNTER"
-        description: "last log position sent to this standby server"
+        usage: COUNTER
+        description: last log position sent to this standby server
     - write_lsn:
-        usage: "COUNTER"
-        description: "last log position written to disk by this standby server"
+        usage: COUNTER
+        description: last log position written to disk by this standby server
     - flush_lsn:
-        usage: "COUNTER"
-        description: "last log position flushed to disk by this standby server"
+        usage: COUNTER
+        description: last log position flushed to disk by this standby server
     - replay_lsn:
-        usage: "COUNTER"
-        description: "last log position replayed into the database on this standby server"
+        usage: COUNTER
+        description: last log position replayed into the database on this standby server
     - write_lag:
-        usage: "GAUGE"
-        description: "latest ACK lsn diff with write (sync-remote-write lag)"
+        usage: GAUGE
+        description: latest ACK lsn diff with write (sync-remote-write lag)
     - flush_lag:
-        usage: "GAUGE"
-        description: "latest ACK lsn diff with flush (sync-remote-flush lag)"
+        usage: GAUGE
+        description: latest ACK lsn diff with flush (sync-remote-flush lag)
     - replay_lag:
-        usage: "GAUGE"
-        description: "latest ACK lsn diff with replay (sync-remote-apply lag)"
+        usage: GAUGE
+        description: latest ACK lsn diff with replay (sync-remote-apply lag)
     - backend_uptime:
-        usage: "GAUGE"
-        description: "how long since standby connect to this server"
+        usage: GAUGE
+        description: how long since standby connect to this server
     - backend_xmin:
-        usage: "GAUGE"
-        description: "this standby's xmin horizon reported by hot_standby_feedback."
+        usage: GAUGE
+        description: this standby's xmin horizon reported by hot_standby_feedback.
     - sync_priority:
-        usage: "GAUGE"
-        description: "priority of being chosen as synchronous standby"
+        usage: GAUGE
+        description: priority of being chosen as synchronous standby
 
 #-------------------------------------------------------------#
 # pg_slot
@@ -188,29 +188,29 @@ pg_slot:
   skip_errors: true
   metrics:
     - slot_name:
-        usage: "LABEL"
-        description: "replication slot name"
+        usage: LABEL
+        description: replication slot name
     - datname:
-        usage: "LABEL"
-        description: "associated database name, only logical slot have this"
+        usage: LABEL
+        description: associated database name, only logical slot have this
     - active:
-        usage: "GAUGE"
-        description: "whether the slot is currently being used"
+        usage: GAUGE
+        description: whether the slot is currently being used
     - xmin:
-        usage: "GAUGE"
-        description: "oldest txid that this slot needs the database to retain"
+        usage: GAUGE
+        description: oldest txid that this slot needs the database to retain
     - catalog_xmin:
-        usage: "GAUGE"
-        description: "oldest txid that this slot needs the database to retain for catalog"
+        usage: GAUGE
+        description: oldest txid that this slot needs the database to retain for catalog
     - restart_lsn:
-        usage: "COUNTER"
-        description: "lsn that needs retain, wal after that will be kept"
+        usage: COUNTER
+        description: lsn that needs retain, wal after that will be kept
     - confirm_lsn:
-        usage: "COUNTER"
-        description: "lsn that confirmed by logical standby, null for physical slot"
+        usage: COUNTER
+        description: lsn that confirmed by logical standby, null for physical slot
     - retained_bytes:
-        usage: "GAUGE"
-        description: "bytes retained for this slot"
+        usage: GAUGE
+        description: bytes retained for this slot
 
 #-------------------------------------------------------------#
 # pg_bgwriter
@@ -1241,4 +1241,188 @@ pg_func:
     - self_time:
         usage: COUNTER
         description: how much time spent in this function itself (other func not included), in ms
+
+#-------------------------------------------------------------#
+# pgb_list
+# show pgbouncer lists
+#-------------------------------------------------------------#
+
+pgb_list:
+  query: |
+    SHOW LISTS;
+  ttl: 5
+  tags: [pgbouncer]
+  min_version: 10800
+  metrics:
+    - list:
+        usage: LABEL
+        description: pgbouncer internal list name
+    - items:
+        usage: GAUGE
+        description: count of curresponding pgbouncer object
+#-------------------------------------------------------------#
+# pgb_stat
+# this is a special query for pgbouncer
+#-------------------------------------------------------------#
+
+pgb_stat:
+  query: |
+    SHOW STATS;
+  ttl: 5
+  tags: [pgbouncer]
+  min_version: 10800
+  max_version: 11300
+  metrics:
+    - database:
+        usage: LABEL
+        rename: datname
+        description: database name of this relation
+    - total_xact_count:
+        usage: LABEL
+        description: total tr
+    - total_query_count:
+        usage: LABEL
+        description: relation name of this relation
+    - total_received:
+        usage: COUNTER
+        description: how many times this function has been called
+    - total_sent:
+        usage: COUNTER
+        description: how much time spent in this function and it's child function, in ms
+    - total_xact_time:
+        usage: COUNTER
+        description: how much time spent in this function itself (other func not included), in ms
+    - total_query_time:
+        usage: COUNTER
+        description: how many times this function has been called
+    - total_wait_time:
+        usage: COUNTER
+        description: how much time spent in this function and it's child function, in ms
+    - avg_xact_count:
+        usage: GAUGE
+        description: how much time spent in this function itself (other func not included), in ms
+    - avg_query_count:
+        usage: GAUGE
+        description: how many times this function has been called
+    - avg_recv:
+        usage: GAUGE
+        description: how much time spent in this function and it's child function, in ms
+    - avg_sent:
+        usage: GAUGE
+        description: how much time spent in this function itself (other func not included), in ms
+    - avg_xact_time:
+        usage: GAUGE
+        description: how many times this function has been called
+    - avg_query_time:
+        usage: GAUGE
+        description: how much time spent in this function and it's child function, in ms
+    - avg_wait_time:
+        usage: GAUGE
+        description: how much time spent in this function itself (other func not included), in ms
+#-------------------------------------------------------------#
+# pgb_database
+# show database stats
+#-------------------------------------------------------------#
+
+pgb_database:
+  query: |
+    SHOW DATABASES;
+  ttl: 5
+  tags: [pgbouncer]
+  min_version: 10800
+  max_version: 11300
+  metrics:
+    - name:
+        usage: LABEL
+        rename: datname
+        description: name of configured database entry
+    - host:
+        usage: LABEL
+        description: host pgbouncer connects to
+    - port:
+        usage: LABEL
+        description:  port pgbouncer connects to
+    - database:
+        usage: LABEL
+        rename: real_datname
+        description: actual database name pgbouncer connects to
+    - force_user:
+        usage: DISCARD
+    - pool_size:
+        usage: COUNTER
+        description: maximum number of server connections
+    - reserve_pool:
+        usage: GAUGE
+        description: maximum number of additional connections for this database
+    - pool_mode:
+        usage: DISCARD
+    - max_connections:
+        usage: GAUGE
+        description: maximum number of allowed connections for this database
+    - current_connections:
+        usage: GAUGE
+        description: current number of connections for this database
+    - paused:
+        usage: GAUGE
+        description: 1 if this database is currently paused, else 0
+    - disabled:
+        usage: GAUGE
+        description: 1 if this database is currently disabled, else 0
+#-------------------------------------------------------------#
+# pgb_pool
+# pgbouncer pool level stats, pool is a database-user pair
+#-------------------------------------------------------------#
+
+pgb_pool:
+  query: |
+    SHOW POOLS;
+  ttl: 5
+  tags: [pgbouncer]
+  min_version: 10800
+  max_version: 11300
+  metrics:
+    - database:
+        usage: LABEL
+        rename: datname
+        description: database name of this relation
+    - user:
+        usage: LABEL
+        description: user
+    - cl_active:
+        usage: LABEL
+        rename: active_clients
+        description: client connections that are linked to server connection and can process queries
+    - cl_waiting:
+        usage: COUNTER
+        rename: waiting_clients
+        description: client connections that have sent queries but have not yet got a server connection
+    - sv_active:
+        usage: COUNTER
+        rename: active_servers
+        description: server connections that are linked to a client
+    - sv_idle:
+        usage: COUNTER
+        rename: idle_servers
+        description: server connections that are unused and immediately usable for client queries
+    - sv_used:
+        usage: COUNTER
+        rename: used_servers
+        description: server connections that have been idle for more than server_check_delay (means have to run check query)
+    - sv_tested:
+        usage: COUNTER
+        rename: tested_servers
+        description: server connections that are currently running reset or check query
+    - sv_login:
+        usage: GAUGE
+        rename: login_servers
+        description:  server connections currently in the process of logging in
+    - maxwait:
+        usage: GAUGE
+        description: how long the first(oldest) client in the queue has waited, in seconds, key metric
+    - maxwait_us:
+        usage: GAUGE
+        description: microsecond part of the maximum waiting time.
+    - pool_mode:
+        usage: DISCARD
+        description: the pooling mode in use
 

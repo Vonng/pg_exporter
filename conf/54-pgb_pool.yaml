@@ -1,0 +1,58 @@
+#-------------------------------------------------------------#
+# pgb_pool
+# pgbouncer pool level stats, pool is a database-user pair
+#-------------------------------------------------------------#
+
+pgb_pool:
+  query: |
+    SHOW POOLS;
+  ttl: 5
+  tags: [pgbouncer]
+  min_version: 10800
+  max_version: 11300
+  metrics:
+    - database:
+        usage: LABEL
+        rename: datname
+        description: database name of this relation
+    - user:
+        usage: LABEL
+        description: user
+    - cl_active:
+        usage: LABEL
+        rename: active_clients
+        description: client connections that are linked to server connection and can process queries
+    - cl_waiting:
+        usage: COUNTER
+        rename: waiting_clients
+        description: client connections that have sent queries but have not yet got a server connection
+    - sv_active:
+        usage: COUNTER
+        rename: active_servers
+        description: server connections that are linked to a client
+    - sv_idle:
+        usage: COUNTER
+        rename: idle_servers
+        description: server connections that are unused and immediately usable for client queries
+    - sv_used:
+        usage: COUNTER
+        rename: used_servers
+        description: server connections that have been idle for more than server_check_delay (means have to run check query)
+    - sv_tested:
+        usage: COUNTER
+        rename: tested_servers
+        description: server connections that are currently running reset or check query
+    - sv_login:
+        usage: GAUGE
+        rename: login_servers
+        description:  server connections currently in the process of logging in
+    - maxwait:
+        usage: GAUGE
+        description: how long the first(oldest) client in the queue has waited, in seconds, key metric
+    - maxwait_us:
+        usage: GAUGE
+        description: microsecond part of the maximum waiting time.
+    - pool_mode:
+        usage: DISCARD
+        description: the pooling mode in use
+

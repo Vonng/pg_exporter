@@ -1,9 +1,9 @@
 ###############################################################
-# PostgreSQL Metric Queries
+# PostgreSQL/Pgbouncer Metric Queries
 # Author:   Vonng (fengruohang@outlook.com)
 # Desc  :   pg_exporter metrics config files
-# Ver   :   PostgreSQL 10, 11, 12
-# Mtime :   2019-12-05
+# Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+
+# Mtime :   2019-12-09
 ###############################################################
 
 

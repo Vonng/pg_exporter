@@ -6,3 +6,6 @@ go.mod
 go.sum
 vendor/
 pg_exporter
+.DS_Store
+pg_exporter_test.go
+test/

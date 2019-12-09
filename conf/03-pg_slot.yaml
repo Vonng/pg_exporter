@@ -25,27 +25,27 @@ pg_slot:
   skip_errors: true
   metrics:
     - slot_name:
-        usage: "LABEL"
-        description: "replication slot name"
+        usage: LABEL
+        description: replication slot name
     - datname:
-        usage: "LABEL"
-        description: "associated database name, only logical slot have this"
+        usage: LABEL
+        description: associated database name, only logical slot have this
     - active:
-        usage: "GAUGE"
-        description: "whether the slot is currently being used"
+        usage: GAUGE
+        description: whether the slot is currently being used
     - xmin:
-        usage: "GAUGE"
-        description: "oldest txid that this slot needs the database to retain"
+        usage: GAUGE
+        description: oldest txid that this slot needs the database to retain
     - catalog_xmin:
-        usage: "GAUGE"
-        description: "oldest txid that this slot needs the database to retain for catalog"
+        usage: GAUGE
+        description: oldest txid that this slot needs the database to retain for catalog
     - restart_lsn:
-        usage: "COUNTER"
-        description: "lsn that needs retain, wal after that will be kept"
+        usage: COUNTER
+        description: lsn that needs retain, wal after that will be kept
     - confirm_lsn:
-        usage: "COUNTER"
-        description: "lsn that confirmed by logical standby, null for physical slot"
+        usage: COUNTER
+        description: lsn that confirmed by logical standby, null for physical slot
     - retained_bytes:
-        usage: "GAUGE"
-        description: "bytes retained for this slot"
+        usage: GAUGE
+        description: bytes retained for this slot
 

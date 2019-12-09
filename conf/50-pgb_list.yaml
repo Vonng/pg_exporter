@@ -1,0 +1,18 @@
+#-------------------------------------------------------------#
+# pgb_list
+# show pgbouncer lists
+#-------------------------------------------------------------#
+
+pgb_list:
+  query: |
+    SHOW LISTS;
+  ttl: 5
+  tags: [pgbouncer]
+  min_version: 10800
+  metrics:
+    - list:
+        usage: LABEL
+        description: pgbouncer internal list name
+    - items:
+        usage: GAUGE
+        description: count of curresponding pgbouncer object

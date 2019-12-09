@@ -1,0 +1,49 @@
+#-------------------------------------------------------------#
+# pgb_database
+# show database stats
+#-------------------------------------------------------------#
+
+pgb_database:
+  query: |
+    SHOW DATABASES;
+  ttl: 5
+  tags: [pgbouncer]
+  min_version: 10800
+  max_version: 11300
+  metrics:
+    - name:
+        usage: LABEL
+        rename: datname
+        description: name of configured database entry
+    - host:
+        usage: LABEL
+        description: host pgbouncer connects to
+    - port:
+        usage: LABEL
+        description:  port pgbouncer connects to
+    - database:
+        usage: LABEL
+        rename: real_datname
+        description: actual database name pgbouncer connects to
+    - force_user:
+        usage: DISCARD
+    - pool_size:
+        usage: COUNTER
+        description: maximum number of server connections
+    - reserve_pool:
+        usage: GAUGE
+        description: maximum number of additional connections for this database
+    - pool_mode:
+        usage: DISCARD
+    - max_connections:
+        usage: GAUGE
+        description: maximum number of allowed connections for this database
+    - current_connections:
+        usage: GAUGE
+        description: current number of connections for this database
+    - paused:
+        usage: GAUGE
+        description: 1 if this database is currently paused, else 0
+    - disabled:
+        usage: GAUGE
+        description: 1 if this database is currently disabled, else 0
