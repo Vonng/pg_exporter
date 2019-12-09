@@ -5,7 +5,9 @@
 You can [download](https://github.com/Vonng/pg_exporter/releases) latest binaries on [release](https://github.com/Vonng/pg_exporter/releases) page
 
 
+
 ## Features
+
 * Support both Postgres & Pgbouncer
 * Flexible, completely customizable queries & metrics
 * More control on execution policy (version, primay/standby, cluster/database level), cache, timeout
@@ -55,8 +57,8 @@ If the target database name is `pgbouncer`, The exporter will turn into pgbounce
 usage: pg_exporter [<flags>]
 
 Flags:
-  --help                         Show context-sensitive help (also try --help-long and --help-man).
-  --url="postgresql:///?sslmode=disable"
+  --help                         Show context-sensitive help 
+  --url="postgresql:///postgres?sslmode=disable"
                                  postgres connect url
   --config="./pg_exporter.yaml"  Path to config files
   --label=""                     Comma separated list label=value pair
@@ -64,16 +66,17 @@ Flags:
   --web.listen-address=":8848"   prometheus web server listen address
   --web.telemetry-path="/metrics"
                                  Path under which to expose metrics.
-  --log-level="Info"             log-level
   --explain                      dry run and explain queries
   --version                      Show application version.
   --log.level="info"             Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]
-  --log.format="logger:stderr"   Set the log target and format. Example: "logger:syslog?appname=bob&local=7" or "logger:stdout?json=true"
+  --log.format="logger:stderr"   Set the log target and format. 
 ```
+
+
 
 ## Config
 
-config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir
+Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir
 
 here is a sample config that scrapes `pg_database` metrics:
 
@@ -114,8 +117,9 @@ pg_database:
     - frozen_xid:
         usage: GAUGE
         description: tuple with xmin below this will always be visable (until wrap around)
-
 ```
+
+If a directory is given, `pg_exporter` will iterate the directory and load config in alphabetic order.
 
 
 
@@ -146,3 +150,6 @@ Or just [download](https://github.com/Vonng/pg_exporter/releases) latest prebuil
 Author：Vonng ([fengruohang@outlook.com](mailto:fengruohang@outlook.com))
 
 License：BSD
+
+Regards: I used to be a faithful user of [PostgresExporter](https://github.com/wrouesnel/postgres_exporter), until I felt some functionailities are missing. Some ideas are blatantly copy from it.
+

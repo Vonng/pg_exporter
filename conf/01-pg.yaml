@@ -83,4 +83,3 @@ pg:
         usage: GAUGE
         description: time when last transaction been replayed
 
-

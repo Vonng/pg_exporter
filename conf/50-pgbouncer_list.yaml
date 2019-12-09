@@ -1,9 +1,9 @@
 #-------------------------------------------------------------#
-# pgb_list
-# show pgbouncer lists
+# pgbouncer_list
+# show PgBouncer lists
 #-------------------------------------------------------------#
 
-pgb_list:
+pgbouncer_list:
   query: |
     SHOW LISTS;
   ttl: 5

@@ -83,7 +83,6 @@ pg:
         usage: GAUGE
         description: time when last transaction been replayed
 
-
 #-------------------------------------------------------------#
 # pg_repl
 # replication metrics
@@ -280,7 +279,7 @@ pg_wal:
   query: |
     SELECT coalesce(sum(size),0) AS size FROM pg_catalog.pg_ls_waldir();
 
-  ttl: 10
+  ttl: 100
   tags: [cluster]
   min_version: 100000
   max_version: 130000
@@ -414,6 +413,7 @@ pg_recovery:
            backup_start_lsn - '0/0'     AS backup_start_lsn,
            backup_end_lsn - '0/0'       AS backup_end_lsn
     FROM pg_control_recovery();
+
   ttl: 100
   tags: [cluster]
   min_version: 100000
@@ -450,6 +450,7 @@ pg_lock:
   tags: [cluster]
   min_version: 100000
   max_version: 130000
+
   metrics:
     - datname:
         usage: LABEL
@@ -477,6 +478,7 @@ pg_xact:
   tags: [cluster]
   min_version: 100000
   max_version: 130000
+
   metrics:
     - xmin:
         usage: GAUGE
@@ -603,11 +605,12 @@ pg_query:
     GROUP BY datname, queryid
     ORDER BY calls DESC, total_time DESC LIMIT 20;
 
-  ttl: 10
+  ttl: 100
   tags: [cluster, pg_stat_statements]
   min_version: 100000
   max_version: 130000
   skip_errors: true
+
   metrics:
     - datname:
         usage: LABEL
@@ -743,6 +746,7 @@ pg_database:
   tags: [cluster]
   min_version: 100000
   max_version: 130000
+
   metrics:
     - datname:
         usage: LABEL
@@ -784,6 +788,7 @@ pg_db:
   tags: [cluster]
   min_version: 100000
   max_version: 130000
+  skip_errors: true
   metrics:
     - datid:
         usage: DISCARD
@@ -1243,11 +1248,11 @@ pg_func:
         description: how much time spent in this function itself (other func not included), in ms
 
 #-------------------------------------------------------------#
-# pgb_list
-# show pgbouncer lists
+# pgbouncer_list
+# show PgBouncer lists
 #-------------------------------------------------------------#
 
-pgb_list:
+pgbouncer_list:
   query: |
     SHOW LISTS;
   ttl: 5
@@ -1261,11 +1266,11 @@ pgb_list:
         usage: GAUGE
         description: count of curresponding pgbouncer object
 #-------------------------------------------------------------#
-# pgb_stat
+# pgbouncer_stat
 # this is a special query for pgbouncer
 #-------------------------------------------------------------#
 
-pgb_stat:
+pgbouncer_stat:
   query: |
     SHOW STATS;
   ttl: 5
@@ -1278,10 +1283,10 @@ pgb_stat:
         rename: datname
         description: database name of this relation
     - total_xact_count:
-        usage: LABEL
+        usage: GAUGE
         description: total tr
     - total_query_count:
-        usage: LABEL
+        usage: GAUGE
         description: relation name of this relation
     - total_received:
         usage: COUNTER
@@ -1320,11 +1325,11 @@ pgb_stat:
         usage: GAUGE
         description: how much time spent in this function itself (other func not included), in ms
 #-------------------------------------------------------------#
-# pgb_database
+# pgbouncer_database
 # show database stats
 #-------------------------------------------------------------#
 
-pgb_database:
+pgbouncer_database:
   query: |
     SHOW DATABASES;
   ttl: 5
@@ -1369,11 +1374,11 @@ pgb_database:
         usage: GAUGE
         description: 1 if this database is currently disabled, else 0
 #-------------------------------------------------------------#
-# pgb_pool
+# pgbouncer_pool
 # pgbouncer pool level stats, pool is a database-user pair
 #-------------------------------------------------------------#
 
-pgb_pool:
+pgbouncer_pool:
   query: |
     SHOW POOLS;
   ttl: 5
@@ -1389,27 +1394,27 @@ pgb_pool:
         usage: LABEL
         description: user
     - cl_active:
-        usage: LABEL
+        usage: GAUGE
         rename: active_clients
         description: client connections that are linked to server connection and can process queries
     - cl_waiting:
-        usage: COUNTER
+        usage: GAUGE
         rename: waiting_clients
         description: client connections that have sent queries but have not yet got a server connection
     - sv_active:
-        usage: COUNTER
+        usage: GAUGE
         rename: active_servers
         description: server connections that are linked to a client
     - sv_idle:
-        usage: COUNTER
+        usage: GAUGE
         rename: idle_servers
         description: server connections that are unused and immediately usable for client queries
     - sv_used:
-        usage: COUNTER
+        usage: GAUGE
         rename: used_servers
         description: server connections that have been idle for more than server_check_delay (means have to run check query)
     - sv_tested:
-        usage: COUNTER
+        usage: GAUGE
         rename: tested_servers
         description: server connections that are currently running reset or check query
     - sv_login:

@@ -1,9 +1,9 @@
 #-------------------------------------------------------------#
-# pgb_database
+# pgbouncer_database
 # show database stats
 #-------------------------------------------------------------#
 
-pgb_database:
+pgbouncer_database:
   query: |
     SHOW DATABASES;
   ttl: 5

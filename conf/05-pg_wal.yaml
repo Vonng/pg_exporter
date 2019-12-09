@@ -7,7 +7,7 @@ pg_wal:
   query: |
     SELECT coalesce(sum(size),0) AS size FROM pg_catalog.pg_ls_waldir();
 
-  ttl: 10
+  ttl: 100
   tags: [cluster]
   min_version: 100000
   max_version: 130000

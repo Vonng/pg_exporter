@@ -24,8 +24,12 @@ release-windows: clean
 	tar -cf bin/pg_exporter_v$(VERSION)_windows-amd64.tar.gz pg_exporter
 	rm -rf pg_exporter
 
+conf:
+	rm -rf pg_exporter.yaml
+	cat conf/* >> pg_exporter.yaml
+
 docker: clean
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o pg_exporter
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
 	docker build -t pg_exporter .
 
 run:
@@ -36,4 +40,4 @@ curl:
 
 release: release-linux release-darwin release-windows
 
-.PHONY: build clean release-linux release-darwin release-windows release docker run curl
+.PHONY: build clean release-linux release-darwin release-windows release docker run curl conf

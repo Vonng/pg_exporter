@@ -1,9 +1,9 @@
 #-------------------------------------------------------------#
-# pgb_stat
+# pgbouncer_stat
 # this is a special query for pgbouncer
 #-------------------------------------------------------------#
 
-pgb_stat:
+pgbouncer_stat:
   query: |
     SHOW STATS;
   ttl: 5
@@ -16,10 +16,10 @@ pgb_stat:
         rename: datname
         description: database name of this relation
     - total_xact_count:
-        usage: LABEL
+        usage: GAUGE
         description: total tr
     - total_query_count:
-        usage: LABEL
+        usage: GAUGE
         description: relation name of this relation
     - total_received:
         usage: COUNTER

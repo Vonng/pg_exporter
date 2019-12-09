@@ -14,6 +14,7 @@ pg_xact:
   tags: [cluster]
   min_version: 100000
   max_version: 130000
+
   metrics:
     - xmin:
         usage: GAUGE

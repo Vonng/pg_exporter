@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/user"
 	"path"
 	"runtime"
 	"sort"
@@ -31,14 +30,14 @@ import (
 *                                       Parameters                                             *
 \**********************************************************************************************/
 
-// Version 0.0.1
-var Version = "0.0.1"
+// Version 0.0.2
+var Version = "0.0.2"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
 var (
 	// exporter settings
-	pgURL        = kingpin.Flag("url", "postgres connect url").Default(defaultPGURL).Envar("PG_EXPORTER_URL").String()
+	pgURL        = kingpin.Flag("url", "postgres connect url").String()
 	configPath   = kingpin.Flag("config", "Path to config files").Default("./pg_exporter.yaml").Envar("PG_EXPORTER_CONFIG").String()
 	constLabels  = kingpin.Flag("label", "Comma separated list label=value pair").Default("").Envar("PG_EXPORTER_LABELS").String()
 	disableCache = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_CACHE").Bool()
@@ -291,6 +290,13 @@ type QueryInstance struct {
 	lastScrape time.Time // real execution will fresh this
 }
 
+// ResultSize report last scrapped metric count
+func (q *QueryInstance) ResultSize() int {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	return len(q.result)
+}
+
 // NewQueryInstance will generate query instance from query, and optional const labels
 func NewQueryInstance(q *Query, s *Server) *QueryInstance {
 	instance := &QueryInstance{
@@ -312,9 +318,9 @@ func (q *QueryInstance) Collect(ch chan<- prometheus.Metric) {
 	if q.CacheExpired() || q.Server.disableCache {
 		if q.Err = q.Execute(); q.Err == nil {
 			q.lastScrape = q.Server.lastScrape
-			q.SendMetrics(ch)
 		}
 	}
+	q.SendMetrics(ch)
 }
 
 // SendMetrics will send cached result to ch
@@ -475,6 +481,7 @@ type Server struct {
 	error        *prometheus.GaugeVec // last scrape error
 	duration     *prometheus.GaugeVec // last scrape duration
 
+	metricCount   *prometheus.CounterVec
 	queryError    *prometheus.GaugeVec
 	queryDuration *prometheus.GaugeVec
 }
@@ -492,8 +499,8 @@ func (s *Server) Connect() (err error) {
 	// needs reconnect
 	if s.DB == nil || (!s.pgbouncerMode && s.DB != nil && s.DB.Ping() != nil) {
 		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
-			log.Debugf("fail connecting to server %s: %s", s.Name(), err.Error())
-			return
+			log.Errorf("fail connecting to server %s: %s", s.Name(), err.Error())
+			return err
 		}
 		s.DB.SetMaxIdleConns(1)
 		s.DB.SetMaxOpenConns(1)
@@ -523,7 +530,7 @@ func (s *Server) Connect() (err error) {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
 	if s.Recovery != recovery {
-		log.Infof("server [%s] recovery status changed: from [%s] to [%s]", s.Name(), s.Recovery, recovery)
+		log.Infof("server [%s] recovery status changed: from [%v] to [%v]", s.Name(), s.Recovery, recovery)
 	}
 	s.Recovery = recovery
 	if s.Database != datname {
@@ -563,10 +570,11 @@ func (s *Server) Plan(queries map[string]*Query) error {
 }
 
 // Explain will print all queries that registered to server
-func (s *Server) Explain() {
+func (s *Server) Explain() (res []string) {
 	for _, i := range s.instances {
-		fmt.Println(i.Explain())
+		res = append(res, i.Explain())
 	}
+	return
 }
 
 // Describe implement prometheus.Collector
@@ -618,6 +626,7 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 		instanceStart := time.Now()
 		instance.Collect(ch)
 		s.queryDuration.WithLabelValues(s.Database, instance.Name).Set(time.Now().Sub(instanceStart).Seconds())
+		s.metricCount.WithLabelValues(s.Database, instance.Name).Add(float64(instance.ResultSize()))
 		if instance.Err != nil {
 			s.queryError.WithLabelValues(s.Database, instance.Name).Set(1)
 			if !instance.SkipErrors {
@@ -636,9 +645,11 @@ final:
 	s.scrapeCount.Add(1)
 	if fail {
 		s.pgUp.Set(0)
+		s.error.WithLabelValues(s.Database).Set(1)
 		s.errorCount.Add(1)
 	} else {
 		s.pgUp.Set(1)
+		s.error.WithLabelValues(s.Database).Set(0)
 	}
 	s.collectInternalMetrics(ch)
 	log.Debugf("server [%s] scrapped in %v , fail=%v", s.Name(), duration, fail)
@@ -655,6 +666,7 @@ func (s *Server) collectInternalMetrics(ch chan<- prometheus.Metric) {
 
 	s.error.Collect(ch)
 	s.duration.Collect(ch)
+	s.metricCount.Collect(ch)
 	s.queryError.Collect(ch)
 	s.queryDuration.Collect(ch)
 }
@@ -683,7 +695,7 @@ func NewServer(dsn string, opts ...ServerOpt) (s *Server, err error) {
 func (s *Server) setupInternalMetrics() {
 	pgnsp := "pg"
 	if s.pgbouncerMode {
-		pgnsp = "pgb"
+		pgnsp = "pgbouncer"
 	}
 	s.pgUp = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   pgnsp,
@@ -726,6 +738,13 @@ func (s *Server) setupInternalMetrics() {
 		Help:        "Duration of the last scrape of metrics from PostgresSQL.",
 		ConstLabels: s.labels,
 	}, []string{"datname"})
+	s.metricCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace:   pgnsp,
+		Subsystem:   "exporter",
+		Name:        "query_metric_count",
+		Help:        "how much metric been scrapped",
+		ConstLabels: s.labels,
+	}, []string{"datname", "query"})
 	s.queryError = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace:   pgnsp,
 		Subsystem:   "exporter",
@@ -823,8 +842,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 // Explain is just yet another wrapper of server.Explain
-func (e *Exporter) Explain() {
-	e.server.Explain()
+func (e *Exporter) Explain() string {
+	return strings.Join(e.server.Explain(), "\n\n")
 }
 
 /**************************************************************\
@@ -1038,96 +1057,36 @@ func parseDatname(dsn string) string {
 	return strings.TrimLeft(u.Path, "/")
 }
 
-// ParseDSN will construct a postgres url from different source
-func ParseDSN(dsn string) (string, error) {
-	u, err := url.Parse(dsn)
-	if err != nil {
-		return "", err
+// GetPGURL will try to get dsn from different sources
+func GetPGURL() (res string) {
+	// priority: args > env  > env file path
+	if *pgURL != "" {
+		log.Infof("get target url %s from command line", shadowDSN(*pgURL))
+		return *pgURL
 	}
-
-	var schema, username, password, ui, dbname string
-	// scheme check and unification
-	if u.Scheme == "postgres" || u.Scheme == "postgresql" || u.Scheme == "pg" {
-		schema = "postgresql"
-	} else {
-		return "", fmt.Errorf("invalid schema name: %s", u.Scheme)
+	if res = os.Getenv("PG_EXPORTER_URL"); res != "" {
+		log.Infof("get target url %s from PG_EXPORTER_URL", shadowDSN(*pgURL))
+		return res
 	}
-
-	// in case of some sensitive information can not pass with parameters
-	if username = u.User.Username(); username == "" {
-		// find username in following orders: PG_EXPORTER_USER_FILE, PG_EXPORTER_USER, os.User
-		username = os.Getenv("PG_EXPORTER_USER")
-	}
-	if username == "" { // still not found, try PG_EXPORTER_USER_FILE
-		if userFile := os.Getenv("PG_EXPORTER_USER_FILE"); len(userFile) != 0 {
-			if fileContents, err := ioutil.ReadFile(userFile); err != nil {
-				panic(err) // specified but not found will triggers a panic
-			} else {
-				username = strings.TrimSpace(string(fileContents))
-			}
+	if filename := os.Getenv("PG_EXPORTER_URL_FILE"); filename != "" {
+		if fileContents, err := ioutil.ReadFile(filename); err != nil {
+			log.Fatalf("PG_EXPORTER_URL_FILE=%s is specified, fail loading url: %s", err.Error())
+			os.Exit(-1)
+		} else {
+			res = strings.TrimSpace(string(fileContents))
+			log.Infof("get target url %s from PG_EXPORTER_URL_FILE", shadowDSN(res))
+			return res
 		}
 	}
-	if username == "" { // still not found
-		if u, err := user.Current(); err == nil {
-			username = u.Username // at least we can use os User by default
-		}
-	}
-
-	password, passSet := u.User.Password();
-	if !passSet { // if password is not set
-		password = os.Getenv("PG_EXPORTER_PASS")
-	}
-	if !passSet && password == "" { // still empty pass, try PG_EXPORTER_PASS_FILE
-		if passFile := os.Getenv("PG_EXPORTER_PASS_FILE"); len(passFile) != 0 {
-			if fileContents, err := ioutil.ReadFile(passFile); err != nil {
-				panic(err) // specified but not found will triggers a panic
-			} else {
-				password = strings.TrimSpace(string(fileContents))
-			}
-		}
-	}
-
-	// userinfo
-	if ui = username; password != "" {
-		ui = fmt.Sprintf("%s:%s", username, password)
-	}
-	// query
-	values := make(url.Values, 0)
-	for k, v := range u.Query() {
-		values[k] = v
-	}
-	if sslMode, found := values["sslmode"]; !found || (found && len(sslMode) == 0) {
-		values.Set("sslmode", "disable")
-	}
-	dbname = strings.TrimLeft(u.Path, "/")
-	if dbname == "" {
-		dbname = username
-	}
-
-	// build url
-	var buf bytes.Buffer
-	buf.WriteString(schema)
-	buf.WriteString("://")
-	if len(ui) > 0 {
-		buf.WriteString(ui)
-		buf.WriteString("@")
-	}
-	buf.WriteString(u.Host)
-	buf.WriteString("/")
-	buf.WriteString(dbname)
-	if len(values) != 0 {
-		buf.WriteString("?")
-		buf.WriteString(values.Encode())
-	}
-
-	return buf.String(), err
+	log.Infof("target url not found, use default dsn: %s", defaultPGURL)
+	return defaultPGURL
 }
 
 /**********************************************************************************************\
 *                                        Main                                                  *
 \**********************************************************************************************/
-// PreCheck will parse parameters & validate dsn
-func PreCheck() {
+// Preset will parse parameters & validate dsn
+func init() {
 	kingpin.Version(fmt.Sprintf("postgres_exporter %s (built with %s)\n", Version, runtime.Version()))
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Parse()
@@ -1136,31 +1095,12 @@ func PreCheck() {
 		log.Fatalf("fail setting log level to %s: %w", *logLevel, err)
 		os.Exit(-1)
 	}
-
-	if u, err := ParseDSN(*pgURL); err != nil {
-		log.Fatalf("invalid dsn %s : %s", shadowDSN(*pgURL), err.Error())
-		os.Exit(-2)
-	} else {
-		*pgURL = u
-	}
-}
-
-// RunHttp will start listen on http requests
-func RunHttp() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		_, _ = w.Write([]byte(`<html><head><title>PG Exporter</title></head><body><h1>PG Exporter</h1><p><a href='` + *metricPath + `'>Metrics</a></p></body></html>`))
-	})
-	http.Handle(*metricPath, promhttp.Handler())
-	log.Infof("pg_exporter for %s start, listen on http://%s%s", shadowDSN(*pgURL), *listenAddress, *metricPath)
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
 
 func main() {
-	PreCheck()
-
+	pgurl := GetPGURL()
 	exporter, err := NewExporter(
-		*pgURL,
+		pgurl,
 		WithConfig(*configPath),
 		WithConstLabels(*constLabels),
 		WithCacheDisabled(*disableCache),
@@ -1171,11 +1111,22 @@ func main() {
 	}
 
 	if *explainOnly {
-		exporter.Explain()
+		fmt.Println(exporter.Explain())
 		os.Exit(0)
 	}
 	defer exporter.Close()
 	prometheus.MustRegister(exporter)
 
-	RunHttp()
+	// run http
+	http.Handle(*metricPath, promhttp.Handler())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		_, _ = w.Write([]byte(`<html><head><title>PG Exporter</title></head><body><h1>PG Exporter</h1><p><a href='` + *metricPath + `'>Metrics</a></p></body></html>`))
+	})
+	http.HandleFunc("/explain", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		_, _ = w.Write([]byte(exporter.Explain()))
+	})
+	log.Infof("pg_exporter for %s start, listen on http://%s%s", shadowDSN(pgurl), *listenAddress, *metricPath)
+	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }

@@ -15,6 +15,7 @@ pg_db:
   tags: [cluster]
   min_version: 100000
   max_version: 130000
+  skip_errors: true
   metrics:
     - datid:
         usage: DISCARD
