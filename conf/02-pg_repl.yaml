@@ -3,7 +3,14 @@
 # replication metrics
 #-------------------------------------------------------------#
 
-pg_repl:
+
+
+#-------------------------------------------------------------#
+# This branch is for PostgreSQL 10 ~ 12
+# https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW
+#-------------------------------------------------------------#
+pg_repl_10_12:
+  name: pg_repl
   query: |
     SELECT pid,
       client_addr,
@@ -75,3 +82,68 @@ pg_repl:
         usage: GAUGE
         description: priority of being chosen as synchronous standby
 
+
+#-------------------------------------------------------------#
+# This branch is for PostgreSQL 94 ~ 96
+# https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STAT-REPLICATION-VIEW
+#-------------------------------------------------------------#
+pg_repl_94_96:
+  name: pg_repl
+  query: |
+    SELECT pid,
+      client_addr,
+      application_name,
+      state,
+      CASE WHEN pg_is_in_recovery()
+      THEN pg_last_wal_replay_lsn()
+      ELSE pg_current_wal_lsn() END - '0/0' AS lsn,
+      sent_lsn - '0/0'                          AS sent_lsn,
+      write_lsn - '0/0'                         AS write_lsn,
+      flush_lsn - '0/0'                         AS flush_lsn,
+      replay_lsn - '0/0'                        AS replay_lsn,
+      extract(EPOCH FROM now() - backend_start) AS backend_uptime,
+      backend_xmin::TEXT::BIGINT                AS backend_xmin,
+      sync_priority
+      FROM pg_stat_replication;
+
+  ttl: 10
+  tags: [cluster]
+  min_version: 90400
+  max_version: 100000
+  metrics:
+    - pid:
+        usage: LABEL
+        description: unique walsender pid
+    - client_addr:
+        usage: LABEL
+        description: client address of wal receiver
+    - application_name:
+        usage: LABEL
+        description: application name of standby
+    - state:
+        usage: LABEL
+        description: replication state startup|catchup|streaming|backup|stopping
+    - lsn:
+        usage: COUNTER
+        description: current log position on this server
+    - sent_lsn:
+        usage: COUNTER
+        description: last log position sent to this standby server
+    - write_lsn:
+        usage: COUNTER
+        description: last log position written to disk by this standby server
+    - flush_lsn:
+        usage: COUNTER
+        description: last log position flushed to disk by this standby server
+    - replay_lsn:
+        usage: COUNTER
+        description: last log position replayed into the database on this standby server
+    - backend_uptime:
+        usage: GAUGE
+        description: how long since standby connect to this server
+    - backend_xmin:
+        usage: GAUGE
+        description: this standby's xmin horizon reported by hot_standby_feedback.
+    - sync_priority:
+        usage: GAUGE
+        description: priority of being chosen as synchronous standby

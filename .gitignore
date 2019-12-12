@@ -9,3 +9,4 @@ pg_exporter
 .DS_Store
 pg_exporter_test.go
 test/
+upload.sh

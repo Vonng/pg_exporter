@@ -30,22 +30,22 @@ import (
 *                                       Parameters                                             *
 \**********************************************************************************************/
 
-// Version 0.0.2
-var Version = "0.0.2"
+// Version 0.0.3
+var Version = "0.0.3"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
 var (
 	// exporter settings
-	pgURL        = kingpin.Flag("url", "postgres connect url").String()
-	configPath   = kingpin.Flag("config", "Path to config files").Default("./pg_exporter.yaml").Envar("PG_EXPORTER_CONFIG").String()
-	constLabels  = kingpin.Flag("label", "Comma separated list label=value pair").Default("").Envar("PG_EXPORTER_LABELS").String()
-	disableCache = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_CACHE").Bool()
+	pgURL             = kingpin.Flag("url", "postgres connect url").String()
+	configPath        = kingpin.Flag("config", "Path to config files").Default("./pg_exporter.yaml").Envar("PG_EXPORTER_CONFIG").String()
+	constLabels       = kingpin.Flag("label", "Comma separated list label=value pair").Default("").Envar("PG_EXPORTER_LABELS").String()
+	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_CACHE").Bool()
+	exporterNamespace = kingpin.Flag("namespace", "prefix of built-in metrics").Default("").Envar("PG_EXPORTER_NAMESPACE").String()
 
 	// prometheus http
 	listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Default(":8848").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
 	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").Envar("PG_EXPORTER_TELEMETRY_PATH").String()
-	logLevel      = kingpin.Flag("log-level", "log-level").Default("Info").Envar("PG_EXPORTER_LOG_LEVEL").String()
 
 	// action
 	explainOnly = kingpin.Flag("explain", "dry run and explain queries").Default("false").Bool()
@@ -130,7 +130,7 @@ var queryTemplate, _ = template.New("Query").Parse(`
 {{end}}┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 ┃ Tags     ┆ {{ .Tags }}
 ┃ TTL      ┆ {{ .TTL }}
-┃ Priority ┆ 
+┃ Priority ┆ {{ .Priority }}
 ┃ Timeout  ┆ {{ .Timeout }}
 ┃ SkipErr  ┆ {{ .SkipErrors }}
 ┃ Version  ┆ {{ .MinVersion }} - {{ .MaxVersion }}
@@ -221,15 +221,15 @@ func ParseQuery(config string) (*Query, error) {
 func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 	stat, err := os.Stat(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("invalid config path %s: %w", configPath, err)
+		return nil, fmt.Errorf("invalid config path: %s: %w", configPath, err)
 	}
 	if stat.IsDir() { // recursively iterate conf files if a dir is given
 		files, err := ioutil.ReadDir(configPath)
 		if err != nil {
-			return nil, fmt.Errorf("fail reading config dir %s: %w", configPath, err)
+			return nil, fmt.Errorf("fail reading config dir: %s: %w", configPath, err)
 		}
 
-		log.Debugf("load config from dir %s", configPath)
+		log.Debugf("load config from dir: %s", configPath)
 		confFiles := make([]string, 0)
 		for _, conf := range files {
 			if !strings.HasSuffix(conf.Name(), ".yaml") && !conf.IsDir() { // depth = 1
@@ -239,36 +239,43 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 		}
 
 		queries = make(map[string]*Query, 0)
+		var queryCount, configCount int
+
 		for index, confPath := range confFiles {
 			if singleQueries, err := LoadConfig(confPath); err != nil {
 				log.Warnf("skip config %s due to error: %s", confPath, err.Error())
 			} else {
+				configCount++
+				cnt := 0
 				for name, query := range singleQueries {
+					// assign priority: assume you don't really provide 100+ conf files or put 100+ entry in a conf
+					queryCount++
 					if query.Priority == 0 {
-						query.Priority = 100 - index // assume you don't really provide 100 conf files
+						query.Priority = 10000 - index*100 - cnt
 					}
 					queries[name] = query // so the later one will overwrite former one
 				}
 			}
 		}
-
+		log.Debugf("load %d of %d queries from %d config files", len(queries), queryCount, configCount)
 		return queries, nil
 	}
 
 	// single file case: recursive exit condition
-	if content, err := ioutil.ReadFile(configPath); err != nil {
+	content, err := ioutil.ReadFile(configPath)
+	if err != nil {
 		return nil, fmt.Errorf("fail reading config file %s: %w", configPath, err)
-	} else {
-		if singleQueries, err := ParseConfig(content); err != nil {
-			return nil, err
-		} else {
-			for _, q := range singleQueries {
-				q.Path = stat.Name()
-			}
-			log.Debugf("load config from file %s", configPath)
-			return singleQueries, nil
-		}
 	}
+	queries, err = ParseConfig(content)
+	if err != nil {
+		return nil, err
+	}
+	for _, q := range queries {
+		q.Path = stat.Name()
+	}
+	log.Debugf("load %d queries from %s, ", len(queries), configPath)
+	return queries, nil
+
 }
 
 /**********************************************************************************************\
@@ -285,16 +292,12 @@ type QueryInstance struct {
 	lock        sync.RWMutex                // access lock
 	result      []prometheus.Metric         // cached metrics
 	descriptors map[string]*prometheus.Desc // maps column index to descriptor, build on init
-	Err         error
+	err         error
+	cacheHit    bool // indicate last scrape was served from cache or real execution
 
-	lastScrape time.Time // real execution will fresh this
-}
-
-// ResultSize report last scrapped metric count
-func (q *QueryInstance) ResultSize() int {
-	q.lock.RLock()
-	defer q.lock.RUnlock()
-	return len(q.result)
+	lastScrape  time.Time // server's scrape start time
+	scrapeBegin time.Time // real execution begin
+	scrapeDone  time.Time // execution complete time
 }
 
 // NewQueryInstance will generate query instance from query, and optional const labels
@@ -310,32 +313,138 @@ func NewQueryInstance(q *Query, s *Server) *QueryInstance {
 
 // Describe implement prometheus.Collector
 func (q *QueryInstance) Describe(ch chan<- *prometheus.Desc) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 	q.sendDescriptors(ch)
 }
 
 // Collect implement prometheus.Collector
 func (q *QueryInstance) Collect(ch chan<- prometheus.Metric) {
-	if q.CacheExpired() || q.Server.disableCache {
-		if q.Err = q.Execute(); q.Err == nil {
-			q.lastScrape = q.Server.lastScrape
-		}
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	if q.cacheExpired() || q.Server.DisableCache {
+		q.execute()
+		q.cacheHit = false
+	} else {
+		q.cacheHit = true
 	}
-	q.SendMetrics(ch)
+	// if execution failed, the cache is already reset
+	q.sendMetrics(ch)
 }
 
-// SendMetrics will send cached result to ch
-func (q *QueryInstance) SendMetrics(ch chan<- prometheus.Metric) {
+// ResultSize report last scrapped metric count
+func (q *QueryInstance) ResultSize() int {
 	q.lock.RLock()
-	defer q.lock.RUnlock()
-	for _, metric := range q.result {
-		ch <- metric
-	}
+	q.lock.RUnlock()
+	return len(q.result)
 }
+
+// Error wraps query error
+func (q *QueryInstance) Error() error {
+	q.lock.RLock()
+	q.lock.RUnlock()
+	return q.err
+}
+
+// Duration returns last scrape duration in float64 seconds
+func (q *QueryInstance) Duration() float64 {
+	q.lock.RLock()
+	q.lock.RUnlock()
+	return q.scrapeDone.Sub(q.scrapeBegin).Seconds()
+}
+
+// CacheHit report whether last scrape was serve from cache
+func (q *QueryInstance) CacheHit() bool {
+	q.lock.RLock()
+	q.lock.RUnlock()
+	return q.cacheHit
+}
+
+// execute will run this query to registered server, result and err are registered
+func (q *QueryInstance) execute() {
+	q.result = q.result[:0] // reset cache
+	q.scrapeBegin = time.Now()
+
+	// Server must be inited before using
+	rows, err := q.Server.Query(q.SQL)
+	if err != nil {
+		q.err = fmt.Errorf("query %s failed: %w", q.Name, err)
+		q.scrapeDone = time.Now()
+		return
+	}
+	defer rows.Close() // nolint: errcheck
+
+	// get result metadata for dynamic name lookup, prepare line cache
+	columnNames, err := rows.Columns()
+	if err != nil {
+		q.err = fmt.Errorf("query %s fail retriving rows meta: %w", q.Name, err)
+		q.scrapeDone = time.Now()
+		return
+	}
+	columnIndexes := make(map[string]int, len(columnNames)) // column name to index
+	for i, n := range columnNames {
+		columnIndexes[n] = i
+	}
+	nColumn := len(columnNames)
+	colData := make([]interface{}, nColumn)
+	colArgs := make([]interface{}, nColumn)
+	for i := range colData {
+		colArgs[i] = &colData[i]
+	}
+	// warn if column count not match
+	if len(columnNames) != len(q.Columns) {
+		log.Warnf("query %s column count not match, result %d ≠ config %d", q.Name, len(columnNames), len(q.Columns))
+	}
+
+	// scan loop, for each row, extract labels first, then for each metric column, generate a new metric
+	for rows.Next() {
+		err = rows.Scan(colArgs...)
+		if err != nil {
+			q.err = fmt.Errorf("fail scanning rows: %w", err)
+			q.scrapeDone = time.Now()
+			return
+		}
+
+		// get labels, sequence matters, empty string for null or bad labels
+		labels := make([]string, len(q.LabelNames))
+		for i, labelName := range q.LabelNames {
+			if dataIndex, found := columnIndexes[labelName]; found {
+				labels[i] = castString(colData[dataIndex])
+			} else {
+				//if label column is not found in result, we just warn and send a empty string
+				log.Warnf("missing label %s.%s", q.Name, labelName)
+				labels[i] = ""
+			}
+		}
+
+		// get metrics, warn if column not exist
+		for _, metricName := range q.MetricNames {
+			if dataIndex, found := columnIndexes[metricName]; found { // the metric column is found in result
+				q.result = append(q.result, prometheus.MustNewConstMetric(
+					q.descriptors[metricName], // always find desc & column via name
+					q.Columns[metricName].PrometheusValueType(),
+					castFloat64(colData[dataIndex]),
+					labels...,
+				))
+			} else {
+				log.Warnf("missing metric column %s.%s in result", q.Name, metricName)
+			}
+		}
+	}
+	q.err = nil
+	q.scrapeDone = time.Now()
+	q.lastScrape = q.Server.scrapeBegin // align cache by using server's last scrape time
+	log.Debugf("query %s cache expired, execute duration %v, %d metrics scrapped",
+		q.Name, q.scrapeDone.Sub(q.scrapeBegin), len(q.result))
+	return
+}
+
+/**************************************************************\
+* Query Instance Auxiliary
+\**************************************************************/
 
 // makeDescMap will generate descriptor map from Query
 func (q *QueryInstance) makeDescMap() {
-	q.lock.Lock()
-	defer q.lock.Unlock()
 	descriptors := make(map[string]*prometheus.Desc, 0)
 
 	// rename label name if label column have rename option
@@ -364,89 +473,29 @@ func (q *QueryInstance) makeDescMap() {
 }
 
 func (q *QueryInstance) sendDescriptors(ch chan<- *prometheus.Desc) {
-	q.lock.RLock()
-	defer q.lock.RUnlock()
 	for _, desc := range q.descriptors {
 		ch <- desc
 	}
 }
 
-// Execute will run this query to given source, transform result into metrics and stored in cache
-func (q *QueryInstance) Execute() error {
-	q.lock.Lock()
-	defer q.lock.Unlock()
-	q.result = q.result[:0] // reset cache
-
-	// Server must be inited before using
-	rows, err := q.Server.Query(q.SQL)
-	if err != nil {
-		return fmt.Errorf("query %s failed: %w", q.Name, err)
-	}
-	defer rows.Close() // nolint: errcheck
-
-	// get result metadata for dynamic name lookup, prepare line cache
-	columnNames, err := rows.Columns()
-	if err != nil {
-		return fmt.Errorf("query %s fail retriving rows meta: %w", q.Name, err)
-	}
-	columnIndexes := make(map[string]int, len(columnNames)) // column name to index
-	for i, n := range columnNames {
-		columnIndexes[n] = i
-	}
-	nColumn := len(columnNames)
-	colData := make([]interface{}, nColumn)
-	colArgs := make([]interface{}, nColumn)
-	for i := range colData {
-		colArgs[i] = &colData[i]
-	}
-	// warn if column count not match
-	if len(columnNames) != len(q.Columns) {
-		log.Warnf("query %s column count not match, result %d ≠ config %d", q.Name, len(columnNames), len(q.Columns))
-	}
-
-	// scan loop, for each row, extract labels first, then for each metric column, generate a new metric
-	for rows.Next() {
-		err = rows.Scan(colArgs...)
-		if err != nil {
-			return fmt.Errorf("fail scanning rows: %w", err)
-		}
-
-		// get labels, sequence matters, empty string for null or bad labels
-		labels := make([]string, len(q.LabelNames))
-		for i, labelName := range q.LabelNames {
-			if dataIndex, found := columnIndexes[labelName]; found {
-				labels[i] = castString(colData[dataIndex])
-			} else {
-				//if label column is not found in result, we just warn and send a empty string
-				log.Warnf("missing label %s.%s", q.Name, labelName)
-				labels[i] = ""
-			}
-		}
-
-		// get metrics, warn if column not exist
-		for _, metricName := range q.MetricNames {
-			if dataIndex, found := columnIndexes[metricName]; found { // the metric column is found in result
-				q.result = append(q.result, prometheus.MustNewConstMetric(
-					q.descriptors[metricName], // always find desc & column via name
-					q.Columns[metricName].PrometheusValueType(),
-					castFloat64(colData[dataIndex]),
-					labels...,
-				))
-			} else {
-				log.Debugf("missing %s.%s in result", q.Name, metricName)
-			}
-		}
-	}
-	return nil
-}
-
-// CacheExpired report whether this instance needs actual execution
+// cacheExpired report whether this instance needs actual execution
 // Note you have to using Server.scrapeBegin as "now", and set that timestamp as
-func (q *QueryInstance) CacheExpired() bool {
-	if q.Server.lastScrape.Sub(q.lastScrape) > time.Duration(q.TTL*float64(time.Second)) {
+func (q *QueryInstance) cacheExpired() bool {
+	if q.Server.scrapeBegin.Sub(q.lastScrape) > time.Duration(q.TTL*float64(time.Second)) {
 		return true
 	}
 	return false
+}
+
+func (q *QueryInstance) cacheTTL() float64 {
+	return q.TTL - q.Server.scrapeBegin.Sub(q.lastScrape).Seconds()
+}
+
+// sendMetrics will send cached result to ch
+func (q *QueryInstance) sendMetrics(ch chan<- prometheus.Metric) {
+	for _, metric := range q.result {
+		ch <- metric
+	}
 }
 
 /**********************************************************************************************\
@@ -455,38 +504,47 @@ func (q *QueryInstance) CacheExpired() bool {
 
 // Server represent a postgres connection, with additional fact, conf, runtime info
 type Server struct {
-	*sql.DB               // database instance
-	dsn        string     // data source name
-	scrapeLock sync.Mutex // scrape lock avoid concurrent call
+	*sql.DB                   // database instance
+	dsn          string       // data source name
+	lock         sync.RWMutex // scrape lock avoid concurrent call
+	err          error
+	beforeScrape func(s *Server) error
 
 	// postgres fact gather from server
-	Database string // database name of current server connection
-	Version  int    // pg server version num
-	Recovery bool   // is server recovering? (slave|standby)
+	UP             bool
+	Version        int      // pg server version num
+	Database       string   // database name of current server connection
+	DatabaseNames  []string // all available database in target cluster
+	ExtensionNames []string // all available database in target cluster
+	Recovery       bool     // is server recovering? (slave|standby)
+
+	PgbouncerMode  bool // indicate it is a pgbouncer server
+	DisableCache   bool // force executing, ignoring caching policy
+	DisableCluster bool // cluster server will not run on this server
+	Planned        bool
 
 	// query
-	queries        []string          // query sequence
-	instances      []*QueryInstance  // query instance
-	labels         prometheus.Labels // constant label that inject into metrics
-	disableCache   bool              // force executing, ignoring caching policy
-	disableCluster bool              // cluster server will not run on this server
-	pgbouncerMode  bool
-	lastScrape     time.Time // cache time alignment
+	//queries        []string          // query sequence
+	queries   map[string]*Query // original unfiltered query instance in pirority order
+	instances []*QueryInstance  // query instance
+	labels    prometheus.Labels // constant label that inject into metrics
 
-	// exporter level metrics
-	pgUp         prometheus.Gauge     // primary target server is alive ?
-	lastScrapeTs prometheus.Gauge     // total active target servers
-	scrapeCount  prometheus.Counter   // total scrape count of this server (only primary is counted)
-	errorCount   prometheus.Counter   // error scrape count (only primary is counted)
-	error        *prometheus.GaugeVec // last scrape error
-	duration     *prometheus.GaugeVec // last scrape duration
+	// internal stats
+	scrapeBegin time.Time // server level scrape begin
+	scrapeDone  time.Time // server last scrape done
+	errorCount  float64
+	totalCount  float64
+	totalTime   float64
 
-	metricCount   *prometheus.CounterVec
-	queryError    *prometheus.GaugeVec
-	queryDuration *prometheus.GaugeVec
+	queryCacheTTL          map[string]float64
+	queryScrapeTotalCount  map[string]float64
+	queryScrapeHitCount    map[string]float64
+	queryScrapeErrorCount  map[string]float64
+	queryScrapeMetricCount map[string]float64
+	queryScrapeDuration    map[string]float64
 }
 
-// Name returns server's name, database name , or a shadowed DSN
+// Name is coalesce(s.Database, dsn)
 func (s *Server) Name() string {
 	if s.Database != "" {
 		return s.Database
@@ -494,79 +552,166 @@ func (s *Server) Name() string {
 	return shadowDSN(s.dsn)
 }
 
-// Connect will issue a connection to server
-func (s *Server) Connect() (err error) {
-	// needs reconnect
-	if s.DB == nil || (!s.pgbouncerMode && s.DB != nil && s.DB.Ping() != nil) {
+// Name is coalesce(s.Database, dsn)
+func (s *Server) Error() error {
+	return s.err
+}
+
+// PgbouncerPrecheck checks pgbouncer connection before scrape
+func PgbouncerPrecheck(s *Server) (err error) {
+	if s.DB == nil { // if db is not initialized, create a new DB
 		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
-			log.Errorf("fail connecting to server %s: %s", s.Name(), err.Error())
-			return err
+			s.UP = false
+			return
 		}
 		s.DB.SetMaxIdleConns(1)
 		s.DB.SetMaxOpenConns(1)
 	}
 
-	// pgbouncer will skip gathering fact like version & datname ...
-	if s.pgbouncerMode {
-		log.Debugf("server %s connected, skip fact gathering", s.Name())
-		return nil
+	// TODO: since pgbouncer 1.12- using NOTICE to tell version, we just leave it blank here
+	if _, err = s.DB.Exec(`SHOW VERSION;`); err != nil {
+		return
+	}
+	return nil
+}
+
+// PostgresPrecheck checks postgres connection before scrape
+func PostgresPrecheck(s *Server) (err error) {
+	if s.DB == nil { // if db is not initialized, create a new DB
+		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
+			s.UP = false
+			return
+		}
+		s.DB.SetMaxIdleConns(1)
+		s.DB.SetMaxOpenConns(1)
 	}
 
-	// Gather fact
+	// retrieve version info
 	var version int
-	err = s.DB.QueryRow(`SHOW server_version_num;`).Scan(&version)
-	if err != nil {
+	if err = s.DB.QueryRow(`SHOW server_version_num;`).Scan(&version); err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
+	// fact change triggers a new planning
 	if s.Version != version {
 		log.Infof("server [%s] version changed: from [%d] to [%d]", s.Name(), s.Version, version)
+		s.Planned = false
 	}
 	s.Version = version
 
 	var recovery bool
 	var datname string
-	err = s.DB.QueryRow(`SELECT current_catalog, pg_is_in_recovery();`).Scan(&datname, &recovery)
-	if err != nil {
+	//var extnames, datnames []string
+
+	if err = s.DB.QueryRow(`SELECT current_catalog, pg_is_in_recovery();`).Scan(&datname, &recovery); err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
 	if s.Recovery != recovery {
 		log.Infof("server [%s] recovery status changed: from [%v] to [%v]", s.Name(), s.Recovery, recovery)
+		s.Planned = false
 	}
 	s.Recovery = recovery
 	if s.Database != datname {
 		log.Infof("server [%s] datname changed: from [%s] to [%s]", s.Name(), s.Database, datname)
+		s.Planned = false
 	}
 	s.Database = datname
 
-	log.Debugf("server %s connected, version = %v, in recovery: %v", s.Name(), s.Version, recovery)
 	return nil
 }
 
 // Plan will register queries that option fit server's fact
-func (s *Server) Plan(queries map[string]*Query) error {
+func (s *Server) Plan(queries ...*Query) {
+	if len(queries) > 0 {
+		// if queries are explicitly given to plan, use it anyway
+		newQueries := make(map[string]*Query, 0)
+		for _, q := range queries {
+			newQueries[q.Name] = q
+		}
+		s.queries = newQueries
+	}
+
 	// only register those matches server's fact
 	instances := make([]*QueryInstance, 0)
 	var installedNames, discardedNames []string
-	for _, query := range queries {
-		pgbouncerQuery := query.HasTag("pgbouncer")
-		if (pgbouncerQuery && s.pgbouncerMode) || (!pgbouncerQuery && !s.pgbouncerMode) {
+
+	for name, query := range s.queries {
+		if ok, reason := s.Compatible(query); ok {
 			instances = append(instances, NewQueryInstance(query, s))
-			installedNames = append(installedNames, query.Name)
+			installedNames = append(installedNames, name)
 		} else {
-			discardedNames = append(discardedNames, query.Name)
+			discardedNames = append(discardedNames, name)
+			log.Debugf("query %s discarded because of %s", name, reason)
 		}
 	}
-	// sort in priority order
+
+	// sort by priority
 	sort.Slice(instances, func(i, j int) bool {
 		return instances[i].Priority > instances[j].Priority
 	})
-
 	s.instances = instances
 
-	log.Infof("server %s planned with %d queries, %d installed", s.Name(), len(queries), len(instances))
-	log.Infof("installed queries: %s", strings.Join(installedNames, ", "))
-	log.Infof("discarded queries: %s", strings.Join(discardedNames, ", "))
-	return nil
+	// reset statistics
+	s.ResetStats()
+
+	s.Planned = true
+	log.Infof("server %s planned with %d queries, %d installed, %d discarded, installed: %s , discarded: %s",
+		s.Name(), len(s.queries), len(installedNames), len(discardedNames), strings.Join(installedNames, ", "), strings.Join(discardedNames, ", "))
+}
+
+// ResetStats will clear all statistic info
+func (s *Server) ResetStats() {
+	s.queryCacheTTL = make(map[string]float64, 0)
+	s.queryScrapeTotalCount = make(map[string]float64, 0)
+	s.queryScrapeHitCount = make(map[string]float64, 0)
+	s.queryScrapeErrorCount = make(map[string]float64, 0)
+	s.queryScrapeMetricCount = make(map[string]float64, 0)
+	s.queryScrapeDuration = make(map[string]float64, 0)
+
+	for _, query := range s.instances {
+		s.queryCacheTTL[query.Name] = 0
+		s.queryScrapeTotalCount[query.Name] = 0
+		s.queryScrapeHitCount[query.Name] = 0
+		s.queryScrapeErrorCount[query.Name] = 0
+		s.queryScrapeMetricCount[query.Name] = 0
+		s.queryScrapeDuration[query.Name] = 0
+	}
+}
+
+// Compatible tells whether a query is compatible with current server
+func (s *Server) Compatible(query *Query) (res bool, reason string) {
+	// check mode
+	if pgbouncerQuery := query.HasTag("pgbouncer"); pgbouncerQuery != s.PgbouncerMode {
+		if s.PgbouncerMode {
+			return false, fmt.Sprintf("pgbouncer server doese not match with normal postgres query %s", query.Name)
+		}
+		return false, fmt.Sprintf("pgbouncer query %s does not match with normal postgres server", query.Name)
+	}
+
+	// check version
+	if s.Version != 0 { // if version is not determined yet, just let it go
+		if query.MinVersion != 0 && s.Version < query.MinVersion {
+			return false, fmt.Sprintf("server version %v lower than query min version %v", s.Version, query.MinVersion)
+		}
+		if query.MaxVersion != 0 && s.Version >= query.MaxVersion { // exclude
+			return false, fmt.Sprintf("server version %v higher than query max version %v", s.Version, query.MaxVersion)
+		}
+	}
+
+	// check tags
+	if query.HasTag("cluster") && s.DisableCluster {
+		return false, fmt.Sprintf("cluster level query %s will not run on non-cluster server %v", query.Name, s.Name())
+	}
+	if query.HasTag("primary") && s.Recovery {
+		return false, fmt.Sprintf("primary-only query %s will not run on standby server %v", query.Name, s.Name())
+	}
+	if query.HasTag("standby") && s.Recovery {
+		return false, fmt.Sprintf("standby-only query %s will not run on primary server %v", query.Name, s.Name())
+	}
+	if query.HasTag("pg_stat_statements") {
+		// TODO: check extension exist...
+	}
+
+	return true, ""
 }
 
 // Explain will print all queries that registered to server
@@ -579,96 +724,88 @@ func (s *Server) Explain() (res []string) {
 
 // Describe implement prometheus.Collector
 func (s *Server) Describe(ch chan<- *prometheus.Desc) {
-	s.scrapeLock.Lock()
-	defer s.scrapeLock.Unlock()
+	// we just run Collect when Describe is invoked, therefore runtime planning is done before describe
+	metricCh := make(chan prometheus.Metric)
+	doneCh := make(chan struct{})
+	go func() {
+		cnt := 0
+		for range metricCh {
+			//ch <- m.Desc()
+			cnt++
+		}
+		log.Infof("describe server %s: %d metrics collected", s.Name(), cnt)
+		close(doneCh)
+	}()
+	s.Collect(metricCh)
+	close(metricCh)
+	<-doneCh
 
+	// then we just sending are registed descriptor
 	for _, instance := range s.instances {
 		instance.Describe(ch)
-	}
-
-	// server internal metrics
-	if !s.disableCluster {
-		s.pgUp.Describe(ch)
-		s.scrapeCount.Describe(ch)
-		s.errorCount.Describe(ch)
-		s.lastScrapeTs.Describe(ch)
-		s.duration.Describe(ch)
-		s.error.Describe(ch)
-		s.queryError.Describe(ch)
-		s.queryDuration.Describe(ch)
 	}
 }
 
 // Collect implement prometheus.Collector interface
 func (s *Server) Collect(ch chan<- prometheus.Metric) {
-	s.scrapeLock.Lock()
-	defer s.scrapeLock.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.scrapeBegin = time.Now() // This ts is used for cache expiration check
 
-	// there's errors are treated as non-fatal errors
-	s.lastScrape = time.Now() // This ts is used for cache expiration check
-	s.lastScrapeTs.Set(float64(s.lastScrape.Unix()))
-	s.duration.Reset()
-	s.queryDuration.Reset()
-	s.queryError.Reset()
-	s.error.Reset()
-
-	var fail bool
-	if err := s.Connect(); err != nil {
-		log.Errorf("fail establishing new connection to %s: %s", s.Name(), err.Error())
-		fail = true
-		goto final
+	// precheck hook
+	if s.beforeScrape != nil {
+		if s.err = s.beforeScrape(s); s.err != nil {
+			log.Errorf("fail establishing connection to %s: %s", s.Name(), s.err.Error())
+			goto final
+		}
 	}
 
-	for _, instance := range s.instances {
-		if !compatible(instance, s) {
-			continue
-		}
-		instanceStart := time.Now()
-		instance.Collect(ch)
-		s.queryDuration.WithLabelValues(s.Database, instance.Name).Set(time.Now().Sub(instanceStart).Seconds())
-		s.metricCount.WithLabelValues(s.Database, instance.Name).Add(float64(instance.ResultSize()))
-		if instance.Err != nil {
-			s.queryError.WithLabelValues(s.Database, instance.Name).Set(1)
-			if !instance.SkipErrors {
-				log.Errorf("server %s fail collecting metrics from instance %s, %s", s.Name(), instance.Name, instance.Err.Error())
-				fail = true
+	if !s.Planned {
+		s.Plan()
+	}
+
+	for _, query := range s.instances {
+		query.Collect(ch)
+		s.queryCacheTTL[query.Name] = query.cacheTTL()
+		s.queryScrapeTotalCount[query.Name]++
+		s.queryScrapeMetricCount[query.Name] = float64(query.ResultSize())
+		s.queryScrapeDuration[query.Name] = query.Duration()
+		if query.Error() != nil {
+			s.queryScrapeErrorCount[query.Name]++
+			if query.SkipErrors { // skip this error according to config
+				log.Warnf("query %s error skipped: %s", query.Name, query.Error())
+				continue
+			} else { // treat as fatal error
+				log.Errorf("query %s error: %s", query.Name, query.Error())
+				s.err = query.Error()
 				goto final
 			}
 		} else {
-			s.queryError.WithLabelValues(s.Database, instance.Name).Set(0)
+			if query.CacheHit() {
+				s.queryScrapeHitCount[query.Name]++
+			}
 		}
 	}
 
 final:
-	duration := time.Now().Sub(s.lastScrape)
-	s.duration.WithLabelValues(s.Database).Set(duration.Seconds())
-	s.scrapeCount.Add(1)
-	if fail {
-		s.pgUp.Set(0)
-		s.error.WithLabelValues(s.Database).Set(1)
-		s.errorCount.Add(1)
+	s.scrapeDone = time.Now() // This ts is used for cache expiration check
+	s.totalTime += s.scrapeDone.Sub(s.scrapeBegin).Seconds()
+	s.totalCount++
+	if s.err != nil {
+		s.UP = false
+		s.errorCount++
+		log.Errorf("fail scrapping server [%s]: %s", s.Name(), s.err.Error())
 	} else {
-		s.pgUp.Set(1)
-		s.error.WithLabelValues(s.Database).Set(0)
+		s.UP = true
+		log.Debugf("server [%s] scrapped in %v, metrics", s.Name(), s.scrapeDone.Sub(s.scrapeBegin).Seconds())
 	}
-	s.collectInternalMetrics(ch)
-	log.Debugf("server [%s] scrapped in %v , fail=%v", s.Name(), duration, fail)
 }
 
-func (s *Server) collectInternalMetrics(ch chan<- prometheus.Metric) {
-	if !s.disableCluster {
-		// only primary server will report up & total & error
-		ch <- s.pgUp
-		ch <- s.lastScrapeTs
-		ch <- s.scrapeCount
-		ch <- s.errorCount
-	}
-
-	s.error.Collect(ch)
-	s.duration.Collect(ch)
-	s.metricCount.Collect(ch)
-	s.queryError.Collect(ch)
-	s.queryDuration.Collect(ch)
+// Duration returns last scrape duration in float64 seconds
+func (s *Server) Duration() float64 {
+	s.lock.RLock()
+	s.lock.RUnlock()
+	return s.scrapeDone.Sub(s.scrapeBegin).Seconds()
 }
 
 /**************************************************************\
@@ -676,89 +813,21 @@ func (s *Server) collectInternalMetrics(ch chan<- prometheus.Metric) {
 \**************************************************************/
 
 // NewServer will check dsn, but not trying to connect
-func NewServer(dsn string, opts ...ServerOpt) (s *Server, err error) {
-	s = &Server{dsn: dsn}
+func NewServer(dsn string, opts ...ServerOpt) *Server {
+	s := &Server{dsn: dsn}
 	for _, opt := range opts {
 		opt(s)
 	}
 	s.Database = parseDatname(dsn)
-	if s.Database == "pgbouncer" {
-		log.Infof("pgbouncer database detected, pgbouncer mode enabled")
-		s.pgbouncerMode = true
+	if s.Database != "pgbouncer" {
+		s.PgbouncerMode = false
+		s.beforeScrape = PostgresPrecheck
+	} else {
+		log.Infof("datname pgbouncer detected, enabling pgbouncer mode")
+		s.PgbouncerMode = true
+		s.beforeScrape = PgbouncerPrecheck
 	}
-
-	s.setupInternalMetrics()
-	return s, nil
-}
-
-// setupInternalMetrics will init internal metrics
-func (s *Server) setupInternalMetrics() {
-	pgnsp := "pg"
-	if s.pgbouncerMode {
-		pgnsp = "pgbouncer"
-	}
-	s.pgUp = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace:   pgnsp,
-		Name:        "up",
-		Help:        "last scrape was able to connect to the server: 1 for yes, 0 for no",
-		ConstLabels: s.labels,
-	})
-	s.lastScrapeTs = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace:   pgnsp,
-		Subsystem:   "exporter",
-		Name:        "last_scrape_time",
-		Help:        "time stamp of last scrape",
-		ConstLabels: s.labels,
-	})
-	s.scrapeCount = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace:   pgnsp,
-		Subsystem:   "exporter",
-		Name:        "scrape_total_count",
-		Help:        "times PostgresSQL was scraped for metrics.",
-		ConstLabels: s.labels,
-	})
-	s.errorCount = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace:   pgnsp,
-		Subsystem:   "exporter",
-		Name:        "scrape_error_count",
-		Help:        "times PostgresSQL was scraped for metrics and failed.",
-		ConstLabels: s.labels,
-	})
-	s.error = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace:   pgnsp,
-		Subsystem:   "exporter",
-		Name:        "last_scrape_error",
-		Help:        "whether last query is fail on this server",
-		ConstLabels: s.labels,
-	}, []string{"datname"})
-	s.duration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace:   pgnsp,
-		Subsystem:   "exporter",
-		Name:        "last_scrape_duration",
-		Help:        "Duration of the last scrape of metrics from PostgresSQL.",
-		ConstLabels: s.labels,
-	}, []string{"datname"})
-	s.metricCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace:   pgnsp,
-		Subsystem:   "exporter",
-		Name:        "query_metric_count",
-		Help:        "how much metric been scrapped",
-		ConstLabels: s.labels,
-	}, []string{"datname", "query"})
-	s.queryError = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace:   pgnsp,
-		Subsystem:   "exporter",
-		Name:        "query_errors",
-		Help:        "whether query instance is error",
-		ConstLabels: s.labels,
-	}, []string{"datname", "query"})
-	s.queryDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace:   pgnsp,
-		Subsystem:   "exporter",
-		Name:        "query_duration",
-		Help:        "duration of each query instance",
-		ConstLabels: s.labels,
-	}, []string{"datname", "query"})
+	return s
 }
 
 // ServerOpt configures Server
@@ -778,17 +847,24 @@ func WithConstLabel(labels prometheus.Labels) ServerOpt {
 	}
 }
 
-// WithCachePolicy set cache parameter to server
+// WithCachePolicy will pass cache option to server
 func WithCachePolicy(disableCache bool) ServerOpt {
 	return func(s *Server) {
-		s.disableCache = disableCache
+		s.DisableCache = disableCache
+	}
+}
+
+// WithQueries set server's default query set
+func WithQueries(queries map[string]*Query) ServerOpt {
+	return func(s *Server) {
+		s.queries = queries
 	}
 }
 
 // WithClusterQueryDisabled will marks server only execute query without cluster tag
 func WithClusterQueryDisabled() ServerOpt {
 	return func(s *Server) {
-		s.disableCluster = true
+		s.DisableCluster = true
 	}
 }
 
@@ -804,13 +880,119 @@ type Exporter struct {
 	configPath        string            // config file path /directory
 	disableCache      bool              // always execute query when been scrapped
 	autoDiscovery     bool              // discovery other database on primary server
+	pgbouncerMode     bool              // is primary server a pgbouncer ?
 	excludedDatabases []string          // excluded database for auto discovery
 	constLabels       prometheus.Labels // prometheus const k=v labels
+	namespace         string
 
-	// internal states
+	lock    sync.RWMutex
 	server  *Server            // primary server
 	servers map[string]*Server // auto discovered peripheral servers
 	queries map[string]*Query  // metrics query definition
+
+	// internal stats
+	scrapeBegin time.Time // server level scrape begin
+	scrapeDone  time.Time // server last scrape done
+	errorCount  float64
+	totalCount  float64
+
+	// internal metrics: global, exporter, server, query
+	up      prometheus.Gauge // cluster level: primary target server is alive
+	version prometheus.Gauge // cluster level: postgres main server version num
+
+	exporterUp       prometheus.Gauge   // exporter level: always set ot 1
+	lastScrapeTime   prometheus.Gauge   // exporter level: last scrape timestamp
+	scrapeDuration   prometheus.Gauge   // exporter level: seconds spend on scrape
+	scrapeTotalCount prometheus.Counter // exporter level: total scrape count of this server
+	scrapeErrorCount prometheus.Counter // exporter level: error scrape count
+
+	serverScrapeDuration     *prometheus.GaugeVec // {datname} database level: how much time spend on server scrape?
+	serverScrapeTotalSeconds *prometheus.GaugeVec // {datname} database level: how much time spend on server scrape?
+	serverScrapeTotalCount   *prometheus.GaugeVec // {datname} database level how many metrics scrapped from server
+	serverScrapeErrorCount   *prometheus.GaugeVec // {datname} database level: how many error occurs when scrapping server
+
+	queryCacheTTL          *prometheus.GaugeVec // {datname,query} query cache ttl
+	queryScrapeTotalCount  *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
+	queryScrapeErrorCount  *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
+	queryScrapeDuration    *prometheus.GaugeVec // {datname,query} query level: how many seconds the query spends?
+	queryScrapeMetricCount *prometheus.GaugeVec // {datname,query} query level: how many metrics the query returns?
+	queryScrapeHitCount    *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
+
+}
+
+// Describe implement prometheus.Collector
+func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
+	e.server.Describe(ch)
+}
+
+// Collect implement prometheus.Collector
+func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	e.scrapeTotalCount.Add(1)
+
+	// TODO: multi-server
+	e.scrapeBegin = time.Now()
+	s := e.server
+	s.Collect(ch)
+	e.scrapeDone = time.Now()
+
+	e.lastScrapeTime.Set(float64(e.scrapeDone.Unix()))
+	e.scrapeDuration.Set(e.scrapeDone.Sub(e.scrapeBegin).Seconds())
+	e.version.Set(float64(s.Version))
+	if s.UP {
+		e.up.Set(1)
+	} else {
+		e.up.Set(0)
+		e.scrapeErrorCount.Add(1)
+	}
+
+	e.collectServerMetrics(s)
+	e.collectInternalMetrics(ch)
+}
+
+func (e *Exporter) collectServerMetrics(s *Server) {
+	e.serverScrapeDuration.Reset()
+	e.serverScrapeTotalSeconds.Reset()
+	e.serverScrapeTotalCount.Reset()
+	e.serverScrapeErrorCount.Reset()
+	e.queryCacheTTL.Reset()
+	e.queryScrapeTotalCount.Reset()
+	e.queryScrapeErrorCount.Reset()
+	e.queryScrapeDuration.Reset()
+	e.queryScrapeMetricCount.Reset()
+	e.queryScrapeHitCount.Reset()
+
+	e.serverScrapeDuration.WithLabelValues(s.Database).Set(s.Duration())
+	e.serverScrapeTotalSeconds.WithLabelValues(s.Database).Set(s.totalTime)
+	e.serverScrapeTotalCount.WithLabelValues(s.Database).Set(s.totalCount)
+	if s.Error() != nil {
+		e.serverScrapeErrorCount.WithLabelValues(s.Database).Add(1)
+	}
+
+	for queryName, counter := range s.queryCacheTTL {
+		e.queryCacheTTL.WithLabelValues(s.Database, queryName).Set(counter)
+	}
+	for queryName, counter := range s.queryScrapeTotalCount {
+		e.queryScrapeTotalCount.WithLabelValues(s.Database, queryName).Set(counter)
+	}
+	for queryName, counter := range s.queryScrapeHitCount {
+		e.queryScrapeHitCount.WithLabelValues(s.Database, queryName).Set(counter)
+	}
+	for queryName, counter := range s.queryScrapeErrorCount {
+		e.queryScrapeErrorCount.WithLabelValues(s.Database, queryName).Set(counter)
+	}
+	for queryName, counter := range s.queryScrapeMetricCount {
+		e.queryScrapeMetricCount.WithLabelValues(s.Database, queryName).Set(counter)
+	}
+	for queryName, counter := range s.queryScrapeDuration {
+		e.queryScrapeDuration.WithLabelValues(s.Database, queryName).Set(counter)
+	}
+}
+
+// Explain is just yet another wrapper of server.Explain
+func (e *Exporter) Explain() string {
+	return strings.Join(e.server.Explain(), "\n\n")
 }
 
 // Close will close all underlying servers
@@ -831,19 +1013,114 @@ func (e *Exporter) Close() {
 	log.Infof("pg exporter closed")
 }
 
-// Describe implement prometheus.Collector
-func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-	e.server.Describe(ch)
+// setupInternalMetrics will init internal metrics
+func (e *Exporter) setupInternalMetrics() {
+	if e.namespace == "" {
+		if e.pgbouncerMode {
+			e.namespace = "pgbouncer"
+		} else {
+			e.namespace = "pg"
+		}
+	}
+
+	// major fact
+	e.up = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Name: "up", Help: "last scrape was able to connect to the server: 1 for yes, 0 for no",
+	})
+	e.version = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Name: "version", Help: "server version number",
+	})
+
+	// exporter level metrics
+	e.exporterUp = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter", Name: "up", Help: "always be 1 if your could retrieve metrics",
+	})
+	e.scrapeTotalCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter", Name: "scrape_total_count", Help: "times exporter was scraped for metrics",
+	})
+	e.scrapeErrorCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter", Name: "scrape_error_count", Help: "times exporter was scraped for metrics and failed",
+	})
+	e.scrapeDuration = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter", Name: "scrape_duration", Help: "seconds exporter spending on scrapping",
+	})
+	e.lastScrapeTime = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter", Name: "last_scrape_time", Help: "seconds exporter spending on scrapping",
+	})
+
+	// exporter level metrics
+	e.serverScrapeDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_server", Name: "scrape_duration", Help: "seconds exporter server spending on scrapping",
+	}, []string{"datname"})
+	e.serverScrapeTotalSeconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_server", Name: "scrape_total_seconds", Help: "seconds exporter server spending on scrapping",
+	}, []string{"datname"})
+	e.serverScrapeTotalCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_server", Name: "scrape_total_count", Help: "times exporter server was scraped for metrics",
+	}, []string{"datname"})
+	e.serverScrapeErrorCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_server", Name: "scrape_error_count", Help: "times exporter server was scraped for metrics and failed",
+	}, []string{"datname"})
+
+	// query level metrics
+	e.queryCacheTTL = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_query", Name: "cache_ttl", Help: "times to live of query cache",
+	}, []string{"datname", "query"})
+	e.queryScrapeTotalCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_query", Name: "scrape_total_count", Help: "times exporter server was scraped for metrics",
+	}, []string{"datname", "query"})
+	e.queryScrapeErrorCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_query", Name: "scrape_error_count", Help: "times the query failed",
+	}, []string{"datname", "query"})
+	e.queryScrapeDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_query", Name: "scrape_duration", Help: "seconds query spending on scrapping",
+	}, []string{"datname", "query"})
+	e.queryScrapeMetricCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_query", Name: "scrape_metric_count", Help: "numbers of metrics been scrapped from this query",
+	}, []string{"datname", "query"})
+	e.queryScrapeHitCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_query", Name: "scrape_hit_count", Help: "numbers  been scrapped from this query",
+	}, []string{"datname", "query"})
 }
 
-// Collect implement prometheus.Collector
-func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	e.server.Collect(ch)
-}
+func (e *Exporter) collectInternalMetrics(ch chan<- prometheus.Metric) {
+	ch <- e.up
+	ch <- e.version
 
-// Explain is just yet another wrapper of server.Explain
-func (e *Exporter) Explain() string {
-	return strings.Join(e.server.Explain(), "\n\n")
+	ch <- e.exporterUp
+	ch <- e.lastScrapeTime
+	ch <- e.scrapeTotalCount
+	ch <- e.scrapeErrorCount
+	ch <- e.scrapeDuration
+
+	e.serverScrapeDuration.Collect(ch)
+	e.serverScrapeTotalSeconds.Collect(ch)
+	e.serverScrapeTotalCount.Collect(ch)
+	e.serverScrapeErrorCount.Collect(ch)
+
+	e.queryCacheTTL.Collect(ch)
+	e.queryScrapeTotalCount.Collect(ch)
+	e.queryScrapeErrorCount.Collect(ch)
+	e.queryScrapeDuration.Collect(ch)
+	e.queryScrapeMetricCount.Collect(ch)
+	e.queryScrapeHitCount.Collect(ch)
 }
 
 /**************************************************************\
@@ -863,19 +1140,14 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 	log.Debugf("exporter init with %d queries", len(e.queries))
 
 	// note here the server is still not connected. it will trigger connecting when being scrapped
-	if e.server, err = NewServer(
+	e.server = NewServer(
 		dsn,
+		WithQueries(e.queries),
 		WithConstLabel(e.constLabels),
 		WithCachePolicy(e.disableCache),
-	); err != nil {
-		return nil, fmt.Errorf("fail creating server %s: %w", shadowDSN(dsn), err)
-	}
-
-	// register queries to server
-	if err = e.server.Plan(e.queries); err != nil {
-		return nil, fmt.Errorf("fail Plan queries for server %s: %w", e.server.Name(), err)
-	}
-
+	)
+	e.pgbouncerMode = e.server.PgbouncerMode
+	e.setupInternalMetrics()
 	// TODO: discover peripheral servers and create servers
 	return
 }
@@ -904,44 +1176,15 @@ func WithCacheDisabled(disableCache bool) ExporterOpt {
 	}
 }
 
+func WithNamespace(namespace string) ExporterOpt {
+	return func(e *Exporter) {
+		e.namespace = namespace
+	}
+}
+
 /**********************************************************************************************\
 *                                     Auxiliaries                                              *
 \**********************************************************************************************/
-
-// Compatible test whether query & server are compatible
-// if not compatible, an error is returned for reason
-func compatible(query *QueryInstance, server *Server) bool {
-	// check version
-	if server.Version != 0 {
-		if query.MinVersion != 0 && server.Version < query.MinVersion {
-			return false
-		}
-		if query.MaxVersion != 0 && server.Version >= query.MaxVersion { // exclude
-			return false
-		}
-	}
-
-	// check tags
-	for _, tag := range query.Tags {
-		switch tag {
-		case "cluster":
-			if server.disableCluster == true {
-				return false
-			}
-		case "primary":
-			if server.Recovery {
-				return false
-			}
-		case "standby":
-			if !server.Recovery {
-				return false
-			}
-		case "pg_stat_statements":
-			// TODO: NOT IMPLEMENT YET
-		}
-	}
-	return true
-}
 
 // castString will force interface{} into float64
 func castFloat64(t interface{}) float64 {
@@ -1057,53 +1300,66 @@ func parseDatname(dsn string) string {
 	return strings.TrimLeft(u.Path, "/")
 }
 
-// GetPGURL will try to get dsn from different sources
-func GetPGURL() (res string) {
-	// priority: args > env  > env file path
+func dumpMap(d map[string]float64) string {
+	var buf bytes.Buffer
+	buf.WriteByte('[')
+	for k, v := range d {
+		buf.WriteString(k)
+		buf.WriteByte(':')
+		buf.WriteString(strconv.Itoa(int(v)))
+		buf.WriteString(", ")
+	}
+	buf.WriteByte(']')
+	return buf.String()
+}
+
+// RetrieveTargetURL retrieve pg target url from different sources
+func RetrieveTargetURL() (res string) {
+	// priority: cli-args > env  > env file path
 	if *pgURL != "" {
-		log.Infof("get target url %s from command line", shadowDSN(*pgURL))
+		log.Infof("retrieve target url %s from command line", shadowDSN(*pgURL))
 		return *pgURL
 	}
 	if res = os.Getenv("PG_EXPORTER_URL"); res != "" {
-		log.Infof("get target url %s from PG_EXPORTER_URL", shadowDSN(*pgURL))
+		log.Infof("retrieve target url %s from PG_EXPORTER_URL", shadowDSN(*pgURL))
 		return res
 	}
 	if filename := os.Getenv("PG_EXPORTER_URL_FILE"); filename != "" {
 		if fileContents, err := ioutil.ReadFile(filename); err != nil {
-			log.Fatalf("PG_EXPORTER_URL_FILE=%s is specified, fail loading url: %s", err.Error())
+			log.Fatalf("PG_EXPORTER_URL_FILE=%s is specified, fail loading url, exit", err.Error())
 			os.Exit(-1)
 		} else {
 			res = strings.TrimSpace(string(fileContents))
-			log.Infof("get target url %s from PG_EXPORTER_URL_FILE", shadowDSN(res))
+			log.Infof("retrieve target url %s from PG_EXPORTER_URL_FILE", shadowDSN(res))
 			return res
 		}
 	}
-	log.Infof("target url not found, use default dsn: %s", defaultPGURL)
+	log.Warnf("fail retrieving target url, fallback on default url: %s", defaultPGURL)
 	return defaultPGURL
 }
 
 /**********************************************************************************************\
 *                                        Main                                                  *
 \**********************************************************************************************/
-// Preset will parse parameters & validate dsn
+
+// parse parameters & retrieve dsn
 func init() {
 	kingpin.Version(fmt.Sprintf("postgres_exporter %s (built with %s)\n", Version, runtime.Version()))
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Parse()
-
-	if err := log.Base().SetLevel(*logLevel); err != nil {
-		log.Fatalf("fail setting log level to %s: %w", *logLevel, err)
-		os.Exit(-1)
-	}
+	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, listenAdress=%v metricPath=%v",
+		*configPath, *constLabels, *disableCache, *listenAddress, *metricPath)
+	*pgURL = RetrieveTargetURL()
 }
 
-func main() {
-	pgurl := GetPGURL()
+// Run pg exporter
+func Run() {
 	exporter, err := NewExporter(
-		pgurl,
+		*pgURL,
 		WithConfig(*configPath),
 		WithConstLabels(*constLabels),
 		WithCacheDisabled(*disableCache),
+		WithNamespace(*exporterNamespace),
 	)
 	if err != nil {
 		log.Fatalf("fail creating pg_exporter: %w", err)
@@ -1114,8 +1370,9 @@ func main() {
 		fmt.Println(exporter.Explain())
 		os.Exit(0)
 	}
-	defer exporter.Close()
+
 	prometheus.MustRegister(exporter)
+	defer exporter.Close()
 
 	// run http
 	http.Handle(*metricPath, promhttp.Handler())
@@ -1127,6 +1384,10 @@ func main() {
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		_, _ = w.Write([]byte(exporter.Explain()))
 	})
-	log.Infof("pg_exporter for %s start, listen on http://%s%s", shadowDSN(pgurl), *listenAddress, *metricPath)
+	log.Infof("pg_exporter for %s start, listen on http://%s%s", shadowDSN(*pgURL), *listenAddress, *metricPath)
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+}
+
+func main() {
+	Run()
 }

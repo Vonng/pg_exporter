@@ -48,6 +48,7 @@ pg_bloat_index:
   tags: []
   min_version: 100000
   max_version: 130000
+  skip_errors: true
   metrics:
     - datname:
         usage: LABEL
