@@ -640,7 +640,7 @@ func (s *Server) Plan(queries ...*Query) {
 			installedNames = append(installedNames, name)
 		} else {
 			discardedNames = append(discardedNames, name)
-			log.Debugf("query %s discarded because of %s", name, reason)
+			log.Debugf("query [%s].%s discarded because of %s", query.Name, name, reason)
 		}
 	}
 
@@ -704,7 +704,7 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 	if query.HasTag("primary") && s.Recovery {
 		return false, fmt.Sprintf("primary-only query %s will not run on standby server %v", query.Name, s.Name())
 	}
-	if query.HasTag("standby") && s.Recovery {
+	if query.HasTag("standby") && !s.Recovery {
 		return false, fmt.Sprintf("standby-only query %s will not run on primary server %v", query.Name, s.Name())
 	}
 	if query.HasTag("pg_stat_statements") {
@@ -797,7 +797,8 @@ final:
 		log.Errorf("fail scrapping server [%s]: %s", s.Name(), s.err.Error())
 	} else {
 		s.UP = true
-		log.Debugf("server [%s] scrapped in %v, metrics", s.Name(), s.scrapeDone.Sub(s.scrapeBegin).Seconds())
+		log.Debugf("server [%s] scrapped in %v",
+			s.Name(), s.scrapeDone.Sub(s.scrapeBegin).Seconds())
 	}
 }
 
@@ -897,9 +898,9 @@ type Exporter struct {
 	totalCount  float64
 
 	// internal metrics: global, exporter, server, query
-	up      prometheus.Gauge // cluster level: primary target server is alive
-	version prometheus.Gauge // cluster level: postgres main server version num
-
+	up               prometheus.Gauge   // cluster level: primary target server is alive
+	version          prometheus.Gauge   // cluster level: postgres main server version num
+	recovery         prometheus.Gauge   // cluster level: postgres is in recovery ?
 	exporterUp       prometheus.Gauge   // exporter level: always set ot 1
 	lastScrapeTime   prometheus.Gauge   // exporter level: last scrape timestamp
 	scrapeDuration   prometheus.Gauge   // exporter level: seconds spend on scrape
@@ -942,6 +943,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.version.Set(float64(s.Version))
 	if s.UP {
 		e.up.Set(1)
+		if s.Recovery {
+			e.recovery.Set(1)
+		} else {
+			e.recovery.Set(0)
+		}
 	} else {
 		e.up.Set(0)
 		e.scrapeErrorCount.Add(1)
@@ -1032,6 +1038,10 @@ func (e *Exporter) setupInternalMetrics() {
 		Namespace: e.namespace, ConstLabels: e.constLabels,
 		Name: "version", Help: "server version number",
 	})
+	e.recovery = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Name: "in_recovery", Help: "server is in recovery mode? 1 for yes 0 for no",
+	})
 
 	// exporter level metrics
 	e.exporterUp = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -1098,11 +1108,14 @@ func (e *Exporter) setupInternalMetrics() {
 		Namespace: e.namespace, ConstLabels: e.constLabels,
 		Subsystem: "exporter_query", Name: "scrape_hit_count", Help: "numbers  been scrapped from this query",
 	}, []string{"datname", "query"})
+
+	e.exporterUp.Set(1) // always be true
 }
 
 func (e *Exporter) collectInternalMetrics(ch chan<- prometheus.Metric) {
 	ch <- e.up
 	ch <- e.version
+	ch <- e.recovery
 
 	ch <- e.exporterUp
 	ch <- e.lastScrapeTime

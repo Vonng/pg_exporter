@@ -23,7 +23,6 @@ pg_db_12:
   ttl: 10
   tags: [cluster]
   min_version: 120000
-  max_version: 130000
   skip_errors: true
   metrics:
     - datid:

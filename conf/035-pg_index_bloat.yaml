@@ -1,8 +1,9 @@
 #-------------------------------------------------------------#
-# pg_bloat_index
+# pg_index_bloat
 # bloat index ratio, not all index are included (btree only)
 #-------------------------------------------------------------#
-pg_bloat_index:
+pg_index_bloat:
+  name: pg_index_bloat
   query: |
     SELECT CURRENT_CATALOG AS datname, nspname, idxname AS relname, relpages::BIGINT * bs AS size,
            COALESCE((relpages - ( reltuples * (6 + ma - (CASE WHEN index_tuple_hdr % ma = 0 THEN ma ELSE index_tuple_hdr % ma END)
@@ -46,8 +47,7 @@ pg_bloat_index:
 
   ttl: 100
   tags: []
-  min_version: 100000
-  max_version: 130000
+  min_version: 090400
   skip_errors: true
   metrics:
     - datname:

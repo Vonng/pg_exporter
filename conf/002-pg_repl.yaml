@@ -9,7 +9,7 @@
 # This branch is for PostgreSQL 10 ~ 12
 # https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW
 #-------------------------------------------------------------#
-pg_repl_10_12:
+pg_repl_10:
   name: pg_repl
   query: |
     SELECT pid,
@@ -34,7 +34,6 @@ pg_repl_10_12:
   ttl: 10
   tags: [cluster]
   min_version: 100000
-  max_version: 130000
   metrics:
     - pid:
         usage: LABEL
@@ -85,9 +84,10 @@ pg_repl_10_12:
 
 #-------------------------------------------------------------#
 # This branch is for PostgreSQL 94 ~ 96
+# which does not have write_lag, replay_lag, flush_lag
 # https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STAT-REPLICATION-VIEW
 #-------------------------------------------------------------#
-pg_repl_94_96:
+pg_repl_94:
   name: pg_repl
   query: |
     SELECT pid,
@@ -108,7 +108,7 @@ pg_repl_94_96:
 
   ttl: 10
   tags: [cluster]
-  min_version: 90400
+  min_version: 090400
   max_version: 100000
   metrics:
     - pid:

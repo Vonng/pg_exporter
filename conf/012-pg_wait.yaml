@@ -1,5 +1,6 @@
 #-------------------------------------------------------------#
 # pg_wait
+# note that in 9.6 wait_event is introduced
 #-------------------------------------------------------------#
 
 pg_wait:
@@ -13,8 +14,7 @@ pg_wait:
 
   ttl: 10
   tags: [cluster]
-  min_version: 100000
-  max_version: 130000
+  min_version: 090600
   skip_errors: true
   metrics:
     - datname:

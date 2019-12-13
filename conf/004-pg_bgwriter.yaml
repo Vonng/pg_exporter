@@ -1,8 +1,14 @@
 #-------------------------------------------------------------#
 # pg_bgwriter
 # Postgresql background writer
+# https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-BGWRITER-VIEW
 #-------------------------------------------------------------#
 
+
+#-------------------------------------------------------------#
+# pg_bgwriter
+# 9.4 ~ 12 is always the same
+#-------------------------------------------------------------#
 pg_bgwriter:
   query: |
     SELECT checkpoints_timed,
@@ -20,8 +26,7 @@ pg_bgwriter:
 
   ttl: 10
   tags: [cluster]
-  min_version: 100000
-  max_version: 130000
+  min_version: 090400
   metrics:
     - checkpoints_timed:
         usage: COUNTER

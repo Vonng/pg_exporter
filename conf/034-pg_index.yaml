@@ -2,9 +2,12 @@
 # pg_index
 # note that database with tremendous of tables may suffer from
 # this query. Use sampling filter or just disable it in that case
+# https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STATIO-ALL-INDEXES-VIEW
+# https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STAT-ALL-INDEXES-VIEW
 #-------------------------------------------------------------#
 
 pg_index:
+  name: pg_index
   query: |
     SELECT CURRENT_CATALOG AS datname,
            schemaname      AS nspname,
@@ -17,10 +20,11 @@ pg_index:
     FROM pg_stat_user_indexes psui,
          LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio
          WHERE psio.indexrelid = psui.indexrelid) p2;
+
   ttl: 10
   tags: []
-  min_version: 100000
-  max_version: 130000
+  min_version: 090400
+  skip_errors: true
   metrics:
     - datname:
         usage: LABEL

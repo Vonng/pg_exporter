@@ -6,10 +6,10 @@
 pgbouncer_database:
   query: |
     SHOW DATABASES;
+
   ttl: 5
   tags: [pgbouncer]
   min_version: 10800
-  max_version: 11300
   metrics:
     - name:
         usage: LABEL

@@ -1,6 +1,6 @@
 #-------------------------------------------------------------#
 # pg_query
-# require pg_stat_statements
+# require pg_stat_statements under schema monitor
 #-------------------------------------------------------------#
 
 pg_query:
@@ -32,8 +32,7 @@ pg_query:
 
   ttl: 100
   tags: [cluster, pg_stat_statements]
-  min_version: 100000
-  max_version: 130000
+  min_version: 090400
   skip_errors: true
 
   metrics:

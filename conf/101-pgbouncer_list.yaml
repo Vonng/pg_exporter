@@ -6,6 +6,7 @@
 pgbouncer_list:
   query: |
     SHOW LISTS;
+
   ttl: 5
   tags: [pgbouncer]
   min_version: 10800

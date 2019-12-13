@@ -7,13 +7,14 @@ pg_recovery:
     SELECT min_recovery_end_timeline    AS min_timeline,
            min_recovery_end_lsn - '0/0' AS min_lsn,
            backup_start_lsn - '0/0'     AS backup_start_lsn,
-           backup_end_lsn - '0/0'       AS backup_end_lsn
+           backup_end_lsn - '0/0'       AS backup_end_lsn,
+           end_of_backup_record_required AS require_record
     FROM pg_control_recovery();
 
   ttl: 100
   tags: [cluster]
-  min_version: 100000
-  max_version: 130000
+  min_version: 090600
+  skip_errors: true
   metrics:
     - min_timeline:
         usage: COUNTER
@@ -27,4 +28,7 @@ pg_recovery:
     - backup_end_lsn:
         usage: COUNTER
         description: pg control recovery backup end lsn
+    - require_record:
+        usage: GAUGE
+        description: do recovery need a end of backup record
 

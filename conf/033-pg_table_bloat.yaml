@@ -2,7 +2,8 @@
 # pg_bloat_table
 # estimated bloat
 #-------------------------------------------------------------#
-pg_bloat_table:
+pg_table_bloat:
+  name: pg_table_bloat
   query: |
     SELECT CURRENT_CATALOG AS datname, schemaname AS nspname, tblname AS relname , bs * tblpages AS size,
     CASE WHEN tblpages - est_tblpages_ff > 0 THEN (tblpages - est_tblpages_ff)/tblpages::FLOAT ELSE 0 END AS ratio
@@ -44,8 +45,7 @@ pg_bloat_table:
 
   ttl: 100
   tags: []
-  min_version: 100000
-  max_version: 130000
+  min_version: 090400
   skip_errors: true
   metrics:
     - datname:

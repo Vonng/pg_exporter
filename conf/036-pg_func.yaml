@@ -13,10 +13,11 @@ pg_func:
            total_time,
            self_time
     FROM pg_stat_user_functions;
+
   ttl: 10
   tags: []
-  min_version: 100000
-  max_version: 130000
+  min_version: 090400
+  skip_errors: true
   metrics:
     - datname:
         usage: LABEL

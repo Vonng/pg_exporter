@@ -17,15 +17,16 @@ pg_class:
            relkind,
            relpages,
            reltuples,
-           CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage
+           CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,
+           pg_relation_size(oid)                                        AS relsize
     FROM pg_class
     WHERE relnamespace NOT IN
           ('pg_catalog'::regnamespace::oid, 'information_schema'::regnamespace::oid, 'pg_toast'::regnamespace::oid)
-      AND relkind IN ('r', 'i', 'm', 't');
+      AND relkind IN ('r', 'i', 'm', 't')
   ttl: 100
   tags: []
-  min_version: 100000
-  max_version: 130000
+  min_version: 090400
+  skip_errors: true
   metrics:
     - datname:
         usage: LABEL
@@ -48,4 +49,6 @@ pg_class:
     - relage:
         usage: GAUGE
         description: age of non-index relation
-
+    - relsize:
+        usage: GAUGE
+        description: size of this relation
