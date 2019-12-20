@@ -22,9 +22,10 @@ pg_index:
          WHERE psio.indexrelid = psui.indexrelid) p2;
 
   ttl: 10
-  tags: []
+  tags: [not:shard]
   min_version: 090400
   skip_errors: true
+
   metrics:
     - datname:
         usage: LABEL

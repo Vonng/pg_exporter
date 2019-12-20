@@ -5,6 +5,7 @@
 #-------------------------------------------------------------#
 
 pg_table:
+  name: pg_table
   query: |
     SELECT CURRENT_CATALOG                     AS datname,
            psut.schemaname                     AS nspname,
@@ -43,7 +44,7 @@ pg_table:
          LATERAL (SELECT * FROM pg_statio_user_tables psio WHERE psio.relid = psut.relid) p;
 
   ttl: 10
-  tags: []
+  tags: [not:shard]
   min_version: 090400
   skip_errors: true
   metrics:
@@ -146,3 +147,5 @@ pg_table:
     - tidx_blks_hit:
         usage: COUNTER
         description: toast index hit
+
+

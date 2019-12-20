@@ -31,7 +31,7 @@ pg_query:
     ORDER BY calls DESC, total_time DESC LIMIT 20;
 
   ttl: 100
-  tags: [cluster, pg_stat_statements]
+  tags: [cluster, extension:pg_stat_statements , schema:monitor]
   min_version: 090400
   skip_errors: true
 

@@ -5,29 +5,34 @@
 #-------------------------------------------------------------#
 
 pg_func:
+  name: pg_func
   query: |
     SELECT CURRENT_CATALOG AS datname,
            schemaname      AS nspname,
            funcname,
+           funcid,
            calls,
            total_time,
            self_time
     FROM pg_stat_user_functions;
 
   ttl: 10
-  tags: []
+  tags: [not:shard]
   min_version: 090400
   skip_errors: true
   metrics:
     - datname:
         usage: LABEL
-        description: database name of this relation
+        description: database name of this function
     - nspname:
         usage: LABEL
-        description: schema name of this relation
+        description: schema name of this function
     - funcname:
         usage: LABEL
-        description: relation name of this relation
+        description: function name of this function
+    - funcid:
+        usage: LABEL
+        description: function id, note that function could override
     - calls:
         usage: COUNTER
         description: how many times this function has been called
@@ -37,4 +42,5 @@ pg_func:
     - self_time:
         usage: COUNTER
         description: how much time spent in this function itself (other func not included), in ms
+
 

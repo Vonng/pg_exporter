@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"github.com/lib/pq"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -39,12 +40,13 @@ var (
 	// exporter settings
 	pgURL             = kingpin.Flag("url", "postgres connect url").String()
 	configPath        = kingpin.Flag("config", "Path to config files").Default("./pg_exporter.yaml").Envar("PG_EXPORTER_CONFIG").String()
-	constLabels       = kingpin.Flag("label", "Comma separated list label=value pair").Default("").Envar("PG_EXPORTER_LABELS").String()
+	constLabels       = kingpin.Flag("label", "Comma separated list label=value pair").Default("").Envar("PG_EXPORTER_LABEL").String()
+	serverTags        = kingpin.Flag("tag", "Comma separated list of server tag").Default("").Envar("PG_EXPORTER_TAG").String()
 	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_CACHE").Bool()
 	exporterNamespace = kingpin.Flag("namespace", "prefix of built-in metrics").Default("").Envar("PG_EXPORTER_NAMESPACE").String()
 
 	// prometheus http
-	listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Default(":8848").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
+	listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Default(":9630").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
 	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").Envar("PG_EXPORTER_TELEMETRY_PATH").String()
 
 	// action
@@ -105,8 +107,9 @@ type Query struct {
 	SQL  string `yaml:"query"` // SQL command to fetch metrics
 
 	// control query behaviour
-	TTL        float64              `yaml:"ttl"`         // caching ttl, e.g. 10s, 2min
-	Tags       []string             `yaml:"tags"`        // tags are user provided execution hint
+	TTL  float64  `yaml:"ttl"`  // caching ttl, e.g. 10s, 2min
+	Tags []string `yaml:"tags"` // tags are user provided execution hint
+
 	Priority   int                  `yaml:"priority"`    // execution priority, from 1 to 100 (low to high)
 	MinVersion int                  `yaml:"min_version"` // minimal supported version, include
 	MaxVersion int                  `yaml:"max_version"` // maximal supported version, not include
@@ -150,6 +153,7 @@ func (q *Query) Explain() string {
 }
 
 // HasTag tells whether this query have specific tag
+// since only few tags is provided, we don't really need a map here
 func (q *Query) HasTag(tag string) bool {
 	for _, t := range q.Tags {
 		if t == tag {
@@ -511,16 +515,18 @@ type Server struct {
 	beforeScrape func(s *Server) error
 
 	// postgres fact gather from server
-	UP             bool
-	Version        int      // pg server version num
-	Database       string   // database name of current server connection
-	DatabaseNames  []string // all available database in target cluster
-	ExtensionNames []string // all available database in target cluster
-	Recovery       bool     // is server recovering? (slave|standby)
+	UP         bool
+	Version    int             // pg server version num
+	Database   string          // database name of current server connection
+	Databases  map[string]bool // all available database in target cluster
+	Namespaces map[string]bool // all available database in target cluster
+	Extensions map[string]bool // all available database in target cluster
+	Recovery   bool            // is server recovering? (slave|standby)
 
-	PgbouncerMode  bool // indicate it is a pgbouncer server
-	DisableCache   bool // force executing, ignoring caching policy
-	DisableCluster bool // cluster server will not run on this server
+	Tags           []string // server tags set by parameters
+	PgbouncerMode  bool     // indicate it is a pgbouncer server
+	DisableCache   bool     // force executing, ignoring caching policy
+	DisableCluster bool     // cluster server will not run on this server
 	Planned        bool
 
 	// query
@@ -530,6 +536,7 @@ type Server struct {
 	labels    prometheus.Labels // constant label that inject into metrics
 
 	// internal stats
+	serverInit  time.Time
 	scrapeBegin time.Time // server level scrape begin
 	scrapeDone  time.Time // server last scrape done
 	errorCount  float64
@@ -600,9 +607,14 @@ func PostgresPrecheck(s *Server) (err error) {
 
 	var recovery bool
 	var datname string
-	//var extnames, datnames []string
+	var databases, namespaces, extensions []string
 
-	if err = s.DB.QueryRow(`SELECT current_catalog, pg_is_in_recovery();`).Scan(&datname, &recovery); err != nil {
+	precheckSQL := `SELECT current_catalog, pg_is_in_recovery(),       
+	(SELECT array_agg(datname) AS databases FROM pg_database),
+	(SELECT array_agg(nspname) AS namespaces FROM pg_namespace),
+	(SELECT array_agg(extname) AS extensions FROM pg_extension);`
+	if err = s.DB.QueryRow(precheckSQL).Scan(&datname, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions));
+		err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
 	if s.Recovery != recovery {
@@ -615,6 +627,21 @@ func PostgresPrecheck(s *Server) (err error) {
 		s.Planned = false
 	}
 	s.Database = datname
+
+	s.Databases = make(map[string]bool, len(databases))
+	for _, dbname := range databases {
+		s.Databases[dbname] = true
+	}
+	s.Namespaces = make(map[string]bool, len(namespaces))
+	for _, nsname := range namespaces {
+		s.Namespaces[nsname] = true
+	}
+	s.Extensions = make(map[string]bool, len(extensions))
+	for _, extname := range extensions {
+		s.Extensions[extname] = true
+	}
+
+	log.Infof("database list fetch from server: %v %v %v", s.Database, s.Namespaces, s.Extensions)
 
 	return nil
 }
@@ -697,20 +724,58 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 		}
 	}
 
-	// check tags
-	if query.HasTag("cluster") && s.DisableCluster {
-		return false, fmt.Sprintf("cluster level query %s will not run on non-cluster server %v", query.Name, s.Name())
-	}
-	if query.HasTag("primary") && s.Recovery {
-		return false, fmt.Sprintf("primary-only query %s will not run on standby server %v", query.Name, s.Name())
-	}
-	if query.HasTag("standby") && !s.Recovery {
-		return false, fmt.Sprintf("standby-only query %s will not run on primary server %v", query.Name, s.Name())
-	}
-	if query.HasTag("pg_stat_statements") {
-		// TODO: check extension exist...
-	}
+	// check query side tags
+	for _, tag := range query.Tags {
+		// check extension is installed on target database
+		if strings.HasPrefix(tag, "extension:") {
+			if _, found := s.Extensions[strings.TrimPrefix(tag, "extension:")]; !found {
+				return false, fmt.Sprintf("server does not have %s", tag)
+			}
+			continue
+		}
 
+		// check schema exist on target database
+		if strings.HasPrefix(tag, "schema:") {
+			if _, found := s.Namespaces[strings.TrimPrefix(tag, "schema:")]; !found {
+				return false, fmt.Sprintf("server does not have %s", tag)
+			}
+			continue
+		}
+
+		// check server does not have given tag
+		if strings.HasPrefix(tag, "not:") {
+			if negTag := strings.TrimPrefix(tag, "not:"); s.HasTag(negTag) {
+				return false, fmt.Sprintf("server %s has tag %s that query %s forbid", s.Name(), negTag, query.Name)
+			}
+			continue
+		}
+
+		// check 3 default tags: cluster, primary, standby
+		switch tag {
+		case "cluster":
+			if s.DisableCluster {
+				return false, fmt.Sprintf("cluster level query %s will not run on non-cluster server %v", query.Name, s.Name())
+			}
+			continue
+		case "primary":
+			if s.Recovery {
+				return false, fmt.Sprintf("primary-only query %s will not run on standby server %v", query.Name, s.Name())
+			}
+			continue
+		case "standby":
+			if !s.Recovery {
+				return false, fmt.Sprintf("standby-only query %s will not run on primary server %v", query.Name, s.Name())
+			}
+			continue
+		case "pgbouncer":
+			continue
+		default:
+			// if this tag is nether a pre-defined tag nor a prefixed pattern tag, check whether server have that tag
+			if !s.HasTag(tag) {
+				return false, fmt.Sprintf("server %s does not have tag %s that query %s require", s.Name(), tag, query.Name)
+			}
+		}
+	}
 	return true, ""
 }
 
@@ -802,11 +867,26 @@ final:
 	}
 }
 
+// HasTag tells whether this server have specific tag
+func (s *Server) HasTag(tag string) bool {
+	for _, t := range s.Tags {
+		if t == tag {
+			return true
+		}
+	}
+	return false
+}
+
 // Duration returns last scrape duration in float64 seconds
 func (s *Server) Duration() float64 {
 	s.lock.RLock()
 	s.lock.RUnlock()
 	return s.scrapeDone.Sub(s.scrapeBegin).Seconds()
+}
+
+// Uptime returns servers's uptime
+func (s *Server) Uptime() float64 {
+	return time.Now().Sub(s.serverInit).Seconds()
 }
 
 /**************************************************************\
@@ -828,6 +908,7 @@ func NewServer(dsn string, opts ...ServerOpt) *Server {
 		s.PgbouncerMode = true
 		s.beforeScrape = PgbouncerPrecheck
 	}
+	s.serverInit = time.Now()
 	return s
 }
 
@@ -869,6 +950,13 @@ func WithClusterQueryDisabled() ServerOpt {
 	}
 }
 
+// WithClusterQueryDisabled will marks server only execute query without cluster tag
+func WithServerTags(tags []string) ServerOpt {
+	return func(s *Server) {
+		s.Tags = tags
+	}
+}
+
 /**********************************************************************************************\
 *                                        Exporter                                              *
 \**********************************************************************************************/
@@ -884,6 +972,7 @@ type Exporter struct {
 	pgbouncerMode     bool              // is primary server a pgbouncer ?
 	excludedDatabases []string          // excluded database for auto discovery
 	constLabels       prometheus.Labels // prometheus const k=v labels
+	tags              []string
 	namespace         string
 
 	lock    sync.RWMutex
@@ -902,6 +991,7 @@ type Exporter struct {
 	version          prometheus.Gauge   // cluster level: postgres main server version num
 	recovery         prometheus.Gauge   // cluster level: postgres is in recovery ?
 	exporterUp       prometheus.Gauge   // exporter level: always set ot 1
+	exporterUptime   prometheus.Gauge   // exporter level: primary target server uptime (exporter itself)
 	lastScrapeTime   prometheus.Gauge   // exporter level: last scrape timestamp
 	scrapeDuration   prometheus.Gauge   // exporter level: seconds spend on scrape
 	scrapeTotalCount prometheus.Counter // exporter level: total scrape count of this server
@@ -952,7 +1042,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		e.up.Set(0)
 		e.scrapeErrorCount.Add(1)
 	}
-
+	e.exporterUptime.Set(e.server.Uptime())
 	e.collectServerMetrics(s)
 	e.collectInternalMetrics(ch)
 }
@@ -1048,6 +1138,10 @@ func (e *Exporter) setupInternalMetrics() {
 		Namespace: e.namespace, ConstLabels: e.constLabels,
 		Subsystem: "exporter", Name: "up", Help: "always be 1 if your could retrieve metrics",
 	})
+	e.exporterUptime = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter", Name: "uptime", Help: "seconds since exporter primary server inited",
+	})
 	e.scrapeTotalCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
 		Subsystem: "exporter", Name: "scrape_total_count", Help: "times exporter was scraped for metrics",
@@ -1118,6 +1212,7 @@ func (e *Exporter) collectInternalMetrics(ch chan<- prometheus.Metric) {
 	ch <- e.recovery
 
 	ch <- e.exporterUp
+	ch <- e.exporterUptime
 	ch <- e.lastScrapeTime
 	ch <- e.scrapeTotalCount
 	ch <- e.scrapeErrorCount
@@ -1158,6 +1253,7 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 		WithQueries(e.queries),
 		WithConstLabel(e.constLabels),
 		WithCachePolicy(e.disableCache),
+		WithServerTags(e.tags),
 	)
 	e.pgbouncerMode = e.server.PgbouncerMode
 	e.setupInternalMetrics()
@@ -1189,9 +1285,17 @@ func WithCacheDisabled(disableCache bool) ExporterOpt {
 	}
 }
 
+// WithNamespace will specify metric namespace, by default is pg or pgbouncer
 func WithNamespace(namespace string) ExporterOpt {
 	return func(e *Exporter) {
 		e.namespace = namespace
+	}
+}
+
+// WithTags will register given tags to Exporter and all belonged servers
+func WithTags(tags string) ExporterOpt {
+	return func(e *Exporter) {
+		e.tags = parseTags(tags)
 	}
 }
 
@@ -1292,6 +1396,25 @@ func parseConstLabels(s string) prometheus.Labels {
 	return labels
 }
 
+func parseTags(s string) (tags []string) {
+	s = strings.TrimSpace(s)
+	if len(s) == 0 {
+		return nil
+	}
+
+	parts := strings.Split(s, ",")
+	for _, p := range parts {
+		if tag := strings.TrimSpace(p); len(tag) > 0 {
+			tags = append(tags, tag)
+		}
+	}
+
+	if len(tags) == 0 {
+		return nil
+	}
+	return
+}
+
 // shadowDSN will hide password part of dsn
 func shadowDSN(dsn string) string {
 	pDSN, err := url.Parse(dsn)
@@ -1373,6 +1496,7 @@ func Run() {
 		WithConstLabels(*constLabels),
 		WithCacheDisabled(*disableCache),
 		WithNamespace(*exporterNamespace),
+		WithTags(*serverTags),
 	)
 	if err != nil {
 		log.Fatalf("fail creating pg_exporter: %w", err)

@@ -1,7 +1,8 @@
 #-------------------------------------------------------------#
-# pg_class
+# pg_table_size
 #-------------------------------------------------------------#
 pg_table_size:
+  name: pg_table_size
   query: |
     SELECT CURRENT_CATALOG                       AS datname,
            nsp.nspname,
@@ -16,7 +17,7 @@ pg_table_size:
       AND rel.relkind = 'r';
 
   ttl: 100
-  tags: []
+  tags: [not:shard]
   min_version: 100000
   skip_errors: true
   metrics:
@@ -41,4 +42,5 @@ pg_table_size:
     - toastsize:
         usage: GAUGE
         description: size of corresponding toast tables
+
 

@@ -46,7 +46,7 @@ pg_index_bloat:
      ) est;
 
   ttl: 100
-  tags: []
+  tags: [not:shard]
   min_version: 090400
   skip_errors: true
   metrics:

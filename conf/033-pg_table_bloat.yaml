@@ -1,25 +1,25 @@
 #-------------------------------------------------------------#
-# pg_bloat_table
+# pg_table_bloat
 # estimated bloat
 #-------------------------------------------------------------#
 pg_table_bloat:
   name: pg_table_bloat
   query: |
-    SELECT CURRENT_CATALOG AS datname, schemaname AS nspname, tblname AS relname , bs * tblpages AS size,
-    CASE WHEN tblpages - est_tblpages_ff > 0 THEN (tblpages - est_tblpages_ff)/tblpages::FLOAT ELSE 0 END AS ratio
+    SELECT CURRENT_CATALOG AS datname, nspname, relname , bs * tblpages AS size,
+           CASE WHEN tblpages - est_tblpages_ff > 0 THEN (tblpages - est_tblpages_ff)/tblpages::FLOAT ELSE 0 END AS ratio
     FROM (
              SELECT ceil( reltuples / ( (bs-page_hdr)*fillfactor/(tpl_size*100) ) ) + ceil( toasttuples / 4 ) AS est_tblpages_ff,
-                    tblpages, fillfactor, bs, tblid, schemaname, tblname, is_na
+                    tblpages, fillfactor, bs, tblid, nspname, relname, is_na
              FROM (
                       SELECT
                           ( 4 + tpl_hdr_size + tpl_data_size + (2 * ma)
                               - CASE WHEN tpl_hdr_size % ma = 0 THEN ma ELSE tpl_hdr_size % ma END
                               - CASE WHEN ceil(tpl_data_size)::INT % ma = 0 THEN ma ELSE ceil(tpl_data_size)::INT % ma END
-                          ) AS tpl_size, (heappages + toastpages) AS tblpages, heappages,
-                          toastpages, reltuples, toasttuples, bs, page_hdr, tblid, schemaname, tblname, fillfactor, is_na
+                              ) AS tpl_size, (heappages + toastpages) AS tblpages, heappages,
+                          toastpages, reltuples, toasttuples, bs, page_hdr, tblid, nspname, relname, fillfactor, is_na
                       FROM (
                                SELECT
-                                   tbl.oid AS tblid, ns.nspname AS schemaname, tbl.relname AS tblname, tbl.reltuples,
+                                   tbl.oid AS tblid, ns.nspname , tbl.relname, tbl.reltuples,
                                    tbl.relpages AS heappages, coalesce(toast.relpages, 0) AS toastpages,
                                    coalesce(toast.reltuples, 0) AS toasttuples,
                                    coalesce(substring(array_to_string(tbl.reloptions, ' ') FROM 'fillfactor=([0-9]+)')::smallint, 100) AS fillfactor,
@@ -43,10 +43,12 @@ pg_table_bloat:
          ) AS s3
     WHERE NOT is_na;
 
+
   ttl: 100
-  tags: []
+  tags: [not:shard]
   min_version: 090400
   skip_errors: true
+
   metrics:
     - datname:
         usage: LABEL
@@ -63,4 +65,5 @@ pg_table_bloat:
     - ratio:
         usage: GAUGE
         description: estimated bloat ratio of this table, 0~1
+
 

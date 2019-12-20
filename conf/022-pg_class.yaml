@@ -10,6 +10,7 @@
 # pg_class
 #-------------------------------------------------------------#
 pg_class:
+  name: pg_class
   query: |
     SELECT CURRENT_CATALOG                                              AS datname,
            relnamespace::RegNamespace                                   AS nspname,
@@ -24,7 +25,7 @@ pg_class:
           ('pg_catalog'::regnamespace::oid, 'information_schema'::regnamespace::oid, 'pg_toast'::regnamespace::oid)
       AND relkind IN ('r', 'i', 'm', 't')
   ttl: 100
-  tags: []
+  tags: [not:shard]
   min_version: 090400
   skip_errors: true
   metrics:
@@ -52,3 +53,5 @@ pg_class:
     - relsize:
         usage: GAUGE
         description: size of this relation
+
+
