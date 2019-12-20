@@ -47,3 +47,5 @@ pgbouncer_database:
     - disabled:
         usage: GAUGE
         description: 1 if this database is currently disabled, else 0
+
+

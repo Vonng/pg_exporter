@@ -31,8 +31,8 @@ import (
 *                                       Parameters                                             *
 \**********************************************************************************************/
 
-// Version 0.0.3
-var Version = "0.0.3"
+// Version is read by make build procedure
+var Version = "0.0.4"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
@@ -43,7 +43,9 @@ var (
 	constLabels       = kingpin.Flag("label", "Comma separated list label=value pair").Default("").Envar("PG_EXPORTER_LABEL").String()
 	serverTags        = kingpin.Flag("tag", "Comma separated list of server tag").Default("").Envar("PG_EXPORTER_TAG").String()
 	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_CACHE").Bool()
-	exporterNamespace = kingpin.Flag("namespace", "prefix of built-in metrics").Default("").Envar("PG_EXPORTER_NAMESPACE").String()
+	autoDiscovery     = kingpin.Flag("auto-discovery", "scrape all database for given cluster").Default("false").Envar("PG_EXPORTER_AUTO_DISCOVERY").Bool()
+	excludeDatabase   = kingpin.Flag("exclude-database", "excluded databases when enabling auto-discovery").Default("postgres,template0,template1").Envar("PG_EXPORTER_EXCLUDE_DATABASE").String()
+	exporterNamespace = kingpin.Flag("namespace", "prefix of built-in metrics (pg|pgbouncer) by default").Default("").Envar("PG_EXPORTER_NAMESPACE").String()
 
 	// prometheus http
 	listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Default(":9630").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
@@ -63,7 +65,7 @@ const (
 	GAUGE   = "GAUGE"   // Use this column as a gauge
 )
 
-// ColumnUsage determins how to explain query result column
+// ColumnUsage determine how to use query result column
 var ColumnUsage = map[string]bool{
 	DISCARD: false,
 	LABEL:   false,
@@ -71,7 +73,7 @@ var ColumnUsage = map[string]bool{
 	GAUGE:   true,
 }
 
-// Column holds metadata of query result
+// Column holds the metadata of query result
 type Column struct {
 	Name   string `yaml:"name"`
 	Desc   string `yaml:"description"`
@@ -79,7 +81,7 @@ type Column struct {
 	Rename string `yaml:"rename"`
 }
 
-// PrometheusValueType returns column's usage for prometheus
+// PrometheusValueType returns column's corresponding prometheus value type
 func (c *Column) PrometheusValueType() prometheus.ValueType {
 	switch strings.ToUpper(c.Usage) {
 	case GAUGE:
@@ -92,7 +94,7 @@ func (c *Column) PrometheusValueType() prometheus.ValueType {
 	}
 }
 
-// String turns column into a line text representation
+// String turns column into a one-line text representation
 func (c *Column) String() string {
 	return fmt.Sprintf("%-8s %-20s %s", c.Usage, c.Name, c.Desc)
 }
@@ -107,10 +109,10 @@ type Query struct {
 	SQL  string `yaml:"query"` // SQL command to fetch metrics
 
 	// control query behaviour
-	TTL  float64  `yaml:"ttl"`  // caching ttl, e.g. 10s, 2min
-	Tags []string `yaml:"tags"` // tags are user provided execution hint
+	TTL  float64  `yaml:"ttl"`  // caching ttl in seconds
+	Tags []string `yaml:"tags"` // tags are used for execution control
 
-	Priority   int                  `yaml:"priority"`    // execution priority, from 1 to 100 (low to high)
+	Priority   int                  `yaml:"priority"`    // execution priority, from 1 to 10000
 	MinVersion int                  `yaml:"min_version"` // minimal supported version, include
 	MaxVersion int                  `yaml:"max_version"` // maximal supported version, not include
 	Timeout    float64              `yaml:"timeout"`     // query execution timeout, e.g. 1.0ms, 300us
@@ -508,47 +510,51 @@ func (q *QueryInstance) sendMetrics(ch chan<- prometheus.Metric) {
 
 // Server represent a postgres connection, with additional fact, conf, runtime info
 type Server struct {
-	*sql.DB                   // database instance
-	dsn          string       // data source name
-	lock         sync.RWMutex // scrape lock avoid concurrent call
-	err          error
-	beforeScrape func(s *Server) error
+	*sql.DB              // database instance
+	dsn     string       // data source name
+	lock    sync.RWMutex // server scrape lock
+	err     error        // last error
+
+	// hooks
+	beforeScrape     func(s *Server) error        // hook: execute before scrape
+	onDatabaseChange func(change map[string]bool) // hook: invoke when database list is changed
 
 	// postgres fact gather from server
-	UP         bool
+	UP         bool            // indicate whether target server is connectable
 	Version    int             // pg server version num
 	Database   string          // database name of current server connection
 	Databases  map[string]bool // all available database in target cluster
-	Namespaces map[string]bool // all available database in target cluster
-	Extensions map[string]bool // all available database in target cluster
-	Recovery   bool            // is server recovering? (slave|standby)
+	dblistLock sync.Mutex      // lock when access Databases map
+	Namespaces map[string]bool // all available schema in target cluster
+	Extensions map[string]bool // all available extension in target cluster
+	Recovery   bool            // is server in recovering?
 
-	Tags           []string // server tags set by parameters
+	Tags           []string // server tags set by cli arg --tag
 	PgbouncerMode  bool     // indicate it is a pgbouncer server
 	DisableCache   bool     // force executing, ignoring caching policy
-	DisableCluster bool     // cluster server will not run on this server
-	Planned        bool
+	ExcludeDbnames []string // if ExcludeDbnames is provided, Auto Database Discovery is enabled
+	Forked         bool     // is this a forked server ? (does not run cluster level query)
+	Planned        bool     // if false, server will trigger a plan before collect
 
 	// query
-	//queries        []string          // query sequence
-	queries   map[string]*Query // original unfiltered query instance in pirority order
 	instances []*QueryInstance  // query instance
-	labels    prometheus.Labels // constant label that inject into metrics
+	queries   map[string]*Query // queries map, keys are config file top layer key
+	labels    prometheus.Labels // constant labels
 
 	// internal stats
-	serverInit  time.Time
-	scrapeBegin time.Time // server level scrape begin
-	scrapeDone  time.Time // server last scrape done
-	errorCount  float64
-	totalCount  float64
-	totalTime   float64
+	serverInit  time.Time // server init timestamp
+	scrapeBegin time.Time // server last scrape begin time
+	scrapeDone  time.Time // server last scrape done time
+	errorCount  float64   // total error count on this server
+	totalCount  float64   // total scrape count on this server
+	totalTime   float64   // total time spend on scraping
 
-	queryCacheTTL          map[string]float64
-	queryScrapeTotalCount  map[string]float64
-	queryScrapeHitCount    map[string]float64
-	queryScrapeErrorCount  map[string]float64
-	queryScrapeMetricCount map[string]float64
-	queryScrapeDuration    map[string]float64
+	queryCacheTTL          map[string]float64 // internal query metrics: cache time to live
+	queryScrapeTotalCount  map[string]float64 // internal query metrics: total executed
+	queryScrapeHitCount    map[string]float64 // internal query metrics: times serving from hit cache
+	queryScrapeErrorCount  map[string]float64 // internal query metrics: times failed
+	queryScrapeMetricCount map[string]float64 // internal query metrics: number of metrics scrapped
+	queryScrapeDuration    map[string]float64 // internal query metrics: time spend on executing
 }
 
 // Name is coalesce(s.Database, dsn)
@@ -564,6 +570,11 @@ func (s *Server) Error() error {
 	return s.err
 }
 
+// Check will issue a connection and executing precheck hook function
+func (s *Server) Check() error {
+	return s.beforeScrape(s)
+}
+
 // PgbouncerPrecheck checks pgbouncer connection before scrape
 func PgbouncerPrecheck(s *Server) (err error) {
 	if s.DB == nil { // if db is not initialized, create a new DB
@@ -575,14 +586,14 @@ func PgbouncerPrecheck(s *Server) (err error) {
 		s.DB.SetMaxOpenConns(1)
 	}
 
-	// TODO: since pgbouncer 1.12- using NOTICE to tell version, we just leave it blank here
 	if _, err = s.DB.Exec(`SHOW VERSION;`); err != nil {
-		return
+		// TODO: since pgbouncer 1.12- using NOTICE to tell version, we just leave it blank here
+		return nil
 	}
 	return nil
 }
 
-// PostgresPrecheck checks postgres connection before scrape
+// PostgresPrecheck checks postgres connection and gathering facts
 func PostgresPrecheck(s *Server) (err error) {
 	if s.DB == nil { // if db is not initialized, create a new DB
 		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
@@ -600,7 +611,7 @@ func PostgresPrecheck(s *Server) (err error) {
 	}
 	// fact change triggers a new planning
 	if s.Version != version {
-		log.Infof("server [%s] version changed: from [%d] to [%d]", s.Name(), s.Version, version)
+		log.Infof("server %s version changed: from [%d] to [%d]", s.Name(), s.Version, version)
 		s.Planned = false
 	}
 	s.Version = version
@@ -627,11 +638,9 @@ func PostgresPrecheck(s *Server) (err error) {
 		s.Planned = false
 	}
 	s.Database = datname
+	s.Databases[datname] = true
 
-	s.Databases = make(map[string]bool, len(databases))
-	for _, dbname := range databases {
-		s.Databases[dbname] = true
-	}
+	// update schema & extension list
 	s.Namespaces = make(map[string]bool, len(namespaces))
 	for _, nsname := range namespaces {
 		s.Namespaces[nsname] = true
@@ -641,15 +650,39 @@ func PostgresPrecheck(s *Server) (err error) {
 		s.Extensions[extname] = true
 	}
 
-	log.Infof("database list fetch from server: %v %v %v", s.Database, s.Namespaces, s.Extensions)
-
+	// detect db change
+	s.dblistLock.Lock()
+	defer s.dblistLock.Unlock()
+	newDBList := make(map[string]bool, len(databases))
+	changes := make(map[string]bool)
+	// if new db is not found in old db list, add a change entry [NewDBName:true]
+	for _, dbname := range databases {
+		newDBList[dbname] = true
+		if _, found := s.Databases[dbname]; !found {
+			log.Debugf("server %s found new database %s", s.Name(), dbname)
+			changes[dbname] = true
+		}
+	}
+	// if old db is not found in new db list, add a change entry [OldDBName:false]
+	for dbname, _ := range s.Databases {
+		if _, found := newDBList[dbname]; !found {
+			log.Debugf("server %s found vanished database %s", s.Name(), dbname)
+			changes[dbname] = false
+		}
+	}
+	// invoke hook if there are changes on database list
+	if len(changes) > 0 && s.onDatabaseChange != nil {
+		log.Debugf("auto discovery database list change : %v", changes)
+		s.onDatabaseChange(changes) // if doing something long, launch another goroutine
+	}
+	s.Databases = newDBList
 	return nil
 }
 
-// Plan will register queries that option fit server's fact
+// Plan will install queries that compatible with server fact (version, level, recovery, plugin, tags,...)
 func (s *Server) Plan(queries ...*Query) {
+	// if queries are explicitly given, use it instead of server.queries
 	if len(queries) > 0 {
-		// if queries are explicitly given to plan, use it anyway
 		newQueries := make(map[string]*Query, 0)
 		for _, q := range queries {
 			newQueries[q.Name] = q
@@ -657,10 +690,9 @@ func (s *Server) Plan(queries ...*Query) {
 		s.queries = newQueries
 	}
 
-	// only register those matches server's fact
+	// check query compatibility
 	instances := make([]*QueryInstance, 0)
 	var installedNames, discardedNames []string
-
 	for name, query := range s.queries {
 		if ok, reason := s.Compatible(query); ok {
 			instances = append(instances, NewQueryInstance(query, s))
@@ -677,9 +709,8 @@ func (s *Server) Plan(queries ...*Query) {
 	})
 	s.instances = instances
 
-	// reset statistics
+	// reset statistics after planning
 	s.ResetStats()
-
 	s.Planned = true
 	log.Infof("server %s planned with %d queries, %d installed, %d discarded, installed: %s , discarded: %s",
 		s.Name(), len(s.queries), len(installedNames), len(discardedNames), strings.Join(installedNames, ", "), strings.Join(discardedNames, ", "))
@@ -742,6 +773,14 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 			continue
 		}
 
+		// check schema exist on target database
+		if strings.HasPrefix(tag, "dbname:") {
+			if s.Database != strings.TrimPrefix(tag, "dbname:") {
+				return false, fmt.Sprintf("server %s does not match with query tag %s", s.Database, tag)
+			}
+			continue
+		}
+
 		// check server does not have given tag
 		if strings.HasPrefix(tag, "not:") {
 			if negTag := strings.TrimPrefix(tag, "not:"); s.HasTag(negTag) {
@@ -753,8 +792,8 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 		// check 3 default tags: cluster, primary, standby
 		switch tag {
 		case "cluster":
-			if s.DisableCluster {
-				return false, fmt.Sprintf("cluster level query %s will not run on non-cluster server %v", query.Name, s.Name())
+			if s.Forked {
+				return false, fmt.Sprintf("cluster level query %s will not run on forked server %v", query.Name, s.Name())
 			}
 			continue
 		case "primary":
@@ -817,14 +856,13 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 	defer s.lock.Unlock()
 	s.scrapeBegin = time.Now() // This ts is used for cache expiration check
 
-	// precheck hook
-	if s.beforeScrape != nil {
-		if s.err = s.beforeScrape(s); s.err != nil {
-			log.Errorf("fail establishing connection to %s: %s", s.Name(), s.err.Error())
-			goto final
-		}
+	// check server conn, gathering fact
+	if err := s.Check(); err != nil {
+		log.Errorf("fail establishing connection to %s: %s", s.Name(), s.err.Error())
+		goto final
 	}
 
+	// fact change (including first time) will incur a plan procedure
 	if !s.Planned {
 		s.Plan()
 	}
@@ -908,6 +946,7 @@ func NewServer(dsn string, opts ...ServerOpt) *Server {
 		s.PgbouncerMode = true
 		s.beforeScrape = PgbouncerPrecheck
 	}
+	s.Databases = make(map[string]bool, 1)
 	s.serverInit = time.Now()
 	return s
 }
@@ -944,13 +983,6 @@ func WithQueries(queries map[string]*Query) ServerOpt {
 }
 
 // WithClusterQueryDisabled will marks server only execute query without cluster tag
-func WithClusterQueryDisabled() ServerOpt {
-	return func(s *Server) {
-		s.DisableCluster = true
-	}
-}
-
-// WithClusterQueryDisabled will marks server only execute query without cluster tag
 func WithServerTags(tags []string) ServerOpt {
 	return func(s *Server) {
 		s.Tags = tags
@@ -970,12 +1002,12 @@ type Exporter struct {
 	disableCache      bool              // always execute query when been scrapped
 	autoDiscovery     bool              // discovery other database on primary server
 	pgbouncerMode     bool              // is primary server a pgbouncer ?
-	excludedDatabases []string          // excluded database for auto discovery
+	excludedDatabases map[string]bool   // excluded database for auto discovery
 	constLabels       prometheus.Labels // prometheus const k=v labels
 	tags              []string
 	namespace         string
 
-	lock    sync.RWMutex
+	lock    sync.RWMutex       // export lock
 	server  *Server            // primary server
 	servers map[string]*Server // auto discovered peripheral servers
 	queries map[string]*Query  // metrics query definition
@@ -983,8 +1015,6 @@ type Exporter struct {
 	// internal stats
 	scrapeBegin time.Time // server level scrape begin
 	scrapeDone  time.Time // server last scrape done
-	errorCount  float64
-	totalCount  float64
 
 	// internal metrics: global, exporter, server, query
 	up               prometheus.Gauge   // cluster level: primary target server is alive
@@ -1255,10 +1285,41 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 		WithCachePolicy(e.disableCache),
 		WithServerTags(e.tags),
 	)
+
+	// register db change callback
+	if e.autoDiscovery {
+		log.Infof("auto discovery is enabled, exclucded database: %v", e.excludedDatabases)
+		e.server.onDatabaseChange = e.OnDatabaseChange
+	}
+
+	// check server immediately
+	if err = e.server.Check(); err != nil {
+		log.Errorf("primary server check failed: %s, exporter will continue retrying", err.Error())
+	}
 	e.pgbouncerMode = e.server.PgbouncerMode
 	e.setupInternalMetrics()
-	// TODO: discover peripheral servers and create servers
+
 	return
+}
+
+func (e *Exporter) OnDatabaseChange(change map[string]bool) {
+	// TODO: spawn or destroy database on dbchange
+	for dbname, add := range change {
+		if dbname == e.server.Database {
+			continue // skip primary database change
+		}
+		if _, found := e.excludedDatabases[dbname]; found {
+			log.Infof("skip database change:%v %v according to excluded databases", dbname, add)
+			continue // skip exclude databases changes
+		}
+		if add {
+			// TODO: spawn new server
+			log.Infof("database %s is installed due to auto-discovery", dbname)
+		} else {
+			// TODO: close old server
+			log.Warnf("database %s is removed due to auto-discovery", dbname)
+		}
+	}
 }
 
 // ExporterOpt configures Exporter
@@ -1295,7 +1356,26 @@ func WithNamespace(namespace string) ExporterOpt {
 // WithTags will register given tags to Exporter and all belonged servers
 func WithTags(tags string) ExporterOpt {
 	return func(e *Exporter) {
-		e.tags = parseTags(tags)
+		e.tags = parseCSV(tags)
+	}
+}
+
+// WithAutoDiscovery configures exporter with excluded database
+func WithAutoDiscovery(flag bool) ExporterOpt {
+	return func(e *Exporter) {
+		e.autoDiscovery = flag
+	}
+}
+
+// WithExcludeDatabases configures exporter with excluded database
+func WithExcludeDatabases(excludeStr string) ExporterOpt {
+	return func(e *Exporter) {
+		exclMap := make(map[string]bool)
+		exclList := parseCSV(excludeStr)
+		for _, item := range exclList {
+			exclMap[item] = true
+		}
+		e.excludedDatabases = exclMap
 	}
 }
 
@@ -1396,7 +1476,8 @@ func parseConstLabels(s string) prometheus.Labels {
 	return labels
 }
 
-func parseTags(s string) (tags []string) {
+// parseCSV will turn a comma separated string into a []string
+func parseCSV(s string) (tags []string) {
 	s = strings.TrimSpace(s)
 	if len(s) == 0 {
 		return nil
@@ -1428,25 +1509,13 @@ func shadowDSN(dsn string) string {
 	return pDSN.String()
 }
 
+// parseDatname extract datname part of a dsn
 func parseDatname(dsn string) string {
 	u, err := url.Parse(dsn)
 	if err != nil {
 		return ""
 	}
 	return strings.TrimLeft(u.Path, "/")
-}
-
-func dumpMap(d map[string]float64) string {
-	var buf bytes.Buffer
-	buf.WriteByte('[')
-	for k, v := range d {
-		buf.WriteString(k)
-		buf.WriteByte(':')
-		buf.WriteString(strconv.Itoa(int(v)))
-		buf.WriteString(", ")
-	}
-	buf.WriteByte(']')
-	return buf.String()
 }
 
 // RetrieveTargetURL retrieve pg target url from different sources
@@ -1483,8 +1552,8 @@ func init() {
 	kingpin.Version(fmt.Sprintf("postgres_exporter %s (built with %s)\n", Version, runtime.Version()))
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Parse()
-	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, listenAdress=%v metricPath=%v",
-		*configPath, *constLabels, *disableCache, *listenAddress, *metricPath)
+	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, autoDiscovery=%v, excludeDatabase=%v listenAdress=%v metricPath=%v",
+		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *listenAddress, *metricPath)
 	*pgURL = RetrieveTargetURL()
 }
 
@@ -1496,6 +1565,8 @@ func Run() {
 		WithConstLabels(*constLabels),
 		WithCacheDisabled(*disableCache),
 		WithNamespace(*exporterNamespace),
+		WithAutoDiscovery(*autoDiscovery),
+		WithExcludeDatabases(*excludeDatabase),
 		WithTags(*serverTags),
 	)
 	if err != nil {

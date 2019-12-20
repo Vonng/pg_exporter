@@ -36,7 +36,7 @@ run:
 	go run pg_exporter.go --log-level=Debug
 
 curl:
-	curl localhost:8848/metrics | grep -v '#' | grep pg_
+	curl localhost:9630/metrics | grep -v '#' | grep pg_
 
 upload:
 	./upload.sh

@@ -1,24 +1,20 @@
 # PG Exporter
 
-[Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics.
+[Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics. Latest binaries can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. 
 
- Latest binaries can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. 
-
-Battery included configuration files are in [`conf`](./conf)，With PostgreSQL 10+ and pgbouncer 1.9+ support
+supporting PostgreSQL 10+ & Pgbouncer 1.9+.
 
 
 
 ## Features
 
 * Support both Postgres & Pgbouncer
-* Flexible, completely customizable queries & metrics
-* Configurable caching policy
-
-* Expose many internal metrics, so it is easy to monitor exporter itself
-* Dynamic planned query, brings more fine-grained contronl on execution policy
-
-* blah blah, lazy writing document
-
+* Fine-grained execution control (cluster/database level, primary/standby only, tags, etc...)
+* Flexible: completely customizable queries & metrics
+* Configurable caching policy & query timeout
+* Including many internal metrics, built-in self-monitoring
+* Dynamic planning query, brings more fine-grained contronl on execution policy
+* Auto discovery multi database in the same cluster 
 * Tested in real world production environment (200+ Nodes)
 
 
@@ -38,7 +34,7 @@ Or the docker way:
 ```bash
 docker run \
   --env=PG_EXPORTER_URL='postgres://postgres:password@docker.for.mac.host.internal:5432/postgres' \
-  --env=PGB_EXPORTER_WEB_LISTEN_ADDRESS=':8848' \
+  --env=PGB_EXPORTER_WEB_LISTEN_ADDRESS=':9630' \
   --env=PGB_EXPORTER_WEB_TELEMETRY_PATH='/metrics' \
   -p 8848:8848 \
   pg_exporter
@@ -47,7 +43,7 @@ docker run \
 The default listen address is `localhost:8848` and the default telemetry path is `/metrics`. 
 
 ```bash
-curl localhost:8848/metrics
+curl localhost:9630/metrics
 ```
 
 And the default data source name is:
@@ -171,7 +167,9 @@ If a directory is given, `pg_exporter` will iterate the directory and load confi
 
 You can provide multiple config file even in split conf mode.  AND you could provide multiple version of a metric query like `pg_db_10`, `pg_db_93`. The Server.Plan will discard query that does not matching server's fact. So in order to make sure no duplicated metrics are gathered, please make sure all query versions are mutually exclusive by (`primary|standby`, exclusive version range, etc....).
 
-Note that most built-in queries are trying to make no assumption on target servers. while `pg_query` depending on built-in extension `pg_stat_statements` installed in schema `monitor`. and `pg_size.wal|log` requires wal & log dir exist. Normally these queries errors are skipped.
+Note that most built-in queries are trying to make no assumption on target servers. while `pg_query` depending on built-in extension `pg_stat_statements` installed in schema `monitor`. and `pg_size.wal|log` requires wal & log dir exist. Normally these queries errors are skipped
+
+
 
 ## FAQ
 
