@@ -33,28 +33,28 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.0.5"
+var Version = "0.1.0"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
 var (
 	// exporter settings
-	pgURL             = kingpin.Flag("url", "postgres connect url").String()
-	configPath        = kingpin.Flag("config", "Path to config files").Default("./pg_exporter.yaml").Envar("PG_EXPORTER_CONFIG").String()
-	constLabels       = kingpin.Flag("label", "Comma separated list label=value pair").Default("").Envar("PG_EXPORTER_LABEL").String()
-	serverTags        = kingpin.Flag("tag", "Comma separated list of server tag").Default("").Envar("PG_EXPORTER_TAG").String()
-	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_CACHE").Bool()
-	autoDiscovery     = kingpin.Flag("auto-discovery", "scrape all database for given cluster").Default("false").Envar("PG_EXPORTER_AUTO_DISCOVERY").Bool()
+	pgURL             = kingpin.Flag("url", "postgres target url").String()
+	configPath        = kingpin.Flag("config", "path to config dir or file").Default("pg_exporter.yaml").Envar("PG_EXPORTER_CONFIG").String()
+	constLabels       = kingpin.Flag("label", "constant lables:comma separated list of label=value pair").Default("").Envar("PG_EXPORTER_LABEL").String()
+	serverTags        = kingpin.Flag("tag", "tags,comma separated list of server tag").Default("").Envar("PG_EXPORTER_TAG").String()
+	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_DISABLE_CACHE").Bool()
+	autoDiscovery     = kingpin.Flag("auto-discovery", "automatically scrape all database for given server").Default("false").Envar("PG_EXPORTER_AUTO_DISCOVERY").Bool()
 	excludeDatabase   = kingpin.Flag("exclude-database", "excluded databases when enabling auto-discovery").Default("postgres,template0,template1").Envar("PG_EXPORTER_EXCLUDE_DATABASE").String()
-	exporterNamespace = kingpin.Flag("namespace", "prefix of built-in metrics (pg|pgbouncer) by default").Default("").Envar("PG_EXPORTER_NAMESPACE").String()
+	exporterNamespace = kingpin.Flag("namespace", "prefix of built-in metrics, (pg|pgbouncer) by default").Default("").Envar("PG_EXPORTER_NAMESPACE").String()
 	failFast          = kingpin.Flag("fail-fast", "fail fast instead of waiting during start-up").Envar("PG_EXPORTER_FAIL_FAST").Default("false").Bool()
 
 	// prometheus http
 	listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Default(":9630").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
-	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").Envar("PG_EXPORTER_TELEMETRY_PATH").String()
+	metricPath    = kingpin.Flag("web.telemetry-path", "URL path under which to expose metrics.").Default("/metrics").Envar("PG_EXPORTER_TELEMETRY_PATH").String()
 
 	// action
-	dryRun      = kingpin.Flag("dry-run", "dry run and explain raw conf").Default("false").Bool()
+	dryRun      = kingpin.Flag("dry-run", "dry run and print raw configs").Default("false").Bool()
 	explainOnly = kingpin.Flag("explain", "explain server planned queries").Default("false").Bool()
 )
 
@@ -133,24 +133,24 @@ type Query struct {
 }
 
 var queryTemplate, _ = template.New("Query").Parse(`
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ {{ .Name }}{{ if ne .Name .Branch}}.{{ .Branch }}{{end}}
-#  ┃ {{ .Desc }}
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ {{ .Tags }}
-#  ┃ TTL      ┆ {{ .TTL }}
-#  ┃ Priority ┆ {{ .Priority }}
-#  ┃ Timeout  ┆ {{ .TimeoutDuration }}
-#  ┃ Fatal    ┆ {{ .Fatal }}
-#  ┃ Version  ┆ {{if ne .MinVersion 0}}{{ .MinVersion }}{{else}}lower{{end}} ~ {{if ne .MaxVersion 0}}{{ .MaxVersion }}{{else}}higher{{end}}
-#  ┃ Source   ┆ {{.Path }}
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-{{range .ColumnList}}#  ┃ {{.}}
-{{end}}#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-{{range .MetricList}}#  ┃ {{.}}
-{{end}}#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ {{.TemplateSQL}}
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┃ {{ .Name }}{{ if ne .Name .Branch}}.{{ .Branch }}{{end}}
+┃ {{ .Desc }}
+┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+┃ Tags     ┆ {{ .Tags }}
+┃ TTL      ┆ {{ .TTL }}
+┃ Priority ┆ {{ .Priority }}
+┃ Timeout  ┆ {{ .TimeoutDuration }}
+┃ Fatal    ┆ {{ .Fatal }}
+┃ Version  ┆ {{if ne .MinVersion 0}}{{ .MinVersion }}{{else}}lower{{end}} ~ {{if ne .MaxVersion 0}}{{ .MaxVersion }}{{else}}higher{{end}}
+┃ Source   ┆ {{.Path }}
+┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+{{range .ColumnList}}┃ {{.}}
+{{end}}┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+{{range .MetricList}}┃ {{.}}
+{{end}}┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+┃ {{.TemplateSQL}}
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
 
 // Explain will turn query into text representation
 func (q *Query) Explain() string {
@@ -208,7 +208,7 @@ func (q *Query) MetricList() (res []string) {
 }
 
 func (q *Query) TemplateSQL() string {
-	return strings.Replace(q.SQL, "\n", "\n#  ┃ ", -1)
+	return strings.Replace(q.SQL, "\n", "\n┃ ", -1)
 }
 
 func (q *Query) TimeoutDuration() time.Duration {
@@ -356,8 +356,8 @@ type QueryInstance struct {
 	lock        sync.RWMutex                // access lock
 	result      []prometheus.Metric         // cached metrics
 	descriptors map[string]*prometheus.Desc // maps column index to descriptor, build on init
+	cacheHit    bool                        // indicate last scrape was served from cache or real execution
 	err         error
-	cacheHit    bool // indicate last scrape was served from cache or real execution
 
 	lastScrape  time.Time // server's scrape start time
 	scrapeBegin time.Time // real execution begin
@@ -1621,6 +1621,10 @@ func RetrieveTargetURL() (res string) {
 	}
 	if res = os.Getenv("PG_EXPORTER_URL"); res != "" {
 		log.Infof("retrieve target url %s from PG_EXPORTER_URL", shadowDSN(*pgURL))
+		return res
+	}
+	if res = os.Getenv("DATA_SOURCE_NAME"); res != "" {
+		log.Infof("retrieve target url %s from DATA_SOURCE_NAME", shadowDSN(*pgURL))
 		return res
 	}
 	if filename := os.Getenv("PG_EXPORTER_URL_FILE"); filename != "" {
