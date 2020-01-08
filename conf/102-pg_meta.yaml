@@ -1,0 +1,82 @@
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pg_meta
+#  ┃ PostgreSQL meta info (semi-constant)
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [cluster]
+#  ┃ TTL      ┆ 100
+#  ┃ Priority ┆ 102
+#  ┃ Timeout  ┆ 100ms
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 90600 ~ higher
+#  ┃ Source   ┆ 102-pg_meta.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ LABEL    cluster_id           cluster system identifier
+#  ┃ LABEL    port                 listen port
+#  ┃ LABEL    data_dir             data directory path
+#  ┃ LABEL    conf_path            postgresql.conf path
+#  ┃ LABEL    hba_path             pg_hba.conf path
+#  ┃ LABEL    wal_level            wal level
+#  ┃ LABEL    version              server version in human readable format
+#  ┃ LABEL    ver_num              server version number in machine readable format
+#  ┃ GAUGE    info                 constant 1
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pg_meta_info{cluster_id,port,data_dir,conf_path,hba_path,wal_level,version,ver_num}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SELECT (SELECT system_identifier FROM pg_control_system()) AS cluster_id,
+#  ┃        current_setting('port')                             AS port,
+#  ┃        current_setting('data_directory')                   AS data_dir,
+#  ┃        current_setting('config_file')                      AS conf_path,
+#  ┃        current_setting('hba_file')                         AS hba_path,
+#  ┃        current_setting('wal_level')                        AS wal_level,
+#  ┃        current_setting('server_version')                   AS version,
+#  ┃        current_setting('server_version_num')               AS ver_num,
+#  ┃        1                                                   AS info
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_meta:
+  name: pg_meta
+  desc: PostgreSQL meta info (pg_control_system() is provisioned since 9.6)
+  query: |
+    SELECT (SELECT system_identifier FROM pg_control_system()) AS cluster_id,
+           current_setting('port')                             AS port,
+           current_setting('data_directory')                   AS data_dir,
+           current_setting('config_file')                      AS conf_path,
+           current_setting('hba_file')                         AS hba_path,
+           current_setting('wal_level')                        AS wal_level,
+           current_setting('server_version')                   AS version,
+           current_setting('server_version_num')               AS ver_num,
+           1                                                   AS info
+
+  ttl: 100
+  tags: [cluster]
+  min_version: 090600
+
+  metrics:
+    - cluster_id:
+        usage: LABEL
+        description: cluster system identifier
+    - port:
+        usage: LABEL
+        description: listen port
+    - data_dir:
+        usage: LABEL
+        description: data directory path
+    - conf_path:
+        usage: LABEL
+        description: postgresql.conf path
+    - hba_path:
+        usage: LABEL
+        description: pg_hba.conf path
+    - wal_level:
+        usage: LABEL
+        description: wal level
+    - version:
+        usage: LABEL
+        description: server version in human readable format
+    - ver_num:
+        usage: LABEL
+        description: server version number in machine readable format
+    - info:
+        usage: GAUGE
+        description: constant 1
+

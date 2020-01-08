@@ -33,7 +33,7 @@ docker: linux
 	docker build -t pg_exporter .
 
 run:
-	go run pg_exporter.go --log-level=Debug
+	go run pg_exporter.go --log.level=Debug --config=conf
 
 curl:
 	curl localhost:9630/metrics | grep -v '#' | grep pg_

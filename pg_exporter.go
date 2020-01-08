@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/lib/pq"
@@ -32,7 +33,7 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.0.4"
+var Version = "0.0.5"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
@@ -46,13 +47,15 @@ var (
 	autoDiscovery     = kingpin.Flag("auto-discovery", "scrape all database for given cluster").Default("false").Envar("PG_EXPORTER_AUTO_DISCOVERY").Bool()
 	excludeDatabase   = kingpin.Flag("exclude-database", "excluded databases when enabling auto-discovery").Default("postgres,template0,template1").Envar("PG_EXPORTER_EXCLUDE_DATABASE").String()
 	exporterNamespace = kingpin.Flag("namespace", "prefix of built-in metrics (pg|pgbouncer) by default").Default("").Envar("PG_EXPORTER_NAMESPACE").String()
+	failFast          = kingpin.Flag("fail-fast", "fail fast instead of waiting during start-up").Envar("PG_EXPORTER_FAIL_FAST").Default("false").Bool()
 
 	// prometheus http
 	listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Default(":9630").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
 	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").Envar("PG_EXPORTER_TELEMETRY_PATH").String()
 
 	// action
-	explainOnly = kingpin.Flag("explain", "dry run and explain queries").Default("false").Bool()
+	dryRun      = kingpin.Flag("dry-run", "dry run and explain raw conf").Default("false").Bool()
+	explainOnly = kingpin.Flag("explain", "explain server planned queries").Default("false").Bool()
 )
 
 /**********************************************************************************************\
@@ -105,19 +108,21 @@ func (c *Column) String() string {
 
 // Query hold the information of how to fetch metric and parse them
 type Query struct {
-	Name string `yaml:"name"`  // query name, used as metric prefix
-	SQL  string `yaml:"query"` // SQL command to fetch metrics
+	Name   string `yaml:"name"`  // actual query name, used as metric prefix
+	Desc   string `yaml:"desc"`  // description of this metric query
+	SQL    string `yaml:"query"` // SQL command to fetch metrics
+	Branch string // branch name, top layer key of config file
 
 	// control query behaviour
-	TTL  float64  `yaml:"ttl"`  // caching ttl in seconds
-	Tags []string `yaml:"tags"` // tags are used for execution control
+	Tags       []string `yaml:"tags"`        // tags are used for execution control
+	TTL        float64  `yaml:"ttl"`         // caching ttl in seconds
+	Timeout    float64  `yaml:"timeout"`     // query execution timeout in seconds
+	Priority   int      `yaml:"priority"`    // execution priority, from 1 to 999
+	MinVersion int      `yaml:"min_version"` // minimal supported version, include
+	MaxVersion int      `yaml:"max_version"` // maximal supported version, not include
+	Fatal      bool     `yaml:"fatal"`       // if query marked fatal fail, entire scrape will fail
 
-	Priority   int                  `yaml:"priority"`    // execution priority, from 1 to 10000
-	MinVersion int                  `yaml:"min_version"` // minimal supported version, include
-	MaxVersion int                  `yaml:"max_version"` // maximal supported version, not include
-	Timeout    float64              `yaml:"timeout"`     // query execution timeout, e.g. 1.0ms, 300us
-	SkipErrors bool                 `yaml:"skip_errors"` // can error be omitted?
-	Metrics    []map[string]*Column `yaml:"metrics"`
+	Metrics []map[string]*Column `yaml:"metrics"` // metric definition list
 
 	// metrics parsing auxiliaries
 	Path        string             // where am I from ?
@@ -128,21 +133,24 @@ type Query struct {
 }
 
 var queryTemplate, _ = template.New("Query").Parse(`
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ {{ .Name }}
-┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-{{range .Columns }}┃{{.String}}
-{{end}}┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-┃ Tags     ┆ {{ .Tags }}
-┃ TTL      ┆ {{ .TTL }}
-┃ Priority ┆ {{ .Priority }}
-┃ Timeout  ┆ {{ .Timeout }}
-┃ SkipErr  ┆ {{ .SkipErrors }}
-┃ Version  ┆ {{ .MinVersion }} - {{ .MaxVersion }}
-┃ Source   ┆ {{.Path }}
-┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
- {{ .SQL }}
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ {{ .Name }}{{ if ne .Name .Branch}}.{{ .Branch }}{{end}}
+#  ┃ {{ .Desc }}
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ {{ .Tags }}
+#  ┃ TTL      ┆ {{ .TTL }}
+#  ┃ Priority ┆ {{ .Priority }}
+#  ┃ Timeout  ┆ {{ .TimeoutDuration }}
+#  ┃ Fatal    ┆ {{ .Fatal }}
+#  ┃ Version  ┆ {{if ne .MinVersion 0}}{{ .MinVersion }}{{else}}lower{{end}} ~ {{if ne .MaxVersion 0}}{{ .MaxVersion }}{{else}}higher{{end}}
+#  ┃ Source   ┆ {{.Path }}
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+{{range .ColumnList}}#  ┃ {{.}}
+{{end}}#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+{{range .MetricList}}#  ┃ {{.}}
+{{end}}#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ {{.TemplateSQL}}
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
 
 // Explain will turn query into text representation
 func (q *Query) Explain() string {
@@ -163,6 +171,48 @@ func (q *Query) HasTag(tag string) bool {
 		}
 	}
 	return false
+}
+
+// ColumnList return ordered column list
+func (q *Query) ColumnList() (res []*Column) {
+	res = make([]*Column, len(q.ColumnNames))
+	for i, colName := range q.ColumnNames {
+		res[i] = q.Columns[colName]
+	}
+	return
+}
+
+// MetricList returns a list of metric generated by this query
+func (q *Query) MetricList() (res []string) {
+	labelNames := make([]string, len(q.LabelNames))
+	for i, labelName := range q.LabelNames {
+		labelColumn := q.Columns[labelName]
+		if labelColumn.Rename != "" {
+			labelNames[i] = labelColumn.Rename
+		} else {
+			labelNames[i] = labelColumn.Name
+		}
+	}
+	labels := strings.Join(labelNames, ",")
+
+	res = make([]string, len(q.MetricNames))
+	for i, metricName := range q.MetricNames {
+		column := q.Columns[metricName]
+		name := column.Name
+		if column.Rename != "" {
+			name = column.Rename
+		}
+		res[i] = fmt.Sprintf("%s_%s{%s}", q.Name, name, labels)
+	}
+	return
+}
+
+func (q *Query) TemplateSQL() string {
+	return strings.Replace(q.SQL, "\n", "\n#  ┃ ", -1)
+}
+
+func (q *Query) TimeoutDuration() time.Duration {
+	return time.Duration(float64(time.Second) * q.Timeout)
 }
 
 // ParseConfig turn config content into Query struct
@@ -195,7 +245,7 @@ func ParseConfig(content []byte) (queries map[string]*Query, err error) {
 				case GAUGE, COUNTER:
 					metricColumns = append(metricColumns, column.Name)
 				}
-				allColumns = append(metricColumns, column.Name)
+				allColumns = append(allColumns, column.Name)
 				columns[column.Name] = column
 			}
 		}
@@ -244,20 +294,19 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 			confFiles = append(confFiles, path.Join(configPath, conf.Name()))
 		}
 
+		// make global config map and assign priority according to config file alphabetic orders
+		// priority is an integer range from 1 to 999, where 1 - 99 is reserved for user
 		queries = make(map[string]*Query, 0)
 		var queryCount, configCount int
-
-		for index, confPath := range confFiles {
+		for _, confPath := range confFiles {
 			if singleQueries, err := LoadConfig(confPath); err != nil {
 				log.Warnf("skip config %s due to error: %s", confPath, err.Error())
 			} else {
 				configCount++
-				cnt := 0
 				for name, query := range singleQueries {
-					// assign priority: assume you don't really provide 100+ conf files or put 100+ entry in a conf
 					queryCount++
-					if query.Priority == 0 {
-						query.Priority = 10000 - index*100 - cnt
+					if query.Priority == 0 { // set to config rank if not manually set
+						query.Priority = 100 + configCount
 					}
 					queries[name] = query // so the later one will overwrite former one
 				}
@@ -276,8 +325,17 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, q := range queries {
+	for branch, q := range queries {
 		q.Path = stat.Name()
+		q.Branch = branch
+		// if timeout is not set, set to 100ms by default
+		// if timeout is set to a neg number, set to 0 so it's actually disabled
+		if q.Timeout == 0 {
+			q.Timeout = 0.1
+		}
+		if q.Timeout < 0 {
+			q.Timeout = 0
+		}
 	}
 	log.Debugf("load %d queries from %s, ", len(queries), configPath)
 	return queries, nil
@@ -371,11 +429,24 @@ func (q *QueryInstance) execute() {
 	q.result = q.result[:0] // reset cache
 	q.scrapeBegin = time.Now()
 
-	// Server must be inited before using
-	rows, err := q.Server.Query(q.SQL)
+	// if timeout is provided, use context
+	var rows *sql.Rows
+	var err error
+	if q.Timeout != 0 {
+		ctx, _ := context.WithTimeout(context.Background(), q.TimeoutDuration())
+		rows, err = q.Server.QueryContext(ctx, q.SQL)
+	} else {
+		rows, err = q.Server.Query(q.SQL)
+	}
+
 	if err != nil {
-		q.err = fmt.Errorf("query %s failed: %w", q.Name, err)
 		q.scrapeDone = time.Now()
+		// timeout or query error
+		if strings.Contains(err.Error(), "canceling statement due to user request") {
+			q.err = fmt.Errorf("query %s timeout, duration: %v, limit: %v", q.Name, q.Duration(), q.TimeoutDuration())
+		} else {
+			q.err = fmt.Errorf("query %s failed: %w", q.Name, err)
+		}
 		return
 	}
 	defer rows.Close() // nolint: errcheck
@@ -594,10 +665,10 @@ func PgbouncerPrecheck(s *Server) (err error) {
 }
 
 // PostgresPrecheck checks postgres connection and gathering facts
+// if any important fact changed, it will triggers a plan before next scrape
 func PostgresPrecheck(s *Server) (err error) {
 	if s.DB == nil { // if db is not initialized, create a new DB
 		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
-			s.UP = false
 			return
 		}
 		s.DB.SetMaxIdleConns(1)
@@ -606,7 +677,8 @@ func PostgresPrecheck(s *Server) (err error) {
 
 	// retrieve version info
 	var version int
-	if err = s.DB.QueryRow(`SHOW server_version_num;`).Scan(&version); err != nil {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+	if err = s.DB.QueryRowContext(ctx, `SHOW server_version_num;`).Scan(&version); err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
 	// fact change triggers a new planning
@@ -624,7 +696,8 @@ func PostgresPrecheck(s *Server) (err error) {
 	(SELECT array_agg(datname) AS databases FROM pg_database),
 	(SELECT array_agg(nspname) AS namespaces FROM pg_namespace),
 	(SELECT array_agg(extname) AS extensions FROM pg_extension);`
-	if err = s.DB.QueryRow(precheckSQL).Scan(&datname, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions));
+	ctx, _ = context.WithTimeout(context.Background(), time.Second)
+	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions));
 		err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
@@ -705,7 +778,7 @@ func (s *Server) Plan(queries ...*Query) {
 
 	// sort by priority
 	sort.Slice(instances, func(i, j int) bool {
-		return instances[i].Priority > instances[j].Priority
+		return instances[i].Priority < instances[j].Priority
 	})
 	s.instances = instances
 
@@ -857,8 +930,8 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 	s.scrapeBegin = time.Now() // This ts is used for cache expiration check
 
 	// check server conn, gathering fact
-	if err := s.Check(); err != nil {
-		log.Errorf("fail establishing connection to %s: %s", s.Name(), s.err.Error())
+	if s.err = s.Check(); s.err != nil {
+		log.Debugf("fail establishing connection to %s: %s", s.Name(), s.err.Error())
 		goto final
 	}
 
@@ -875,13 +948,13 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 		s.queryScrapeDuration[query.Name] = query.Duration()
 		if query.Error() != nil {
 			s.queryScrapeErrorCount[query.Name]++
-			if query.SkipErrors { // skip this error according to config
-				log.Warnf("query %s error skipped: %s", query.Name, query.Error())
-				continue
-			} else { // treat as fatal error
+			if query.Fatal { // treat as fatal error
 				log.Errorf("query %s error: %s", query.Name, query.Error())
 				s.err = query.Error()
 				goto final
+			} else { // skip this error according to config
+				log.Warnf("query %s error skipped: %s", query.Name, query.Error())
+				continue
 			}
 		} else {
 			if query.CacheHit() {
@@ -1002,6 +1075,7 @@ type Exporter struct {
 	disableCache      bool              // always execute query when been scrapped
 	autoDiscovery     bool              // discovery other database on primary server
 	pgbouncerMode     bool              // is primary server a pgbouncer ?
+	failFast          bool              // fail fast instead fof waiting during start-up ?
 	excludedDatabases map[string]bool   // excluded database for auto discovery
 	constLabels       prometheus.Labels // prometheus const k=v labels
 	tags              []string
@@ -1292,9 +1366,22 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 		e.server.onDatabaseChange = e.OnDatabaseChange
 	}
 
-	// check server immediately
+	// check server immediately, will hang/exit according to failFast
 	if err = e.server.Check(); err != nil {
-		log.Errorf("primary server check failed: %s, exporter will continue retrying", err.Error())
+		if !e.failFast {
+			log.Errorf("fail connecting to primary server: %s, retrying in 10s", err.Error())
+			for err != nil {
+				time.Sleep(10 * time.Second)
+				if err = e.server.Check(); err != nil {
+					log.Errorf("fail connecting to primary server: %s, retrying in 10s", err.Error())
+				}
+			}
+		} else {
+			log.Errorf("fail connecting to primary server: %s, exit", err.Error())
+		}
+	}
+	if err != nil {
+		e.server.Plan()
 	}
 	e.pgbouncerMode = e.server.PgbouncerMode
 	e.setupInternalMetrics()
@@ -1343,6 +1430,13 @@ func WithConstLabels(s string) ExporterOpt {
 func WithCacheDisabled(disableCache bool) ExporterOpt {
 	return func(e *Exporter) {
 		e.disableCache = disableCache
+	}
+}
+
+// WithFailFast marks exporter fail instead of waiting during start-up
+func WithFailFast(failFast bool) ExporterOpt {
+	return func(e *Exporter) {
+		e.failFast = failFast
 	}
 }
 
@@ -1557,13 +1651,43 @@ func init() {
 	*pgURL = RetrieveTargetURL()
 }
 
+// DryRun will explain all query fetched from configs
+func DryRun() {
+	configs, err := LoadConfig(*configPath)
+	if err != nil {
+		log.Errorf("fail loading config %s, %v", *configPath, err)
+		os.Exit(1)
+	}
+
+	var queries []*Query
+	for _, query := range configs {
+		queries = append(queries, query)
+	}
+	sort.Slice(queries, func(i, j int) bool {
+		return queries[i].Priority < queries[j].Priority
+	})
+	for _, query := range queries {
+		fmt.Println(query.Explain())
+	}
+	fmt.Println()
+	os.Exit(0)
+
+}
+
 // Run pg exporter
 func Run() {
+	// explain config only
+	if *dryRun {
+		DryRun()
+	}
+
+	// create exporter: if target is down, exporter creation will wait until it backup online
 	exporter, err := NewExporter(
 		*pgURL,
 		WithConfig(*configPath),
 		WithConstLabels(*constLabels),
 		WithCacheDisabled(*disableCache),
+		WithFailFast(*failFast),
 		WithNamespace(*exporterNamespace),
 		WithAutoDiscovery(*autoDiscovery),
 		WithExcludeDatabases(*excludeDatabase),
@@ -1571,10 +1695,11 @@ func Run() {
 	)
 	if err != nil {
 		log.Fatalf("fail creating pg_exporter: %w", err)
-		os.Exit(-3)
+		os.Exit(2)
 	}
 
 	if *explainOnly {
+		exporter.server.Plan() // trigger a manual planning before explain
 		fmt.Println(exporter.Explain())
 		os.Exit(0)
 	}

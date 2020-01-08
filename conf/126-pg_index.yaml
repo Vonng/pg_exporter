@@ -1,0 +1,149 @@
+#-------------------------------------------------------------#
+# pg_index
+# note that database with tremendous of tables may suffer from
+# this query. Use sampling filter or just disable it in that case
+# https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STATIO-ALL-INDEXES-VIEW
+# https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STAT-ALL-INDEXES-VIEW
+#-------------------------------------------------------------#
+
+pg_index:
+  name: pg_index
+  desc: PostgreSQL index statistics, db level, normal version
+
+  query: |
+    SELECT CURRENT_CATALOG AS datname,
+           schemaname      AS nspname,
+           indexrelname    AS relname,
+           idx_scan,
+           idx_tup_read,
+           idx_tup_fetch,
+           idx_blks_read,
+           idx_blks_hit
+    FROM pg_stat_user_indexes psui,
+         LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio
+         WHERE psio.indexrelid = psui.indexrelid) p2;
+
+  ttl: 10
+  timeout: 1
+  tags: [not:shard]
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this relation
+    - nspname:
+        usage: LABEL
+        description: schema name of this relation
+    - relname:
+        usage: LABEL
+        description: relation name of this relation
+    - idx_scan:
+        usage: COUNTER
+        description: index scans initiated on this index
+    - idx_tup_read:
+        usage: COUNTER
+        description: index entries returned by scans on this index
+    - idx_tup_fetch:
+        usage: COUNTER
+        description: live table rows fetched by simple index scans using this index
+    - idx_blks_read:
+        usage: COUNTER
+        description: blocks been read from disk of this index
+    - idx_blks_hit:
+        usage: COUNTER
+        description: blocks hit from cache of this index
+
+
+
+
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pg_index.pg_index_shard
+#  ┃ PostgreSQL index statistics, db level, shard version
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [shard]
+#  ┃ TTL      ┆ 10
+#  ┃ Priority ┆ 126
+#  ┃ Timeout  ┆ 1s
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 90400 ~ higher
+#  ┃ Source   ┆ 126-pg_index.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ LABEL    datname              database name of this relation
+#  ┃ LABEL    nspname              schema name of this relation
+#  ┃ LABEL    relname              relation name of this relation
+#  ┃ COUNTER  idx_scan             index scans initiated on this index
+#  ┃ COUNTER  idx_tup_read         index entries returned by scans on this index
+#  ┃ COUNTER  idx_tup_fetch        live table rows fetched by simple index scans using this index
+#  ┃ COUNTER  idx_blks_read        blocks been read from disk of this index
+#  ┃ COUNTER  idx_blks_hit         blocks hit from cache of this index
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pg_index_idx_scan{datname,nspname,relname}
+#  ┃ pg_index_idx_tup_read{datname,nspname,relname}
+#  ┃ pg_index_idx_tup_fetch{datname,nspname,relname}
+#  ┃ pg_index_idx_blks_read{datname,nspname,relname}
+#  ┃ pg_index_idx_blks_hit{datname,nspname,relname}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SELECT CURRENT_CATALOG AS datname,
+#  ┃        schemaname      AS nspname,
+#  ┃        indexrelname    AS relname,
+#  ┃        idx_scan,
+#  ┃        idx_tup_read,
+#  ┃        idx_tup_fetch,
+#  ┃        idx_blks_read,
+#  ┃        idx_blks_hit
+#  ┃ FROM pg_stat_user_indexes psui,
+#  ┃      LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid) p2
+#  ┃ WHERE psui.schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR psui.schemaname = 'user_search';
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+pg_index_shard:
+  name: pg_index
+  desc: PostgreSQL index statistics, db level, shard version
+
+  query: |
+    SELECT CURRENT_CATALOG AS datname,
+           schemaname      AS nspname,
+           indexrelname    AS relname,
+           idx_scan,
+           idx_tup_read,
+           idx_tup_fetch,
+           idx_blks_read,
+           idx_blks_hit
+    FROM pg_stat_user_indexes psui,
+         LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid) p2
+    WHERE psui.schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR psui.schemaname = 'user_search';
+
+  ttl: 10
+  timeout: 1
+  tags: [shard]
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this relation
+    - nspname:
+        usage: LABEL
+        description: schema name of this relation
+    - relname:
+        usage: LABEL
+        description: relation name of this relation
+    - idx_scan:
+        usage: COUNTER
+        description: index scans initiated on this index
+    - idx_tup_read:
+        usage: COUNTER
+        description: index entries returned by scans on this index
+    - idx_tup_fetch:
+        usage: COUNTER
+        description: live table rows fetched by simple index scans using this index
+    - idx_blks_read:
+        usage: COUNTER
+        description: blocks been read from disk of this index
+    - idx_blks_hit:
+        usage: COUNTER
+        description: blocks hit from cache of this index
+
+

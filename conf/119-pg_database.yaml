@@ -1,0 +1,79 @@
+
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pg_database
+#  ┃
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [cluster]
+#  ┃ TTL      ┆ 100
+#  ┃ Priority ┆ 119
+#  ┃ Timeout  ┆ 1s
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 100000 ~ 130000
+#  ┃ Source   ┆ 120-pg_database.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ LABEL    datname              database name
+#  ┃ GAUGE    size                 database size in bytes
+#  ┃ GAUGE    age                  database age calculated by age(datfrozenxid)
+#  ┃ GAUGE    is_template          1 for template db , 0 for normal db
+#  ┃ GAUGE    allow_conn           1 allow connection, 0 does not allow
+#  ┃ GAUGE    conn_limit           connection limit, -1 for no limit
+#  ┃ GAUGE    frozen_xid           tuple with xmin below this will always be visable (until wrap around)
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pg_database_size{datname}
+#  ┃ pg_database_age{datname}
+#  ┃ pg_database_is_template{datname}
+#  ┃ pg_database_allow_conn{datname}
+#  ┃ pg_database_conn_limit{datname}
+#  ┃ pg_database_frozen_xid{datname}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SELECT datname,
+#  ┃        pg_database_size(oid)      AS size,
+#  ┃        age(datfrozenxid)          AS age,
+#  ┃        datistemplate              AS is_template,
+#  ┃        datallowconn               AS allow_conn,
+#  ┃        datconnlimit               AS conn_limit,
+#  ┃        datfrozenxid::TEXT::BIGINT as frozen_xid
+#  ┃ FROM pg_database;
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_database:
+  query: |
+    SELECT datname,
+           pg_database_size(oid)      AS size,
+           age(datfrozenxid)          AS age,
+           datistemplate              AS is_template,
+           datallowconn               AS allow_conn,
+           datconnlimit               AS conn_limit,
+           datfrozenxid::TEXT::BIGINT as frozen_xid
+    FROM pg_database;
+
+  ttl: 100
+  timeout: 1
+  tags: [cluster]
+  min_version: 100000
+  max_version: 130000
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name
+    - size:
+        usage: GAUGE
+        description: database size in bytes
+    - age:
+        usage: GAUGE
+        description: database age calculated by age(datfrozenxid)
+    - is_template:
+        usage: GAUGE
+        description: 1 for template db , 0 for normal db
+    - allow_conn:
+        usage: GAUGE
+        description: 1 allow connection, 0 does not allow
+    - conn_limit:
+        usage: GAUGE
+        description: connection limit, -1 for no limit
+    - frozen_xid:
+        usage: GAUGE
+        description: tuple with xmin below this will always be visable (until wrap around)
+
+

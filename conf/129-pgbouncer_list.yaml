@@ -1,0 +1,62 @@
+
+#-------------------------------------------------------------#
+# pgbouncer_list
+# Desc: http://www.pgbouncer.org/usage.html#show-lists
+#-------------------------------------------------------------#
+# metrics:
+# pgbouncer_list_items{list="..."}
+# label could be:
+# databases:      Count of databases.
+# users:          Count of users.
+# pools:          Count of pools.
+# free_clients:   Count of free clients.
+# used_clients:   Count of used clients.
+# login_clients:  Count of clients in login state.
+# free_servers:   Count of free servers.
+# used_servers:   Count of used servers.
+# dns_names:      Count of DNS names in the cache.
+# dns_zones:      Count of DNS zones in the cache.
+# dns_queries:    Count of in-flight DNS queries.
+# dns_pending:    not used
+#-------------------------------------------------------------#
+
+
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pgbouncer_list
+#  ┃ pgbouncer entry list: http://www.pgbouncer.org/usage.html#show-lists
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [pgbouncer]
+#  ┃ TTL      ┆ 5
+#  ┃ Priority ┆ 129
+#  ┃ Timeout  ┆ 100ms
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 10800 ~ higher
+#  ┃ Source   ┆ 129-pgbouncer_list.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ LABEL    list                 pgbouncer internal list name
+#  ┃ GAUGE    items                count of curresponding pgbouncer object
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pgbouncer_list_items{list}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SHOW LISTS;
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pgbouncer_list:
+  desc: "pgbouncer entry list: http://www.pgbouncer.org/usage.html#show-lists"
+
+  query: |
+    SHOW LISTS;
+
+  ttl: 5
+  tags: [pgbouncer]
+  min_version: 10800
+
+  metrics:
+    - list:
+        usage: LABEL
+        description: pgbouncer internal list name
+    - items:
+        usage: GAUGE
+        description: count of curresponding pgbouncer object
+
+

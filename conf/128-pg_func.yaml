@@ -1,0 +1,156 @@
+
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pg_func
+#  ┃ PostgreSQL Function execution statistics, db level, normal version
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [not:shard]
+#  ┃ TTL      ┆ 10
+#  ┃ Priority ┆ 128
+#  ┃ Timeout  ┆ 1s
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 90400 ~ higher
+#  ┃ Source   ┆ 128-pg_func.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ LABEL    datname              database name of this function
+#  ┃ LABEL    nspname              schema name of this function
+#  ┃ LABEL    funcname             function name of this function
+#  ┃ LABEL    funcid               function id, note that function could override
+#  ┃ COUNTER  calls                how many times this function has been called
+#  ┃ COUNTER  total_time           how much time spent in this function and it's child function, in ms
+#  ┃ COUNTER  self_time            how much time spent in this function itself (other func not included), in ms
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pg_func_calls{datname,nspname,funcname,funcid}
+#  ┃ pg_func_total_time{datname,nspname,funcname,funcid}
+#  ┃ pg_func_self_time{datname,nspname,funcname,funcid}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SELECT CURRENT_CATALOG AS datname,
+#  ┃        schemaname      AS nspname,
+#  ┃        funcname,
+#  ┃        funcid,
+#  ┃        calls,
+#  ┃        total_time,
+#  ┃        self_time
+#  ┃ FROM pg_stat_user_functions;
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_func:
+  name: pg_func
+  desc: PostgreSQL Function execution statistics, db level, normal version
+
+  query: |
+    SELECT CURRENT_CATALOG AS datname,
+           schemaname      AS nspname,
+           funcname,
+           funcid,
+           calls,
+           total_time,
+           self_time
+    FROM pg_stat_user_functions;
+
+  ttl: 10
+  timeout: 1
+  tags: [not:shard]
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this function
+    - nspname:
+        usage: LABEL
+        description: schema name of this function
+    - funcname:
+        usage: LABEL
+        description: function name of this function
+    - funcid:
+        usage: LABEL
+        description: function id, note that function could override
+    - calls:
+        usage: COUNTER
+        description: how many times this function has been called
+    - total_time:
+        usage: COUNTER
+        description: how much time spent in this function and it's child function, in ms
+    - self_time:
+        usage: COUNTER
+        description: how much time spent in this function itself (other func not included), in ms
+
+
+
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pg_func.pg_func_shard
+#  ┃ PostgreSQL Function execution statistics, db level, shard version
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [shard]
+#  ┃ TTL      ┆ 10
+#  ┃ Priority ┆ 128
+#  ┃ Timeout  ┆ 100ms
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 90400 ~ higher
+#  ┃ Source   ┆ 128-pg_func.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ LABEL    datname              database name of this function
+#  ┃ LABEL    nspname              schema name of this function
+#  ┃ LABEL    funcname             function name of this function
+#  ┃ LABEL    funcid               function id, note that function could override
+#  ┃ COUNTER  calls                how many times this function has been called
+#  ┃ COUNTER  total_time           how much time spent in this function and it's child function, in ms
+#  ┃ COUNTER  self_time            how much time spent in this function itself (other func not included), in ms
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pg_func_calls{datname,nspname,funcname,funcid}
+#  ┃ pg_func_total_time{datname,nspname,funcname,funcid}
+#  ┃ pg_func_self_time{datname,nspname,funcname,funcid}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SELECT CURRENT_CATALOG AS datname,
+#  ┃        schemaname      AS nspname,
+#  ┃        funcname,
+#  ┃        funcid,
+#  ┃        calls,
+#  ┃        total_time,
+#  ┃        self_time
+#  ┃ FROM pg_stat_user_functions
+#  ┃ WHERE schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR schemaname = 'user_search';
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_func_shard:
+  name: pg_func
+  desc: PostgreSQL Function execution statistics, db level, shard version
+
+  query: |
+    SELECT CURRENT_CATALOG AS datname,
+           schemaname      AS nspname,
+           funcname,
+           funcid,
+           calls,
+           total_time,
+           self_time
+    FROM pg_stat_user_functions
+    WHERE schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR schemaname = 'user_search';
+
+  ttl: 10
+  tags: [shard]
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this function
+    - nspname:
+        usage: LABEL
+        description: schema name of this function
+    - funcname:
+        usage: LABEL
+        description: function name of this function
+    - funcid:
+        usage: LABEL
+        description: function id, note that function could override
+    - calls:
+        usage: COUNTER
+        description: how many times this function has been called
+    - total_time:
+        usage: COUNTER
+        description: how much time spent in this function and it's child function, in ms
+    - self_time:
+        usage: COUNTER
+        description: how much time spent in this function itself (other func not included), in ms
+

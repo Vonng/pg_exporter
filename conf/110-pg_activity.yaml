@@ -1,0 +1,94 @@
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pg_activity
+#  ┃ PostgreSQL backend activity group by state
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [cluster]
+#  ┃ TTL      ┆ 10
+#  ┃ Priority ┆ 110
+#  ┃ Timeout  ┆ 100ms
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 90400 ~ higher
+#  ┃ Source   ┆ 110-pg_activity.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ LABEL    datname              database name
+#  ┃ LABEL    state                client backend connection state
+#  ┃ GAUGE    count                connection count of given (datname,state)
+#  ┃ GAUGE    max_duration         max duration since state change among (datname, state)
+#  ┃ GAUGE    max_tx_duration      max transaction duration since state change among (datname, state)
+#  ┃ GAUGE    max_conn_duration    max backend session duration since state change among (datname, state)
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pg_activity_count{datname,state}
+#  ┃ pg_activity_max_duration{datname,state}
+#  ┃ pg_activity_max_tx_duration{datname,state}
+#  ┃ pg_activity_max_conn_duration{datname,state}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SELECT datname,
+#  ┃        state,
+#  ┃        coalesce(count, 0)             AS count,
+#  ┃        coalesce(max_duration, 0)      AS max_duration,
+#  ┃        coalesce(max_tx_duration, 0)   AS max_tx_duration,
+#  ┃        coalesce(max_conn_duration, 0) AS max_conn_duration
+#  ┃ FROM (SELECT d.oid AS database, d.datname, a.state
+#  ┃       FROM pg_database d,
+#  ┃            unnest(ARRAY ['active','idle','idle in transaction','idle in transaction (aborted)','fastpath function call','disabled']) a(state)
+#  ┃       WHERE d.datname NOT IN ('postgres','template0','template1')) base
+#  ┃          LEFT JOIN (
+#  ┃     SELECT datname, state,
+#  ┃            count(*) AS count,
+#  ┃            max(extract(epoch from now() - state_change)) AS max_duration,
+#  ┃            max(extract(epoch from now() - xact_start))   AS max_tx_duration,
+#  ┃            max(extract(epoch from now() - backend_start)) AS max_conn_duration
+#  ┃     FROM pg_stat_activity WHERE backend_type = 'client backend' AND pid <> pg_backend_pid()
+#  ┃     GROUP BY datname, state
+#  ┃ ) a USING (datname, state);
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_activity:
+  desc: PostgreSQL backend activity group by state
+
+  query: |
+    SELECT datname,
+           state,
+           coalesce(count, 0)             AS count,
+           coalesce(max_duration, 0)      AS max_duration,
+           coalesce(max_tx_duration, 0)   AS max_tx_duration,
+           coalesce(max_conn_duration, 0) AS max_conn_duration
+    FROM (SELECT d.oid AS database, d.datname, a.state
+          FROM pg_database d,
+               unnest(ARRAY ['active','idle','idle in transaction','idle in transaction (aborted)','fastpath function call','disabled']) a(state)
+          WHERE d.datname NOT IN ('postgres','template0','template1')) base
+             LEFT JOIN (
+        SELECT datname, state,
+               count(*) AS count,
+               max(extract(epoch from now() - state_change)) AS max_duration,
+               max(extract(epoch from now() - xact_start))   AS max_tx_duration,
+               max(extract(epoch from now() - backend_start)) AS max_conn_duration
+        FROM pg_stat_activity WHERE backend_type = 'client backend' AND pid <> pg_backend_pid()
+        GROUP BY datname, state
+    ) a USING (datname, state);
+
+  ttl: 10
+  tags: [cluster]
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name
+    - state:
+        usage: LABEL
+        description: client backend connection state
+    - count:
+        usage: GAUGE
+        description: connection count of given (datname,state)
+    - max_duration:
+        usage: GAUGE
+        description: max duration since state change among (datname, state)
+    - max_tx_duration:
+        usage: GAUGE
+        description: max transaction duration since state change among (datname, state)
+    - max_conn_duration:
+        usage: GAUGE
+        description: max backend session duration since state change among (datname, state)
+
+

@@ -1,0 +1,54 @@
+
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pg_lock
+#  ┃ PostgreSQL lock distribution by mode
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [cluster]
+#  ┃ TTL      ┆ 10
+#  ┃ Priority ┆ 113
+#  ┃ Timeout  ┆ 100ms
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 90400 ~ higher
+#  ┃ Source   ┆ 114-pg_lock.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ LABEL    datname              Name of the database
+#  ┃ LABEL    mode                 Type of lock
+#  ┃ COUNTER  count                Number of locks of corresponding mode
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pg_lock_count{datname,mode}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SELECT datname, mode, coalesce(count, 0) AS count
+#  ┃ FROM (SELECT d.oid AS database, d.datname, l.mode FROM pg_database d,
+#  ┃            unnest(ARRAY ['AccessShareLock','RowShareLock','RowExclusiveLock','ShareUpdateExclusiveLock',
+#  ┃                'ShareLock','ShareRowExclusiveLock','ExclusiveLock','AccessExclusiveLock']) l(mode)
+#  ┃       WHERE d.datname NOT IN ('postgres','template0','template1')) base
+#  ┃          LEFT JOIN (SELECT database, mode, count(*) AS count FROM pg_locks
+#  ┃          WHERE database IS NOT NULL GROUP BY database, mode) cnt USING (database, mode);
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_lock:
+  desc: PostgreSQL lock distribution by mode
+  query: |
+    SELECT datname, mode, coalesce(count, 0) AS count
+    FROM (SELECT d.oid AS database, d.datname, l.mode FROM pg_database d,
+               unnest(ARRAY ['AccessShareLock','RowShareLock','RowExclusiveLock','ShareUpdateExclusiveLock',
+                   'ShareLock','ShareRowExclusiveLock','ExclusiveLock','AccessExclusiveLock']) l(mode)
+          WHERE d.datname NOT IN ('postgres','template0','template1')) base
+             LEFT JOIN (SELECT database, mode, count(*) AS count FROM pg_locks
+             WHERE database IS NOT NULL GROUP BY database, mode) cnt USING (database, mode);
+
+  ttl: 10
+  tags: [cluster]
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Name of the database
+    - mode:
+        usage: LABEL
+        description: Type of lock
+    - count:
+        usage: COUNTER
+        description: Number of locks of corresponding mode
+

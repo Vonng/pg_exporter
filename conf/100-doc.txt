@@ -1,125 +1,12 @@
-# PG Exporter
+###############################################################
+# PostgreSQL/Pgbouncer Metric Queries
+# Author:   Vonng (fengruohang@outlook.com)
+# Desc  :   pg_exporter metrics config files
+# Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+
+# Ctime :   2019-12-09
+# Mtime :   2020-01-08
+###############################################################
 
-[Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics. Latest binaries can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. 
-
-supporting PostgreSQL 10+ & Pgbouncer 1.9+。
-
-
-
-## Features
-
-* Support both Postgres & Pgbouncer (auto-switch when target database name is pgbouncer)
-* Fine-grained execution control (cluster/database level, primary/standby only, tags, etc...)
-* Flexible: completely customizable queries & metrics
-* Configurable caching policy & query timeout
-* Including many internal metrics, built-in self-monitoring
-* Dynamic query planning, brings more fine-grained contronl on execution policy
-* Auto discovery multi database in the same cluster (TBD) 
-* Tested in real world production environment (200+ Nodes)
-
-
-
-## Quick Start
-
-To run this exporter, you will need two things
-
-* **Where** to scrape:  A postgres or pgbouncer URL given via `PG_EXPORTER_URL`  or `--url`
-* **What** to scrape: A path to config file or directory, by default `./pg_exporter.yaml`
-
-```bash
-export PG_EXPORTER_URL='postgres://postgres:password@localhost:5432/postgres'
-export PG_EXPORTER_CONFIG='/path/to/conf/file/or/dir'
-pg_exporter
-```
-
-`pg_exporter` only built-in with 3 metrics: `pg_up`,`pg_version` , and  `pg_in_recovery`. **All other metrics are defined in configuration files** . You cound use pre-defined configuration file: [`pg_exporter.yaml`](pg_exporter.yaml) or use separated metric query in [conf](https://github.com/Vonng/pg_exporter/tree/master/conf)  dir.
-
-Parameter could be given via command line arguments or environment variables. 
-
-```bash
-usage: pg_exporter [<flags>]
-
-Flags:
-  --help                         Show context-sensitive help
-  --url=URL                      postgres connect url
-  --config="./pg_exporter.yaml"  Path to config files
-  --label=""                     Comma separated list label=value pair
-  --tag=""                       Comma separated list of server tag
-  --disable-cache                force not using cache
-  --auto-discovery               scrape all database for given cluster
-  --exclude-database="postgres,template0,template1"
-                                 excluded databases when enabling auto-discovery
-  --namespace=""                 prefix of built-in metrics (pg|pgbouncer) by default
-  --fail-fast                    fail fast instead of waiting during start-up
-  --web.listen-address=":9630"   prometheus web server listen address
-  --web.telemetry-path="/metrics"
-                                 Path under which to expose metrics.
-  --dry-run                      dry run and explain raw conf
-  --explain                      explain server planned queries
-  --version                      Show application version.
-  --log.level="info"             Only log messages with the given severity or above.
-  --log.format="logger:stderr"   Set the log target and format. 
-```
-
-
-
-## Build
-
-```
-go build
-```
-
-To build a static stand alone binary for docker scratch
-
-```bash
-CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o pg_exporter
-```
-
-To build a docker image, using:
-
-```
-docker build -t pg_exporter .
-```
-
-Or just [download](https://github.com/Vonng/pg_exporter/releases) latest prebuilt binaries on [release](https://github.com/Vonng/pg_exporter/releases) page
-
-
-
-## Run
-
-```bash
-usage: pg_exporter [<flags>]
-
-Flags:
-  --help                         Show context-sensitive help
-  --url=URL                      postgres connect url
-  --config="./pg_exporter.yaml"  Path to config files
-  --label=""                     Comma separated list label=value pair
-  --tag=""                       Comma separated list of server tag
-  --disable-cache                force not using cache
-  --auto-discovery               scrape all database for given cluster
-  --exclude-database="postgres,template0,template1"
-                                 excluded databases when enabling auto-discovery
-  --namespace=""                 prefix of built-in metrics (pg|pgbouncer) by default
-  --fail-fast                    fail fast instead of waiting during start-up
-  --web.listen-address=":9630"   prometheus web server listen address
-  --web.telemetry-path="/metrics"
-                                 Path under which to expose metrics.
-  --dry-run                      dry run and explain raw conf
-  --explain                      explain server planned queries
-  --version                      Show application version.
-  --log.level="info"             Only log messages with the given severity or above.
-  --log.format="logger:stderr"   Set the log target and format. 
-
-```
-
-
-
-## Config
-
-Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir. and here is a [sample](conf/100-doc.txt) config.
-
-```yaml
 #-------------------------------------------------------------#
 # Metric Query Example
 #-------------------------------------------------------------#
@@ -193,19 +80,4 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #          usage: GAUGE
 #          description: seconds since current backup start. null if don't have one
 
-
-
-```
-
-
-
-## FAQ
-
-
-
-## About
-
-Author：Vonng ([fengruohang@outlook.com](mailto:fengruohang@outlook.com))
-
-License：BSD
 

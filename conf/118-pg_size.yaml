@@ -1,0 +1,57 @@
+
+#-------------------------------------------------------------#
+# pg_size
+# total sizes
+# pg_ls_waldir and pg_ls_log_dir is available since PostgreSQL 10
+#-------------------------------------------------------------#
+
+
+#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  ┃ pg_size
+#  ┃ PostgreSQL Database, WAL, Log size since 10
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ Tags     ┆ [cluster]
+#  ┃ TTL      ┆ 100
+#  ┃ Priority ┆ 118
+#  ┃ Timeout  ┆ 100ms
+#  ┃ Fatal    ┆ false
+#  ┃ Version  ┆ 100000 ~ higher
+#  ┃ Source   ┆ 119-pg_size.yaml
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ GAUGE    log                  database log file size in bytes
+#  ┃ GAUGE    wal                  WAL file size in bytes
+#  ┃ GAUGE    database             all database size in bytes
+#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ pg_size_log{}
+#  ┃ pg_size_wal{}
+#  ┃ pg_size_database{}
+#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#  ┃ SELECT (SELECT (coalesce(sum(size), 0)) FROM pg_ls_logdir())          AS log,
+#  ┃        (SELECT coalesce(sum(size), 0) FROM pg_catalog.pg_ls_waldir()) AS wal,
+#  ┃        (SELECT sum(pg_database_size(oid)) FROM pg_database)           AS database;
+#  ┃
+#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+pg_size:
+  desc: PostgreSQL Database, WAL, Log size since 10
+
+  query: |
+    SELECT (SELECT (coalesce(sum(size), 0)) FROM pg_ls_logdir())          AS log,
+           (SELECT coalesce(sum(size), 0) FROM pg_catalog.pg_ls_waldir()) AS wal,
+           (SELECT sum(pg_database_size(oid)) FROM pg_database)           AS database;
+
+  ttl: 100
+  tags: [cluster]
+  min_version: 100000
+
+  metrics:
+    - log:
+        usage: GAUGE
+        description: database log file size in bytes
+    - wal:
+        usage: GAUGE
+        description: WAL file size in bytes
+    - database:
+        usage: GAUGE
+        description: all database size in bytes
+
