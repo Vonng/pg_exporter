@@ -6,6 +6,10 @@ Latest binaries can be found on [release](https://github.com/Vonng/pg_exporter/r
 
 Current version is v0.1.0, could be used in production with caution.
 
+![](doc/pg-exporter-overview.png)
+
+
+
 ## Features
 
 * Support both Postgres & Pgbouncer (auto-switch when target database name is pgbouncer)
@@ -152,6 +156,10 @@ Config is the core part of pg_exporter. Actually this project have more lines of
 
 ### built-in configs
 
+Dashboard for monitoring pg_exporter itself: [`pg-exporter.json`](monitor/pg-exporter.json)
+
+![](doc/pg-exporter.png)
+
 Current `pg_exporter` is ship with 32 built-in metrics queries. 
 
 
@@ -266,6 +274,24 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #          usage: GAUGE
 #          description: seconds since current backup start. null if don't have one
 ```
+
+
+
+## Alert
+
+TBD
+
+
+
+## Visualize
+
+You can build fancy dashboard along with prometheus and grafana:
+
+![](doc/pg-dashboards.png)
+
+![](doc/pg-instance.png)
+
+![](doc/pg-cluster.png)
 
 
 
