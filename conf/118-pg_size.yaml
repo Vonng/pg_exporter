@@ -1,4 +1,3 @@
-
 #-------------------------------------------------------------#
 # pg_size
 # total sizes
@@ -13,7 +12,7 @@
 #  ┃ Tags     ┆ [cluster]
 #  ┃ TTL      ┆ 100
 #  ┃ Priority ┆ 118
-#  ┃ Timeout  ┆ 100ms
+#  ┃ Timeout  ┆ 1s
 #  ┃ Fatal    ┆ false
 #  ┃ Version  ┆ 100000 ~ higher
 #  ┃ Source   ┆ 119-pg_size.yaml
@@ -41,6 +40,7 @@ pg_size:
            (SELECT sum(pg_database_size(oid)) FROM pg_database)           AS database;
 
   ttl: 100
+  timeout: 1
   tags: [cluster]
   min_version: 100000
 

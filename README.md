@@ -2,37 +2,25 @@
 
 [Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics. **Gives you complete insight on your favourate elephant!**
 
-Latest binaries can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. [Built-in support](pg_exporter.yaml) for PostgreSQL 10+ & Pgbouncer 1.9+. You may add lower version support by providing your own configuration files.
+Latest binaries can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. [Support](pg_exporter.yaml) for PostgreSQL 10+ & Pgbouncer 1.9+ is provided ([`conf`](conf/)).  Lower version support could be add in the future, or you can provide your own conf to achieve it.
 
-Current version is v0.1.0, could be used in production with caution.
+Latest version is v0.1.1. Here are how self monitoring dashboards looks like:
 
-![](doc/pg-exporter-overview.png)
+![](doc/pg-exporter.png)
 
 
 
 ## Features
 
-* Support both Postgres & Pgbouncer (auto-switch when target database name is pgbouncer)
-
-* Fine-grained execution control (cluster/database level, primary/standby only, tags, etc...)
-
-* Flexible: completely customizable queries & metrics
-
+* Support Postgres & Pgbouncer (pgbouncer mode is enabled when target dbname is `pgbouncer`)
+* Fine-grained execution control (Tags Filter, Facts Filter, Version Filter, Timeout, Cache, etc...)
+* Flexible: Almost all metrics are defined in customizable config files with SQL query. 
+* Dynamic Planning: User could provide multiple branches of a metric queries. Queries matches server version & fact & tag will be actually installed.
 * Configurable caching policy & query timeout
-
-* Including many internal metrics, built-in self-monitoring
-
-* Dynamic query planning, brings more fine-grained contronl on execution policy
-
+* Rich metrics about `pg_exporter` itself.
 * Auto discovery multi database in the same cluster (TBD) 
-
 * Tested in real world production environment (200+ Nodes)
-
-* Battery included support for PostgreSQL 10+ and Pgbouncer 1.9+  metrics
-
 * Metrics overhelming!  Gives you complete insight on your favourate elephant!
-
-  
 
 
 
@@ -50,6 +38,8 @@ pg_exporter
 ```
 
 `pg_exporter` only built-in with 3 metrics: `pg_up`,`pg_version` , and  `pg_in_recovery`. **All other metrics are defined in configuration files** . You cound use pre-defined configuration file: [`pg_exporter.yaml`](pg_exporter.yaml) or use separated metric query in [conf](https://github.com/Vonng/pg_exporter/tree/master/conf)  dir.
+
+## Run
 
 Parameter could be given via command line arguments or environment variables. 
 
@@ -92,8 +82,6 @@ Flags:
 * `--dry-run` will print configuration files
 * `--explain` will actually connect to target server and planning queries for it. Then explain which queries are installed.
 
-
-
 ## Build
 
 ```
@@ -112,47 +100,17 @@ To build a docker image, using:
 docker build -t pg_exporter .
 ```
 
-Or just [download](https://github.com/Vonng/pg_exporter/releases) latest prebuilt binaries on [release](https://github.com/Vonng/pg_exporter/releases) page
-
-
-
-## Run
-
-```bash
-usage: pg_exporter [<flags>]
-
-Flags:
-  --help                        Show context-sensitive help (also try --help-long and --help-man).
-  --url="postgresql:///?sslmode=disable"
-                                postgres target url
-  --config="pg_exporter.yaml"   path to config dir or file
-  --label=""                    constant lables: separated list label=value pair
-  --tag=""                      tags, separated list of server tag
-  --disable-cache               force not using cache
-  --auto-discovery              automatically scrape all database for given server
-  --exclude-database="postgres,template0,template1"
-                                excluded databases when enabling auto-discovery
-  --namespace=""                prefix of built-in metrics, (pg|pgbouncer) by default
-  --fail-fast                   fail fast instead of waiting during start-up
-  --web.listen-address=":9630"  prometheus web server listen address
-  --web.telemetry-path="/metrics"
-                                URL path under which to expose metrics.
-  --dry-run                     dry run and print raw configs
-  --explain                     explain server planned queries
-  --version                     Show application version.
-  --log.level="info"            Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]
-  --log.format="logger:stderr"  Set the log target and format. Example: "logger:syslog?appname=bob&local=7" or "logger:stdout?json=true"
-```
+Or [download](https://github.com/Vonng/pg_exporter/releases) latest prebuilt binaries on [release](https://github.com/Vonng/pg_exporter/releases) page
 
 
 
 ## Config
 
-Config is the core part of pg_exporter. Actually this project have more lines of YAML than go. You could find:
+Configs are core part of `pg_exporter`. Actually this project contains more lines of YAML than go.
 
-* A monolith battery-include configuration file: [pg_exporter.yaml](pg_exporter.yaml)
+* A monolith battery-include configuration file: [`pg_exporter.yaml`](pg_exporter.yaml)
 * Separated metrics definition in [`conf`](conf/)
-* Example of how to write a config files:  [100-doc.txt](conf/100-doc.txt)
+* Example of how to write a config files:  [`doc.txt`](conf/100-doc.txt)
 
 ### built-in configs
 
@@ -163,7 +121,6 @@ Dashboard for monitoring pg_exporter itself: [`pg-exporter.json`](monitor/pg-exp
 Current `pg_exporter` is ship with 32 built-in metrics queries. 
 
 
-* [doc](conf/100-doc.txt)
 * [pg](conf/101-pg.yaml)
 * [pg_meta](conf/102-pg_meta.yaml)
 * [pg_bgwriter](conf/103-pg_bgwriter.yaml)
@@ -196,15 +153,12 @@ Current `pg_exporter` is ship with 32 built-in metrics queries.
 * [pgbouncer_stat](conf/130-pgbouncer_stat.yaml)
 * [pgbouncer_database](conf/131-pgbouncer_database.yaml)
 * [pgbouncer_pool](conf/132-pgbouncer_pool.yaml)
-pg_exporter will generate approximately 200~300 metrics for completely new database cluster. For a realworld database with 10 ~ 100 tables, it may generate serveral 1k ~ 10k metrics. You may have to modify or disable some  database level metrics query on database with 1k or more tables.
+
+`pg_exporter` will generate approximately 200~300 metrics for completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate serveral 1k ~ 10k metrics. You may need modifying or disable some  database-level metrics on database with serveral thousands or more tables in order to complete scrape in time.
 
 Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir. and here is a [sample](conf/100-doc.txt) config.
 
 ```yaml
-#-------------------------------------------------------------#
-# Metric Query Example
-#-------------------------------------------------------------#
-
 #  pg_primary_only:       <---- Branch name, distinguish different branch of a metric query
 #    name: pg             <---- actual Query name, used as metric prefix, will set to branch if not provide
 #    desc: PostgreSQL basic information (on primary)                    <---- query description
@@ -231,7 +185,9 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
 #                                        * 'primary' marks this query can only run on a master instance (will not execute if pg_is_in_recovery())
 #                                        * 'standby' marks this query can only run on a recoverying instance (will execute if pg_is_in_recovery())
+#                                        * some special tag prefix will have special effect:
 #                                        * 'dbname:<dbname>' means this query will only execute on database with name '<dbname>'
+#                                        * 'username:<user>' means this query will only execute when connect with user '<user>'
 #                                        * 'extension:<extname>' means this query will only execute when extension '<extname>' is installed
 #                                        * 'schema:<nspname>' means this query will only execute when schema '<nspname>' exist
 #                                        * 'not:<negtag>' means this query will only execute when exporter is launch without tag '<negtag>'
@@ -277,21 +233,17 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 
 
 
-## Alert
-
-TBD
-
-
-
 ## Visualize
 
-You can build fancy dashboard along with prometheus and grafana:
+Users could visualize these metrics via fancy grafana dashboards.
 
 ![](doc/pg-dashboards.png)
 
 ![](doc/pg-instance.png)
 
 ![](doc/pg-cluster.png)
+
+![](pg-exporter-overview.png)
 
 
 

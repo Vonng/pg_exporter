@@ -11,4 +11,4 @@ pg_exporter_test.go
 test/
 upload.sh
 
-conf/099-pg_shard.yaml
+conf/adhoc/

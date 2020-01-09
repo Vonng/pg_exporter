@@ -33,7 +33,7 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.1.0"
+var Version = "0.1.1"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
@@ -353,15 +353,17 @@ type QueryInstance struct {
 	Server *Server // It's a query, but holds a server
 
 	// runtime information
-	lock        sync.RWMutex                // access lock
+	lock        sync.RWMutex                // scrape lock
 	result      []prometheus.Metric         // cached metrics
 	descriptors map[string]*prometheus.Desc // maps column index to descriptor, build on init
 	cacheHit    bool                        // indicate last scrape was served from cache or real execution
 	err         error
 
-	lastScrape  time.Time // server's scrape start time
-	scrapeBegin time.Time // real execution begin
-	scrapeDone  time.Time // execution complete time
+	// stats
+	lastScrape     time.Time     // SERVER's scrape start time (for cache window align)
+	scrapeBegin    time.Time     // execution begin time
+	scrapeDone     time.Time     // execution complete time
+	scrapeDuration time.Duration // last real execution duration
 }
 
 // NewQueryInstance will generate query instance from query, and optional const labels
@@ -386,75 +388,73 @@ func (q *QueryInstance) Describe(ch chan<- *prometheus.Desc) {
 func (q *QueryInstance) Collect(ch chan<- prometheus.Metric) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+	q.scrapeBegin = time.Now()
 	if q.cacheExpired() || q.Server.DisableCache {
 		q.execute()
 		q.cacheHit = false
-	} else {
+		q.scrapeDone = time.Now()
+		q.scrapeDuration = q.scrapeDone.Sub(q.scrapeBegin)
+		q.lastScrape = q.Server.scrapeBegin
+	} else { // serve from cache
 		q.cacheHit = true
+		q.scrapeDone = time.Now()
 	}
-	// if execution failed, the cache is already reset
-	q.sendMetrics(ch)
+	q.sendMetrics(ch) // the cache is already reset to zero even execute failed
 }
 
 // ResultSize report last scrapped metric count
 func (q *QueryInstance) ResultSize() int {
-	q.lock.RLock()
-	q.lock.RUnlock()
 	return len(q.result)
 }
 
 // Error wraps query error
 func (q *QueryInstance) Error() error {
-	q.lock.RLock()
-	q.lock.RUnlock()
 	return q.err
 }
 
 // Duration returns last scrape duration in float64 seconds
 func (q *QueryInstance) Duration() float64 {
-	q.lock.RLock()
-	q.lock.RUnlock()
 	return q.scrapeDone.Sub(q.scrapeBegin).Seconds()
 }
 
 // CacheHit report whether last scrape was serve from cache
 func (q *QueryInstance) CacheHit() bool {
-	q.lock.RLock()
-	q.lock.RUnlock()
 	return q.cacheHit
 }
 
 // execute will run this query to registered server, result and err are registered
 func (q *QueryInstance) execute() {
 	q.result = q.result[:0] // reset cache
-	q.scrapeBegin = time.Now()
-
-	// if timeout is provided, use context
 	var rows *sql.Rows
 	var err error
-	if q.Timeout != 0 {
-		ctx, _ := context.WithTimeout(context.Background(), q.TimeoutDuration())
+
+	// execution
+	if q.Timeout != 0 { // if timeout is provided, use context
+		log.Debugf("query [%s] executing begin with time limit: %v", q.Name, q.TimeoutDuration())
+		ctx, cancel := context.WithTimeout(context.Background(), q.TimeoutDuration())
+		defer cancel()
 		rows, err = q.Server.QueryContext(ctx, q.SQL)
 	} else {
+		log.Debugf("query [%s] executing begin", q.Name)
 		rows, err = q.Server.Query(q.SQL)
 	}
 
+	// error handling: if query failed because of timeout or error, record and return
 	if err != nil {
-		q.scrapeDone = time.Now()
-		// timeout or query error
-		if strings.Contains(err.Error(), "canceling statement due to user request") {
-			q.err = fmt.Errorf("query %s timeout, duration: %v, limit: %v", q.Name, q.Duration(), q.TimeoutDuration())
+		if err == context.DeadlineExceeded { // timeout
+			q.err = fmt.Errorf("query [%s] timeout because duration %v exceed limit %v",
+				q.Name, time.Now().Sub(q.scrapeBegin), q.TimeoutDuration())
 		} else {
-			q.err = fmt.Errorf("query %s failed: %w", q.Name, err)
+			q.err = fmt.Errorf("query [%s] failed: %w", q.Name, err)
 		}
 		return
 	}
 	defer rows.Close() // nolint: errcheck
 
-	// get result metadata for dynamic name lookup, prepare line cache
+	// parsing meta:  fetch column metadata for dynamic name lookup
 	columnNames, err := rows.Columns()
 	if err != nil {
-		q.err = fmt.Errorf("query %s fail retriving rows meta: %w", q.Name, err)
+		q.err = fmt.Errorf("query [%s] fail retriving rows meta: %w", q.Name, err)
 		q.scrapeDone = time.Now()
 		return
 	}
@@ -468,12 +468,11 @@ func (q *QueryInstance) execute() {
 	for i := range colData {
 		colArgs[i] = &colData[i]
 	}
-	// warn if column count not match
-	if len(columnNames) != len(q.Columns) {
-		log.Warnf("query %s column count not match, result %d ≠ config %d", q.Name, len(columnNames), len(q.Columns))
+	if len(columnNames) != len(q.Columns) { // warn if column count not match
+		log.Warnf("query [%s] column count not match, result %d ≠ config %d", q.Name, len(columnNames), len(q.Columns))
 	}
 
-	// scan loop, for each row, extract labels first, then for each metric column, generate a new metric
+	// scan loop: for each row, extract labels from all label columns, then generate a new metric for each metric column
 	for rows.Next() {
 		err = rows.Scan(colArgs...)
 		if err != nil {
@@ -509,10 +508,8 @@ func (q *QueryInstance) execute() {
 		}
 	}
 	q.err = nil
-	q.scrapeDone = time.Now()
-	q.lastScrape = q.Server.scrapeBegin // align cache by using server's last scrape time
-	log.Debugf("query %s cache expired, execute duration %v, %d metrics scrapped",
-		q.Name, q.scrapeDone.Sub(q.scrapeBegin), len(q.result))
+	log.Debugf("query [%s] executing complete in %v, metrics count: %d",
+		q.Name, time.Now().Sub(q.scrapeBegin), len(q.result))
 	return
 }
 
@@ -594,6 +591,7 @@ type Server struct {
 	UP         bool            // indicate whether target server is connectable
 	Version    int             // pg server version num
 	Database   string          // database name of current server connection
+	Username   string          // current username
 	Databases  map[string]bool // all available database in target cluster
 	dblistLock sync.Mutex      // lock when access Databases map
 	Namespaces map[string]bool // all available schema in target cluster
@@ -677,27 +675,29 @@ func PostgresPrecheck(s *Server) (err error) {
 
 	// retrieve version info
 	var version int
-	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
 	if err = s.DB.QueryRowContext(ctx, `SHOW server_version_num;`).Scan(&version); err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
 	// fact change triggers a new planning
 	if s.Version != version {
-		log.Infof("server %s version changed: from [%d] to [%d]", s.Name(), s.Version, version)
+		log.Infof("server [%s] version changed: from [%d] to [%d]", s.Name(), s.Version, version)
 		s.Planned = false
 	}
 	s.Version = version
 
+	// get important metadata
 	var recovery bool
-	var datname string
+	var datname, username string
 	var databases, namespaces, extensions []string
-
-	precheckSQL := `SELECT current_catalog, pg_is_in_recovery(),       
+	precheckSQL := `SELECT current_catalog, current_user, pg_is_in_recovery(),       
 	(SELECT array_agg(datname) AS databases FROM pg_database),
 	(SELECT array_agg(nspname) AS namespaces FROM pg_namespace),
 	(SELECT array_agg(extname) AS extensions FROM pg_extension);`
-	ctx, _ = context.WithTimeout(context.Background(), time.Second)
-	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions));
+	ctx, cancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel2()
+	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions));
 		err != nil {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
@@ -706,6 +706,7 @@ func PostgresPrecheck(s *Server) (err error) {
 		s.Planned = false
 	}
 	s.Recovery = recovery
+	s.Username = username
 	if s.Database != datname {
 		log.Infof("server [%s] datname changed: from [%s] to [%s]", s.Name(), s.Database, datname)
 		s.Planned = false
@@ -732,20 +733,20 @@ func PostgresPrecheck(s *Server) (err error) {
 	for _, dbname := range databases {
 		newDBList[dbname] = true
 		if _, found := s.Databases[dbname]; !found {
-			log.Debugf("server %s found new database %s", s.Name(), dbname)
+			log.Debugf("server [%s] found new database %s", s.Name(), dbname)
 			changes[dbname] = true
 		}
 	}
 	// if old db is not found in new db list, add a change entry [OldDBName:false]
 	for dbname, _ := range s.Databases {
 		if _, found := newDBList[dbname]; !found {
-			log.Debugf("server %s found vanished database %s", s.Name(), dbname)
+			log.Debugf("server [%s] found vanished database %s", s.Name(), dbname)
 			changes[dbname] = false
 		}
 	}
 	// invoke hook if there are changes on database list
 	if len(changes) > 0 && s.onDatabaseChange != nil {
-		log.Debugf("auto discovery database list change : %v", changes)
+		log.Debugf("server [%s] auto discovery database list change : %v", changes)
 		s.onDatabaseChange(changes) // if doing something long, launch another goroutine
 	}
 	s.Databases = newDBList
@@ -785,7 +786,7 @@ func (s *Server) Plan(queries ...*Query) {
 	// reset statistics after planning
 	s.ResetStats()
 	s.Planned = true
-	log.Infof("server %s planned with %d queries, %d installed, %d discarded, installed: %s , discarded: %s",
+	log.Infof("server [%s] planned with %d queries, %d installed, %d discarded, installed: %s , discarded: %s",
 		s.Name(), len(s.queries), len(installedNames), len(discardedNames), strings.Join(installedNames, ", "), strings.Join(discardedNames, ", "))
 }
 
@@ -833,7 +834,7 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 		// check extension is installed on target database
 		if strings.HasPrefix(tag, "extension:") {
 			if _, found := s.Extensions[strings.TrimPrefix(tag, "extension:")]; !found {
-				return false, fmt.Sprintf("server does not have %s", tag)
+				return false, fmt.Sprintf("server [%s] does not have extension %s", s.Name(), tag)
 			}
 			continue
 		}
@@ -841,15 +842,23 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 		// check schema exist on target database
 		if strings.HasPrefix(tag, "schema:") {
 			if _, found := s.Namespaces[strings.TrimPrefix(tag, "schema:")]; !found {
-				return false, fmt.Sprintf("server does not have %s", tag)
+				return false, fmt.Sprintf("server [%s] does not have schema %s", s.Name(), tag)
 			}
 			continue
 		}
 
-		// check schema exist on target database
+		// check if dbname prefix tag match server.Database
 		if strings.HasPrefix(tag, "dbname:") {
 			if s.Database != strings.TrimPrefix(tag, "dbname:") {
-				return false, fmt.Sprintf("server %s does not match with query tag %s", s.Database, tag)
+				return false, fmt.Sprintf("server [%s] dbname does %s not match with query tag %s", s.Name(), s.Database, tag)
+			}
+			continue
+		}
+
+		// check if username prefix tag match server.Username
+		if strings.HasPrefix(tag, "username:") {
+			if s.Username != strings.TrimPrefix(tag, "username:") {
+				return false, fmt.Sprintf("server [%s] username does not match %s", s.Name(), s.Username, tag)
 			}
 			continue
 		}
@@ -857,7 +866,7 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 		// check server does not have given tag
 		if strings.HasPrefix(tag, "not:") {
 			if negTag := strings.TrimPrefix(tag, "not:"); s.HasTag(negTag) {
-				return false, fmt.Sprintf("server %s has tag %s that query %s forbid", s.Name(), negTag, query.Name)
+				return false, fmt.Sprintf("server [%s] has tag %s that query %s forbid", s.Name(), negTag, query.Name)
 			}
 			continue
 		}
@@ -884,7 +893,7 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 		default:
 			// if this tag is nether a pre-defined tag nor a prefixed pattern tag, check whether server have that tag
 			if !s.HasTag(tag) {
-				return false, fmt.Sprintf("server %s does not have tag %s that query %s require", s.Name(), tag, query.Name)
+				return false, fmt.Sprintf("server [%s] does not have tag %s that query %s require", s.Name(), tag, query.Name)
 			}
 		}
 	}
@@ -901,23 +910,6 @@ func (s *Server) Explain() (res []string) {
 
 // Describe implement prometheus.Collector
 func (s *Server) Describe(ch chan<- *prometheus.Desc) {
-	// we just run Collect when Describe is invoked, therefore runtime planning is done before describe
-	metricCh := make(chan prometheus.Metric)
-	doneCh := make(chan struct{})
-	go func() {
-		cnt := 0
-		for range metricCh {
-			//ch <- m.Desc()
-			cnt++
-		}
-		log.Infof("describe server %s: %d metrics collected", s.Name(), cnt)
-		close(doneCh)
-	}()
-	s.Collect(metricCh)
-	close(metricCh)
-	<-doneCh
-
-	// then we just sending are registed descriptor
 	for _, instance := range s.instances {
 		instance.Describe(ch)
 	}
@@ -945,15 +937,15 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 		s.queryCacheTTL[query.Name] = query.cacheTTL()
 		s.queryScrapeTotalCount[query.Name]++
 		s.queryScrapeMetricCount[query.Name] = float64(query.ResultSize())
-		s.queryScrapeDuration[query.Name] = query.Duration()
+		s.queryScrapeDuration[query.Name] = query.scrapeDuration.Seconds() // use the real exec as duration
 		if query.Error() != nil {
 			s.queryScrapeErrorCount[query.Name]++
 			if query.Fatal { // treat as fatal error
-				log.Errorf("query %s error: %s", query.Name, query.Error())
+				log.Errorf("query [%s] error: %s", query.Name, query.Error())
 				s.err = query.Error()
 				goto final
 			} else { // skip this error according to config
-				log.Warnf("query %s error skipped: %s", query.Name, query.Error())
+				log.Warnf("query [%s] error skipped: %s", query.Name, query.Error())
 				continue
 			}
 		} else {

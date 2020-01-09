@@ -234,7 +234,7 @@ pg_table_bloat_shard:
 
 
   ttl: 200
-  timeout: 3
+  timeout: 5
   tags: [shard]
   min_version: 090400
 

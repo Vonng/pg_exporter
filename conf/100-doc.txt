@@ -37,7 +37,9 @@
 #                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
 #                                        * 'primary' marks this query can only run on a master instance (will not execute if pg_is_in_recovery())
 #                                        * 'standby' marks this query can only run on a recoverying instance (will execute if pg_is_in_recovery())
+#                                        * some special tag prefix will have special effect:
 #                                        * 'dbname:<dbname>' means this query will only execute on database with name '<dbname>'
+#                                        * 'username:<user>' means this query will only execute when connect with user '<user>'
 #                                        * 'extension:<extname>' means this query will only execute when extension '<extname>' is installed
 #                                        * 'schema:<nspname>' means this query will only execute when schema '<nspname>' exist
 #                                        * 'not:<negtag>' means this query will only execute when exporter is launch without tag '<negtag>'

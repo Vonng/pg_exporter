@@ -128,6 +128,7 @@ pg_func_shard:
     WHERE schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR schemaname = 'user_search';
 
   ttl: 10
+  timeout: 1
   tags: [shard]
   min_version: 090400
 

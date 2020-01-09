@@ -430,7 +430,7 @@ pg_table_shard:
     WHERE (psut.schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR psut.schemaname = 'user_search');
 
   ttl: 10
-  timeout: 1
+  timeout: 3
   tags: [shard]
   min_version: 090400
 

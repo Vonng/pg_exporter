@@ -5,7 +5,7 @@
 #  ┃ Tags     ┆ [cluster]
 #  ┃ TTL      ┆ 10
 #  ┃ Priority ┆ 103
-#  ┃ Timeout  ┆ 100ms
+#  ┃ Timeout  ┆ 1s
 #  ┃ Fatal    ┆ false
 #  ┃ Version  ┆ 90400 ~ higher
 #  ┃ Source   ┆ 103-pg_bgwriter.yaml
@@ -66,6 +66,7 @@ pg_bgwriter:
     FROM pg_stat_bgwriter;
 
   ttl: 10
+  timeout: 1
   tags: [cluster]
   min_version: 090400
 

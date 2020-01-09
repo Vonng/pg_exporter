@@ -378,7 +378,7 @@ pg_meta:
 #  ┃ Tags     ┆ [cluster]
 #  ┃ TTL      ┆ 10
 #  ┃ Priority ┆ 103
-#  ┃ Timeout  ┆ 100ms
+#  ┃ Timeout  ┆ 1s
 #  ┃ Fatal    ┆ false
 #  ┃ Version  ┆ 90400 ~ higher
 #  ┃ Source   ┆ 103-pg_bgwriter.yaml
@@ -439,6 +439,7 @@ pg_bgwriter:
     FROM pg_stat_bgwriter;
 
   ttl: 10
+  timeout: 1
   tags: [cluster]
   min_version: 090400
 
@@ -2255,10 +2256,10 @@ pg_clustering:
 #  ┃        queryid AS query,
 #  ┃        sum(calls)               AS calls,
 #  ┃        sum(total_time)          AS total_time,
-#  ┃        sum(min_time)            AS min_time,
-#  ┃        sum(max_time)            AS max_time,
-#  ┃        sum(mean_time)           AS mean_time,
-#  ┃        sum(stddev_time)         AS stddev_time,
+#  ┃        avg(min_time)            AS min_time,
+#  ┃        avg(max_time)            AS max_time,
+#  ┃        avg(mean_time)           AS mean_time,
+#  ┃        avg(stddev_time)         AS stddev_time,
 #  ┃        sum(rows)                AS rows,
 #  ┃        sum(shared_blks_hit)     AS shared_blks_hit,
 #  ┃        sum(shared_blks_read)    AS shared_blks_read,
@@ -2284,10 +2285,10 @@ pg_query:
            queryid AS query,
            sum(calls)               AS calls,
            sum(total_time)          AS total_time,
-           sum(min_time)            AS min_time,
-           sum(max_time)            AS max_time,
-           sum(mean_time)           AS mean_time,
-           sum(stddev_time)         AS stddev_time,
+           avg(min_time)            AS min_time,
+           avg(max_time)            AS max_time,
+           avg(mean_time)           AS mean_time,
+           avg(stddev_time)         AS stddev_time,
            sum(rows)                AS rows,
            sum(shared_blks_hit)     AS shared_blks_hit,
            sum(shared_blks_read)    AS shared_blks_read,
@@ -2375,7 +2376,6 @@ pg_query:
         usage: COUNTER
         description: time spent writing blocks, in µs (if track_io_timing is enabled)
 
-
 #-------------------------------------------------------------#
 # pg_size
 # total sizes
@@ -2390,7 +2390,7 @@ pg_query:
 #  ┃ Tags     ┆ [cluster]
 #  ┃ TTL      ┆ 100
 #  ┃ Priority ┆ 118
-#  ┃ Timeout  ┆ 100ms
+#  ┃ Timeout  ┆ 1s
 #  ┃ Fatal    ┆ false
 #  ┃ Version  ┆ 100000 ~ higher
 #  ┃ Source   ┆ 119-pg_size.yaml
@@ -2418,6 +2418,7 @@ pg_size:
            (SELECT sum(pg_database_size(oid)) FROM pg_database)           AS database;
 
   ttl: 100
+  timeout: 1
   tags: [cluster]
   min_version: 100000
 
@@ -3471,7 +3472,7 @@ pg_table_shard:
     WHERE (psut.schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR psut.schemaname = 'user_search');
 
   ttl: 10
-  timeout: 1
+  timeout: 3
   tags: [shard]
   min_version: 090400
 
@@ -4050,7 +4051,7 @@ pg_table_bloat_shard:
 
 
   ttl: 200
-  timeout: 3
+  timeout: 5
   tags: [shard]
   min_version: 090400
 
@@ -4559,6 +4560,7 @@ pg_func_shard:
     WHERE schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR schemaname = 'user_search';
 
   ttl: 10
+  timeout: 1
   tags: [shard]
   min_version: 090400
 
