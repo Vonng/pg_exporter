@@ -127,9 +127,9 @@ pg_func_shard:
     FROM pg_stat_user_functions
     WHERE schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR schemaname = 'user_search';
 
-  ttl: 10
+  ttl: 100
   timeout: 1
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:

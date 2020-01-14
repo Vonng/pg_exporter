@@ -68,7 +68,7 @@ pg_class:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -159,7 +159,7 @@ pg_class_shard:
 
   ttl: 100
   timeout: 1
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:

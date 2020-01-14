@@ -49,7 +49,7 @@ pg_index_bloat:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -183,7 +183,7 @@ pg_index_bloat_shard:
 
   ttl: 200
   timeout: 3
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:

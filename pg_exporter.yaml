@@ -1,87 +1,4 @@
 ###############################################################
-# PostgreSQL/Pgbouncer Metric Queries
-# Author:   Vonng (fengruohang@outlook.com)
-# Desc  :   pg_exporter metrics config files
-# Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+
-# Ctime :   2019-12-09
-# Mtime :   2020-01-08
-###############################################################
-
-#-------------------------------------------------------------#
-# Metric Query Example
-#-------------------------------------------------------------#
-
-#  pg_primary_only:       <---- Branch name, distinguish different branch of a metric query
-#    name: pg             <---- actual Query name, used as metric prefix, will set to branch if not provide
-#    desc: PostgreSQL basic information (on primary)                    <---- query description
-#    query: |                                                           <---- query string
-#
-#      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#             pg_current_wal_lsn() - '0/0'                           AS lsn,
-#             pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
-#             pg_current_wal_lsn() - '0/0'                           AS write_lsn,
-#             pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-#             extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
-#             extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
-#             pg_is_in_backup()                                      AS is_in_backup,
-#             extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-#
-#                                <---- following field are [OPTIONAL], control execution policy
-#    ttl: 10                     <---- cache ttl: how long will exporter cache it's result. set to 0 to disable cache
-#    timeout: 0.1                <---- timeout: in seconds, query execeed this will be canceled. default is 0.1, set to -1 to disable timeout
-#    min_version: 100000         <---- minimal supported version in server version number format, e.g  120001 = 12.1, 090601 = 9.6.1
-#    max_version: 130000         <---- maximal supported version in server version number format, boundary not include
-#    fatal: false                <---- if query marked fatal fail, this scrape will abort immidiately
-#
-#    tags: [cluster, primary]    <---- tags consist of one or more string, which could be:
-#                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
-#                                        * 'primary' marks this query can only run on a master instance (will not execute if pg_is_in_recovery())
-#                                        * 'standby' marks this query can only run on a recoverying instance (will execute if pg_is_in_recovery())
-#                                        * 'dbname:<dbname>' means this query will only execute on database with name '<dbname>'
-#                                        * 'extension:<extname>' means this query will only execute when extension '<extname>' is installed
-#                                        * 'schema:<nspname>' means this query will only execute when schema '<nspname>' exist
-#                                        * 'not:<negtag>' means this query will only execute when exporter is launch without tag '<negtag>'
-#                                        * '<tag>' means this query will only execute when exporter is launch with tag '<tag>'
-#                                           (tag could not be cluster,primary,standby or have special prefix)
-#
-#
-#    metrics:                    <---- this is a list of returned columns, each column must have a name, usage, could have an alias and description
-#      - timestamp:              <---- this is column name, should be exactly same as returned column name
-#          rename: ts            <---- rename is optional, will use this alias instead of column name
-#          usage: GAUGE          <---- usage could be
-#                                        * DISCARD: completely ignore this field
-#                                        * LABEL: use columnName:columnValue as a label in result
-#                                        * GAUGE: use this column as a metric, which is '<query.name>_<column.name>{<labels>} column.value'
-#                                        * COUNTER: same as GAUGE, except it is a counter.
-#
-#          description: database current timestamp
-#      - lsn:
-#          usage: COUNTER
-#          description: log sequence number, current write location (on primary)
-#      - insert_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal inserting
-#      - write_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal writing
-#      - flush_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal syncing
-#      - uptime:
-#          usage: GAUGE
-#          description: seconds since postmaster start
-#      - conf_reload_time:
-#          usage: GAUGE
-#          description: seconds since last configuration reload
-#      - is_in_backup:
-#          usage: GAUGE
-#          description: 1 if backup is in progress
-#      - backup_time:
-#          usage: GAUGE
-#          description: seconds since current backup start. null if don't have one
-
-
-###############################################################
 # Cluster Level Metrics
 #   001 ~ 021 are cluster level metrics, which means they are
 #   identical and visible to all db in that cluster. Cluster
@@ -2197,124 +2114,37 @@ pg_clustering:
         usage: GAUGE
         description: the actual progress
 
-
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg_query
-#  ┃ PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [cluster extension:pg_stat_statements schema:monitor]
-#  ┃ TTL      ┆ 100
-#  ┃ Priority ┆ 117
-#  ┃ Timeout  ┆ 3s
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 90400 ~ higher
-#  ┃ Source   ┆ 118-pg_query.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ LABEL    datname              database name
-#  ┃ LABEL    query                query identifier, bigint
-#  ┃ COUNTER  calls                times been executed
-#  ┃ COUNTER  total_time           Total time spent in the statement, in µs
-#  ┃ GAUGE    min_time             Minimum time spent in the statement, in µs
-#  ┃ GAUGE    max_time             Maximum time spent in the statement, in µs
-#  ┃ GAUGE    mean_time            Mean time spent in the statement, in µs
-#  ┃ GAUGE    stddev_time          Population standard deviation of time spent in the statement, in µs
-#  ┃ COUNTER  rows                 rows retrieved or affected by the statement
-#  ┃ COUNTER  shared_blks_hit      shared block cache hits by the statement
-#  ┃ COUNTER  shared_blks_read     shared blocks read by the statement
-#  ┃ COUNTER  shared_blks_dirtied  shared blocks dirtied by the statement
-#  ┃ COUNTER  shared_blks_written  shared blocks written by the statement
-#  ┃ COUNTER  local_blks_hit       local block cache hits by the statement
-#  ┃ COUNTER  local_blks_read      local blocks read by the statement
-#  ┃ COUNTER  local_blks_dirtied   local blocks dirtied by the statement
-#  ┃ COUNTER  local_blks_written   local blocks written by the statement
-#  ┃ COUNTER  temp_blks_read       temp blocks read by the statement
-#  ┃ COUNTER  temp_blks_written    temp blocks written by the statement
-#  ┃ COUNTER  blk_read_time        time spent reading blocks, in µs (if track_io_timing is enabled)
-#  ┃ COUNTER  blk_write_time       time spent writing blocks, in µs (if track_io_timing is enabled)
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_query_calls{datname,query}
-#  ┃ pg_query_total_time{datname,query}
-#  ┃ pg_query_min_time{datname,query}
-#  ┃ pg_query_max_time{datname,query}
-#  ┃ pg_query_mean_time{datname,query}
-#  ┃ pg_query_stddev_time{datname,query}
-#  ┃ pg_query_rows{datname,query}
-#  ┃ pg_query_shared_blks_hit{datname,query}
-#  ┃ pg_query_shared_blks_read{datname,query}
-#  ┃ pg_query_shared_blks_dirtied{datname,query}
-#  ┃ pg_query_shared_blks_written{datname,query}
-#  ┃ pg_query_local_blks_hit{datname,query}
-#  ┃ pg_query_local_blks_read{datname,query}
-#  ┃ pg_query_local_blks_dirtied{datname,query}
-#  ┃ pg_query_local_blks_written{datname,query}
-#  ┃ pg_query_temp_blks_read{datname,query}
-#  ┃ pg_query_temp_blks_written{datname,query}
-#  ┃ pg_query_blk_read_time{datname,query}
-#  ┃ pg_query_blk_write_time{datname,query}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT datname,
-#  ┃        queryid AS query,
-#  ┃        sum(calls)               AS calls,
-#  ┃        sum(total_time)          AS total_time,
-#  ┃        avg(min_time)            AS min_time,
-#  ┃        avg(max_time)            AS max_time,
-#  ┃        avg(mean_time)           AS mean_time,
-#  ┃        avg(stddev_time)         AS stddev_time,
-#  ┃        sum(rows)                AS rows,
-#  ┃        sum(shared_blks_hit)     AS shared_blks_hit,
-#  ┃        sum(shared_blks_read)    AS shared_blks_read,
-#  ┃        sum(shared_blks_dirtied) AS shared_blks_dirtied,
-#  ┃        sum(shared_blks_written) AS shared_blks_written,
-#  ┃        sum(local_blks_hit)      AS local_blks_hit,
-#  ┃        sum(local_blks_read)     AS local_blks_read,
-#  ┃        sum(local_blks_dirtied)  AS local_blks_dirtied,
-#  ┃        sum(local_blks_written)  AS local_blks_written,
-#  ┃        sum(temp_blks_read)      AS temp_blks_read,
-#  ┃        sum(temp_blks_written)   AS temp_blks_written,
-#  ┃        sum(blk_read_time)       AS blk_read_time,
-#  ┃        sum(blk_write_time)      AS blk_write_time
-#  ┃ FROM monitor.pg_stat_statements s, LATERAL (SELECT datname FROM pg_database db WHERE db.oid = s.dbid) d
-#  ┃ GROUP BY datname, queryid
-#  ┃ ORDER BY calls DESC, total_time DESC LIMIT 16;
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_query:
-  desc: PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor
+  name: pg_query
+  desc: PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor, normal version
   query: |
-    SELECT datname,
-           queryid AS query,
-           sum(calls)               AS calls,
-           sum(total_time)          AS total_time,
-           avg(min_time)            AS min_time,
-           avg(max_time)            AS max_time,
-           avg(mean_time)           AS mean_time,
-           avg(stddev_time)         AS stddev_time,
-           sum(rows)                AS rows,
-           sum(shared_blks_hit)     AS shared_blks_hit,
-           sum(shared_blks_read)    AS shared_blks_read,
-           sum(shared_blks_dirtied) AS shared_blks_dirtied,
-           sum(shared_blks_written) AS shared_blks_written,
-           sum(local_blks_hit)      AS local_blks_hit,
-           sum(local_blks_read)     AS local_blks_read,
-           sum(local_blks_dirtied)  AS local_blks_dirtied,
-           sum(local_blks_written)  AS local_blks_written,
-           sum(temp_blks_read)      AS temp_blks_read,
-           sum(temp_blks_written)   AS temp_blks_written,
-           sum(blk_read_time)       AS blk_read_time,
-           sum(blk_write_time)      AS blk_write_time
-    FROM monitor.pg_stat_statements s, LATERAL (SELECT datname FROM pg_database db WHERE db.oid = s.dbid) d
-    GROUP BY datname, queryid
-    ORDER BY calls DESC, total_time DESC LIMIT 16;
+    SELECT queryid                                      AS query,
+           sum(calls)                                   AS calls,
+           sum(total_time)                              AS total_time,
+           avg(min_time)                                AS min_time,
+           avg(max_time)                                AS max_time,
+           avg(mean_time)                               AS mean_time,
+           avg(stddev_time)                             AS stddev_time,
+           sum(rows)                                    AS rows,
+           sum(shared_blks_hit)                         AS shared_blks_hit,
+           sum(shared_blks_read)                        AS shared_blks_read,
+           sum(shared_blks_read) + sum(shared_blks_hit) AS shared_blks_access,
+           sum(shared_blks_dirtied)                     AS shared_blks_dirtied,
+           sum(shared_blks_written)                     AS shared_blks_written,
+           sum(blk_read_time)                           AS blk_read_time,
+           sum(blk_write_time)                          AS blk_write_time
+    FROM monitor.pg_stat_statements s
+    WHERE calls > 4096
+    GROUP BY queryid
+    ORDER BY total_time DESC
+    LIMIT 32;
 
   ttl: 100
-  timeout: 3
-  tags: [cluster, extension:pg_stat_statements , schema:monitor]
+  timeout: 2
+  tags: [cluster, extension:pg_stat_statements , schema:monitor, not:shard, not:olap]
   min_version: 090400
 
   metrics:
-    - datname:
-        usage: LABEL
-        description: database name
     - query:
         usage: LABEL
         description: query identifier, bigint
@@ -2345,30 +2175,95 @@ pg_query:
     - shared_blks_read:
         usage: COUNTER
         description: shared blocks read by the statement
+    - shared_blks_access:
+        usage: COUNTER
+        description: shared blocks accessed by the statement
     - shared_blks_dirtied:
         usage: COUNTER
         description: shared blocks dirtied by the statement
     - shared_blks_written:
         usage: COUNTER
         description: shared blocks written by the statement
-    - local_blks_hit:
+    - blk_read_time:
         usage: COUNTER
-        description: local block cache hits by the statement
-    - local_blks_read:
+        description: time spent reading blocks, in µs (if track_io_timing is enabled)
+    - blk_write_time:
         usage: COUNTER
-        description: local blocks read by the statement
-    - local_blks_dirtied:
+        description: time spent writing blocks, in µs (if track_io_timing is enabled)
+
+
+
+
+pg_query_shard:
+  name: pg_query
+  desc: PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor, shard version
+  query: |
+    SELECT queryid                                      AS query,
+           sum(calls)                                   AS calls,
+           sum(total_time)                              AS total_time,
+           avg(min_time)                                AS min_time,
+           avg(max_time)                                AS max_time,
+           avg(mean_time)                               AS mean_time,
+           avg(stddev_time)                             AS stddev_time,
+           sum(rows)                                    AS rows,
+           sum(shared_blks_hit)                         AS shared_blks_hit,
+           sum(shared_blks_read)                        AS shared_blks_read,
+           sum(shared_blks_read) + sum(shared_blks_hit) AS shared_blks_access,
+           sum(shared_blks_dirtied)                     AS shared_blks_dirtied,
+           sum(shared_blks_written)                     AS shared_blks_written,
+           sum(blk_read_time)                           AS blk_read_time,
+           sum(blk_write_time)                          AS blk_write_time
+    FROM monitor.pg_stat_statements s
+    WHERE calls > 64 AND query ~ (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1)
+    GROUP BY queryid
+    ORDER BY total_time DESC
+    LIMIT 32;
+
+  ttl: 200
+  timeout: 3
+  tags: [cluster, extension:pg_stat_statements , schema:monitor, shard, not:olap]
+  min_version: 090400
+
+  metrics:
+    - query:
+        usage: LABEL
+        description: query identifier, bigint
+    - calls:
         usage: COUNTER
-        description: local blocks dirtied by the statement
-    - local_blks_written:
+        description: times been executed
+    - total_time:
         usage: COUNTER
-        description: local blocks written by the statement
-    - temp_blks_read:
+        description: Total time spent in the statement, in µs
+    - min_time:
+        usage: GAUGE
+        description: Minimum time spent in the statement, in µs
+    - max_time:
+        usage: GAUGE
+        description: Maximum time spent in the statement, in µs
+    - mean_time:
+        usage: GAUGE
+        description: Mean time spent in the statement, in µs
+    - stddev_time:
+        usage: GAUGE
+        description: Population standard deviation of time spent in the statement, in µs
+    - rows:
         usage: COUNTER
-        description: temp blocks read by the statement
-    - temp_blks_written:
+        description: rows retrieved or affected by the statement
+    - shared_blks_hit:
         usage: COUNTER
-        description: temp blocks written by the statement
+        description: shared block cache hits by the statement
+    - shared_blks_read:
+        usage: COUNTER
+        description: shared blocks read by the statement
+    - shared_blks_access:
+        usage: COUNTER
+        description: shared blocks accessed by the statement
+    - shared_blks_dirtied:
+        usage: COUNTER
+        description: shared blocks dirtied by the statement
+    - shared_blks_written:
+        usage: COUNTER
+        description: shared blocks written by the statement
     - blk_read_time:
         usage: COUNTER
         description: time spent reading blocks, in µs (if track_io_timing is enabled)
@@ -2519,89 +2414,45 @@ pg_database:
 #-------------------------------------------------------------#
 
 
-
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg_db.pg_db_12
-#  ┃ PostgreSQL database statistics 12+
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [cluster]
-#  ┃ TTL      ┆ 10
-#  ┃ Priority ┆ 120
-#  ┃ Timeout  ┆ 1s
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 120000 ~ higher
-#  ┃ Source   ┆ 121-pg_db.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ DISCARD  datid                Name of the database
-#  ┃ LABEL    datname              Name of the database
-#  ┃ GAUGE    numbackends          backends currently connected to this database
-#  ┃ COUNTER  xact_commit          transactions in this database that have been committed
-#  ┃ COUNTER  xact_rollback        transactions in this database that have been rolled back
-#  ┃ COUNTER  blks_read            blocks read from disk in this database
-#  ┃ COUNTER  blks_hit             blocks found in pg buffer
-#  ┃ COUNTER  tup_returned         rows returned by queries in this database
-#  ┃ COUNTER  tup_fetched          rows fetched by queries in this database
-#  ┃ COUNTER  tup_inserted         rows inserted by queries in this database
-#  ┃ COUNTER  tup_updated          rows updated by queries in this database
-#  ┃ COUNTER  tup_deleted          rows deleted by queries in this database
-#  ┃ GAUGE    conflicts            Number of queries canceled due to conflicts with recovery in this database. (slave only)
-#  ┃ GAUGE    temp_files           Number of temporary files created by queries in this database
-#  ┃ GAUGE    temp_bytes           Temporary file byte count
-#  ┃ GAUGE    deadlocks            Number of deadlocks detected in this database
-#  ┃ GAUGE    checksum_failures    Number of data page checksum failures detected in this database, 12+ only
-#  ┃ GAUGE    checksum_last_failure Time at which the last data page checksum failure was detected, 12+ only
-#  ┃ COUNTER  blk_read_time        Time spent reading data file blocks by backends in this database, in milliseconds
-#  ┃ COUNTER  blk_write_time       Time spent writing data file blocks by backends in this database, in milliseconds
-#  ┃ COUNTER  stats_reset          Time at which these statistics were last reset
-#  ┃ COUNTER  confl_tablespace     Number of queries in this database that have been canceled due to dropped tablespaces
-#  ┃ COUNTER  confl_lock           Number of queries in this database that have been canceled due to lock timeouts
-#  ┃ COUNTER  confl_snapshot       Number of queries in this database that have been canceled due to old snapshots
-#  ┃ COUNTER  confl_bufferpin      Number of queries in this database that have been canceled due to pinned buffers
-#  ┃ COUNTER  confl_deadlock       Number of queries in this database that have been canceled due to deadlocks
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_db_numbackends{datname}
-#  ┃ pg_db_xact_commit{datname}
-#  ┃ pg_db_xact_rollback{datname}
-#  ┃ pg_db_blks_read{datname}
-#  ┃ pg_db_blks_hit{datname}
-#  ┃ pg_db_tup_returned{datname}
-#  ┃ pg_db_tup_fetched{datname}
-#  ┃ pg_db_tup_inserted{datname}
-#  ┃ pg_db_tup_updated{datname}
-#  ┃ pg_db_tup_deleted{datname}
-#  ┃ pg_db_conflicts{datname}
-#  ┃ pg_db_temp_files{datname}
-#  ┃ pg_db_temp_bytes{datname}
-#  ┃ pg_db_deadlocks{datname}
-#  ┃ pg_db_checksum_failures{datname}
-#  ┃ pg_db_checksum_last_failure{datname}
-#  ┃ pg_db_blk_read_time{datname}
-#  ┃ pg_db_blk_write_time{datname}
-#  ┃ pg_db_stats_reset{datname}
-#  ┃ pg_db_confl_tablespace{datname}
-#  ┃ pg_db_confl_lock{datname}
-#  ┃ pg_db_confl_snapshot{datname}
-#  ┃ pg_db_confl_bufferpin{datname}
-#  ┃ pg_db_confl_deadlock{datname}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT d.*, c.*
-#  ┃ FROM pg_stat_database d,
-#  ┃      LATERAL (SELECT confl_tablespace, confl_lock, confl_snapshot, confl_bufferpin, confl_deadlock
-#  ┃               FROM pg_stat_database_conflicts pdc WHERE pdc.datname = d.datname) c
-#  ┃ WHERE d.datname NOT IN ('postgres','template0','template1');
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pg_db_12:
   name: pg_db
-  desc: PostgreSQL database statistics 12+
+  desc: PostgreSQL database statistics 12+ (introduce 2 new checksum fields)
 
   query: |
-    SELECT d.*, c.*
+    SELECT datid,
+           datname,
+           numbackends,
+           xact_commit,
+           xact_rollback,
+           xact_rollback + xact_commit              AS xact_total,
+           blks_read,
+           blks_hit,
+           blks_read + blks_hit                     AS blks_access,
+           tup_returned,
+           tup_fetched,
+           tup_inserted,
+           tup_updated,
+           tup_deleted,
+           tup_inserted + tup_updated + tup_deleted AS tup_modified,
+           conflicts,
+           temp_files,
+           temp_bytes,
+           deadlocks,
+           checksum_failures,
+           checksum_last_failure,
+           blk_read_time,
+           blk_write_time,
+           stats_reset,
+           confl_tablespace,
+           confl_lock,
+           confl_snapshot,
+           confl_bufferpin,
+           confl_deadlock
     FROM pg_stat_database d,
          LATERAL (SELECT confl_tablespace, confl_lock, confl_snapshot, confl_bufferpin, confl_deadlock
-                  FROM pg_stat_database_conflicts pdc WHERE pdc.datname = d.datname) c
-    WHERE d.datname NOT IN ('postgres','template0','template1');
+                  FROM pg_stat_database_conflicts pdc
+                  WHERE pdc.datname = d.datname) c
+    WHERE d.datname NOT IN ('postgres', 'template0', 'template1');
 
   ttl: 10
   timeout: 1
@@ -2624,12 +2475,18 @@ pg_db_12:
     - xact_rollback:
         usage: COUNTER
         description: transactions in this database that have been rolled back
+    - xact_total:
+        usage: COUNTER
+        description: transactions in this database that have been issued
     - blks_read:
         usage: COUNTER
         description: blocks read from disk in this database
     - blks_hit:
         usage: COUNTER
         description: blocks found in pg buffer
+    - blks_access:
+        usage: COUNTER
+        description: blocks read plus blocks hit
     - tup_returned:
         usage: COUNTER
         description: rows returned by queries in this database
@@ -2645,20 +2502,23 @@ pg_db_12:
     - tup_deleted:
         usage: COUNTER
         description: rows deleted by queries in this database
+    - tup_modified:
+        usage: COUNTER
+        description: rows modified by queries in this database
     - conflicts:
-        usage: GAUGE
+        usage: COUNTER
         description: Number of queries canceled due to conflicts with recovery in this database. (slave only)
     - temp_files:
-        usage: GAUGE
+        usage: COUNTER
         description: Number of temporary files created by queries in this database
     - temp_bytes:
-        usage: GAUGE
+        usage: COUNTER
         description: Temporary file byte count
     - deadlocks:
-        usage: GAUGE
+        usage: COUNTER
         description: Number of deadlocks detected in this database
     - checksum_failures:
-        usage: GAUGE
+        usage: COUNTER
         description: Number of data page checksum failures detected in this database, 12+ only
     - checksum_last_failure:
         usage: GAUGE
@@ -2691,84 +2551,46 @@ pg_db_12:
 
 
 
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg_db.pg_db_93_11
-#  ┃ PostgreSQL database statistics 93 ~ 11
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [cluster]
-#  ┃ TTL      ┆ 10
-#  ┃ Priority ┆ 120
-#  ┃ Timeout  ┆ 1s
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 90300 ~ 120000
-#  ┃ Source   ┆ 121-pg_db.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ DISCARD  datid                Name of the database
-#  ┃ LABEL    datname              Name of the database
-#  ┃ GAUGE    numbackends          backends currently connected to this database
-#  ┃ COUNTER  xact_commit          transactions in this database that have been committed
-#  ┃ COUNTER  xact_rollback        transactions in this database that have been rolled back
-#  ┃ COUNTER  blks_read            blocks read from disk in this database
-#  ┃ COUNTER  blks_hit             blocks found in pg buffer
-#  ┃ COUNTER  tup_returned         rows returned by queries in this database
-#  ┃ COUNTER  tup_fetched          rows fetched by queries in this database
-#  ┃ COUNTER  tup_inserted         rows inserted by queries in this database
-#  ┃ COUNTER  tup_updated          rows updated by queries in this database
-#  ┃ COUNTER  tup_deleted          rows deleted by queries in this database
-#  ┃ GAUGE    conflicts            Number of queries canceled due to conflicts with recovery in this database. (slave only)
-#  ┃ GAUGE    temp_files           Number of temporary files created by queries in this database
-#  ┃ GAUGE    temp_bytes           Temporary file byte count
-#  ┃ GAUGE    deadlocks            Number of deadlocks detected in this database
-#  ┃ COUNTER  blk_read_time        Time spent reading data file blocks by backends in this database, in milliseconds
-#  ┃ COUNTER  blk_write_time       Time spent writing data file blocks by backends in this database, in milliseconds
-#  ┃ COUNTER  stats_reset          Time at which these statistics were last reset
-#  ┃ COUNTER  confl_tablespace     Number of queries in this database that have been canceled due to dropped tablespaces
-#  ┃ COUNTER  confl_lock           Number of queries in this database that have been canceled due to lock timeouts
-#  ┃ COUNTER  confl_snapshot       Number of queries in this database that have been canceled due to old snapshots
-#  ┃ COUNTER  confl_bufferpin      Number of queries in this database that have been canceled due to pinned buffers
-#  ┃ COUNTER  confl_deadlock       Number of queries in this database that have been canceled due to deadlocks
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_db_numbackends{datname}
-#  ┃ pg_db_xact_commit{datname}
-#  ┃ pg_db_xact_rollback{datname}
-#  ┃ pg_db_blks_read{datname}
-#  ┃ pg_db_blks_hit{datname}
-#  ┃ pg_db_tup_returned{datname}
-#  ┃ pg_db_tup_fetched{datname}
-#  ┃ pg_db_tup_inserted{datname}
-#  ┃ pg_db_tup_updated{datname}
-#  ┃ pg_db_tup_deleted{datname}
-#  ┃ pg_db_conflicts{datname}
-#  ┃ pg_db_temp_files{datname}
-#  ┃ pg_db_temp_bytes{datname}
-#  ┃ pg_db_deadlocks{datname}
-#  ┃ pg_db_blk_read_time{datname}
-#  ┃ pg_db_blk_write_time{datname}
-#  ┃ pg_db_stats_reset{datname}
-#  ┃ pg_db_confl_tablespace{datname}
-#  ┃ pg_db_confl_lock{datname}
-#  ┃ pg_db_confl_snapshot{datname}
-#  ┃ pg_db_confl_bufferpin{datname}
-#  ┃ pg_db_confl_deadlock{datname}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT d.*, c.*
-#  ┃ FROM pg_stat_database d,
-#  ┃      LATERAL (SELECT confl_tablespace, confl_lock, confl_snapshot, confl_bufferpin, confl_deadlock
-#  ┃               FROM pg_stat_database_conflicts pdc WHERE pdc.datname = d.datname) c
-#  ┃ WHERE d.datname NOT IN ('postgres','template0','template1');
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
 
 pg_db_93_11:
   name: pg_db
-  desc: PostgreSQL database statistics 93 ~ 11
+  desc: PostgreSQL database statistics 9.3 ~ 11 ()
 
   query: |
-    SELECT d.*, c.*
+    SELECT datid,
+           datname,
+           numbackends,
+           xact_commit,
+           xact_rollback,
+           xact_rollback + xact_commit              AS xact_total,
+           blks_read,
+           blks_hit,
+           blks_read + blks_hit                     AS blks_access,
+           tup_returned,
+           tup_fetched,
+           tup_inserted,
+           tup_updated,
+           tup_deleted,
+           tup_inserted + tup_updated + tup_deleted AS tup_modified,
+           conflicts,
+           temp_files,
+           temp_bytes,
+           deadlocks,
+           blk_read_time,
+           blk_write_time,
+           stats_reset,
+           confl_tablespace,
+           confl_lock,
+           confl_snapshot,
+           confl_bufferpin,
+           confl_deadlock
     FROM pg_stat_database d,
          LATERAL (SELECT confl_tablespace, confl_lock, confl_snapshot, confl_bufferpin, confl_deadlock
-                  FROM pg_stat_database_conflicts pdc WHERE pdc.datname = d.datname) c
-    WHERE d.datname NOT IN ('postgres','template0','template1');
+                  FROM pg_stat_database_conflicts pdc
+                  WHERE pdc.datname = d.datname) c
+    WHERE d.datname NOT IN ('postgres', 'template0', 'template1');
 
   ttl: 10
   timeout: 1
@@ -2792,12 +2614,18 @@ pg_db_93_11:
     - xact_rollback:
         usage: COUNTER
         description: transactions in this database that have been rolled back
+    - xact_total:
+        usage: COUNTER
+        description: transactions in this database that have been issued
     - blks_read:
         usage: COUNTER
         description: blocks read from disk in this database
     - blks_hit:
         usage: COUNTER
         description: blocks found in pg buffer
+    - blks_access:
+        usage: COUNTER
+        description: blocks read plus blocks hit
     - tup_returned:
         usage: COUNTER
         description: rows returned by queries in this database
@@ -2813,17 +2641,20 @@ pg_db_93_11:
     - tup_deleted:
         usage: COUNTER
         description: rows deleted by queries in this database
+    - tup_modified:
+        usage: COUNTER
+        description: rows modified by queries in this database
     - conflicts:
-        usage: GAUGE
+        usage: COUNTER
         description: Number of queries canceled due to conflicts with recovery in this database. (slave only)
     - temp_files:
-        usage: GAUGE
+        usage: COUNTER
         description: Number of temporary files created by queries in this database
     - temp_bytes:
-        usage: GAUGE
+        usage: COUNTER
         description: Temporary file byte count
     - deadlocks:
-        usage: GAUGE
+        usage: COUNTER
         description: Number of deadlocks detected in this database
     - blk_read_time:
         usage: COUNTER
@@ -2849,6 +2680,7 @@ pg_db_93_11:
     - confl_deadlock:
         usage: COUNTER
         description: Number of queries in this database that have been canceled due to deadlocks
+
 
 ###############################################################
 # Database Level Metrics
@@ -2920,7 +2752,7 @@ pg_class:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -3011,7 +2843,7 @@ pg_class_shard:
 
   ttl: 100
   timeout: 1
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -3206,7 +3038,7 @@ pg_table:
 
   ttl: 10
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard,not:olap]
   min_version: 090400
 
   metrics:
@@ -3471,9 +3303,9 @@ pg_table_shard:
          LATERAL (SELECT * FROM pg_statio_user_tables psio WHERE psio.relid = psut.relid) p
     WHERE (psut.schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR psut.schemaname = 'user_search');
 
-  ttl: 10
+  ttl: 100
   timeout: 3
-  tags: [shard]
+  tags: [shard,not:olap]
   min_version: 090400
 
   metrics:
@@ -3636,7 +3468,7 @@ pg_table_size:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 100000
 
   metrics:
@@ -3723,7 +3555,7 @@ pg_table_size_shard:
 
   ttl: 200
   timeout: 2
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 100000
 
   metrics:
@@ -3796,7 +3628,7 @@ pg_defpart:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 110000
 
   metrics:
@@ -3922,7 +3754,7 @@ pg_table_bloat:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -4052,7 +3884,7 @@ pg_table_bloat_shard:
 
   ttl: 200
   timeout: 5
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -4101,7 +3933,7 @@ pg_index:
 
   ttl: 10
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -4191,9 +4023,9 @@ pg_index_shard:
          LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid) p2
     WHERE psui.schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR psui.schemaname = 'user_search';
 
-  ttl: 10
+  ttl: 100
   timeout: 1
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -4274,7 +4106,7 @@ pg_index_bloat:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -4408,7 +4240,7 @@ pg_index_bloat_shard:
 
   ttl: 200
   timeout: 3
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -4559,9 +4391,9 @@ pg_func_shard:
     FROM pg_stat_user_functions
     WHERE schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR schemaname = 'user_search';
 
-  ttl: 10
+  ttl: 100
   timeout: 1
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:

@@ -26,7 +26,7 @@ release-windows: clean
 
 conf:
 	rm -rf pg_exporter.yaml
-	cat conf/* >> pg_exporter.yaml
+	cat conf/*.yaml >> pg_exporter.yaml
 
 docker: linux
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter

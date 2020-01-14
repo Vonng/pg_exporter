@@ -105,7 +105,7 @@ pg_table_bloat:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -235,7 +235,7 @@ pg_table_bloat_shard:
 
   ttl: 200
   timeout: 5
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:

@@ -25,7 +25,7 @@ pg_index:
 
   ttl: 10
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 090400
 
   metrics:
@@ -115,9 +115,9 @@ pg_index_shard:
          LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid) p2
     WHERE psui.schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR psui.schemaname = 'user_search';
 
-  ttl: 10
+  ttl: 100
   timeout: 1
-  tags: [shard]
+  tags: [shard, not:olap]
   min_version: 090400
 
   metrics:

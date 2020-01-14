@@ -164,7 +164,7 @@ pg_table:
 
   ttl: 10
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard,not:olap]
   min_version: 090400
 
   metrics:
@@ -429,9 +429,9 @@ pg_table_shard:
          LATERAL (SELECT * FROM pg_statio_user_tables psio WHERE psio.relid = psut.relid) p
     WHERE (psut.schemaname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR psut.schemaname = 'user_search');
 
-  ttl: 10
+  ttl: 100
   timeout: 3
-  tags: [shard]
+  tags: [shard,not:olap]
   min_version: 090400
 
   metrics:

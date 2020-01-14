@@ -43,7 +43,7 @@ pg_defpart:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard]
+  tags: [not:shard, not:olap]
   min_version: 110000
 
   metrics:
