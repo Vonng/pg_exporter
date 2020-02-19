@@ -1,10 +1,66 @@
-#-------------------------------------------------------------#
-# pg_db
-# note this query will return different number of columns
-# e.g: checksum_failures , checksum_last_failure is provided in 12
-#-------------------------------------------------------------#
 
-
+# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ┃ pg_db.pg_db_12
+# ┃ PostgreSQL database statistics 12+ (introduce 2 new checksum fields)
+# ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+# ┃ DISCARD  datid                Name of the database
+# ┃ LABEL    datname              Name of the database
+# ┃ GAUGE    numbackends          backends currently connected to this database
+# ┃ COUNTER  xact_commit          transactions in this database that have been committed
+# ┃ COUNTER  xact_rollback        transactions in this database that have been rolled back
+# ┃ COUNTER  xact_total           transactions in this database that have been issued
+# ┃ COUNTER  blks_read            blocks read from disk in this database
+# ┃ COUNTER  blks_hit             blocks found in pg buffer
+# ┃ COUNTER  blks_access          blocks read plus blocks hit
+# ┃ COUNTER  tup_returned         rows returned by queries in this database
+# ┃ COUNTER  tup_fetched          rows fetched by queries in this database
+# ┃ COUNTER  tup_inserted         rows inserted by queries in this database
+# ┃ COUNTER  tup_updated          rows updated by queries in this database
+# ┃ COUNTER  tup_deleted          rows deleted by queries in this database
+# ┃ COUNTER  tup_modified         rows modified by queries in this database
+# ┃ COUNTER  conflicts            Number of queries canceled due to conflicts with recovery in this database. (slave only)
+# ┃ COUNTER  temp_files           Number of temporary files created by queries in this database
+# ┃ COUNTER  temp_bytes           Temporary file byte count
+# ┃ COUNTER  deadlocks            Number of deadlocks detected in this database
+# ┃ COUNTER  checksum_failures    Number of data page checksum failures detected in this database, 12+ only
+# ┃ GAUGE    checksum_last_failure Time at which the last data page checksum failure was detected, 12+ only
+# ┃ COUNTER  blk_read_time        Time spent reading data file blocks by backends in this database, in milliseconds
+# ┃ COUNTER  blk_write_time       Time spent writing data file blocks by backends in this database, in milliseconds
+# ┃ COUNTER  stats_reset          Time at which these statistics were last reset
+# ┃ COUNTER  confl_tablespace     Number of queries in this database that have been canceled due to dropped tablespaces
+# ┃ COUNTER  confl_lock           Number of queries in this database that have been canceled due to lock timeouts
+# ┃ COUNTER  confl_snapshot       Number of queries in this database that have been canceled due to old snapshots
+# ┃ COUNTER  confl_bufferpin      Number of queries in this database that have been canceled due to pinned buffers
+# ┃ COUNTER  confl_deadlock       Number of queries in this database that have been canceled due to deadlocks
+# ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+# ┃ pg_db_numbackends{datname}
+# ┃ pg_db_xact_commit{datname}
+# ┃ pg_db_xact_rollback{datname}
+# ┃ pg_db_xact_total{datname}
+# ┃ pg_db_blks_read{datname}
+# ┃ pg_db_blks_hit{datname}
+# ┃ pg_db_blks_access{datname}
+# ┃ pg_db_tup_returned{datname}
+# ┃ pg_db_tup_fetched{datname}
+# ┃ pg_db_tup_inserted{datname}
+# ┃ pg_db_tup_updated{datname}
+# ┃ pg_db_tup_deleted{datname}
+# ┃ pg_db_tup_modified{datname}
+# ┃ pg_db_conflicts{datname}
+# ┃ pg_db_temp_files{datname}
+# ┃ pg_db_temp_bytes{datname}
+# ┃ pg_db_deadlocks{datname}
+# ┃ pg_db_checksum_failures{datname}
+# ┃ pg_db_checksum_last_failure{datname}
+# ┃ pg_db_blk_read_time{datname}
+# ┃ pg_db_blk_write_time{datname}
+# ┃ pg_db_stats_reset{datname}
+# ┃ pg_db_confl_tablespace{datname}
+# ┃ pg_db_confl_lock{datname}
+# ┃ pg_db_confl_snapshot{datname}
+# ┃ pg_db_confl_bufferpin{datname}
+# ┃ pg_db_confl_deadlock{datname}
+# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_db_12:
   name: pg_db
   desc: PostgreSQL database statistics 12+ (introduce 2 new checksum fields)
@@ -144,10 +200,13 @@ pg_db_12:
 
 
 
-
+# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ┃ pg_db.pg_db_93_11
+# ┃ PostgreSQL database statistics 9.3 ~ 11
+# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_db_93_11:
   name: pg_db
-  desc: PostgreSQL database statistics 9.3 ~ 11 ()
+  desc: PostgreSQL database statistics 9.3 ~ 11
 
   query: |
     SELECT datid,

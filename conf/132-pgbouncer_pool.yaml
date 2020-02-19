@@ -1,43 +1,33 @@
 
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pgbouncer_pool
-#  ┃ pgbouncer pool stats: http://www.pgbouncer.org/usage.html#show-pools
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [pgbouncer]
-#  ┃ TTL      ┆ 5
-#  ┃ Priority ┆ 132
-#  ┃ Timeout  ┆ 100ms
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 10800 ~ higher
-#  ┃ Source   ┆ 132-pgbouncer_pool.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ LABEL    database             database name of this relation
-#  ┃ LABEL    user                 user
-#  ┃ GAUGE    cl_active            client connections that are linked to server connection and can process queries
-#  ┃ GAUGE    cl_waiting           client connections that have sent queries but have not yet got a server connection
-#  ┃ GAUGE    sv_active            server connections that are linked to a client
-#  ┃ GAUGE    sv_idle              server connections that are unused and immediately usable for client queries
-#  ┃ GAUGE    sv_used              server connections that have been idle for more than server_check_delay (means have to run check query)
-#  ┃ GAUGE    sv_tested            server connections that are currently running reset or check query
-#  ┃ GAUGE    sv_login             server connections currently in the process of logging in
-#  ┃ GAUGE    maxwait              how long the first(oldest) client in the queue has waited, in seconds, key metric
-#  ┃ GAUGE    maxwait_us           microsecond part of the maximum waiting time.
-#  ┃ DISCARD  pool_mode            the pooling mode in use
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pgbouncer_pool_active_clients{datname,user}
-#  ┃ pgbouncer_pool_waiting_clients{datname,user}
-#  ┃ pgbouncer_pool_active_servers{datname,user}
-#  ┃ pgbouncer_pool_idle_servers{datname,user}
-#  ┃ pgbouncer_pool_used_servers{datname,user}
-#  ┃ pgbouncer_pool_tested_servers{datname,user}
-#  ┃ pgbouncer_pool_login_servers{datname,user}
-#  ┃ pgbouncer_pool_maxwait{datname,user}
-#  ┃ pgbouncer_pool_maxwait_us{datname,user}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SHOW POOLS;
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pgbouncer_pool
+#┃ pgbouncer pool stats: http://www.pgbouncer.org/usage.html#show-pools
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ LABEL    database             database name of this relation
+#┃ LABEL    user                 user
+#┃ GAUGE    cl_active            client connections that are linked to server connection and can process queries
+#┃ GAUGE    cl_waiting           client connections that have sent queries but have not yet got a server connection
+#┃ GAUGE    sv_active            server connections that are linked to a client
+#┃ GAUGE    sv_idle              server connections that are unused and immediately usable for client queries
+#┃ GAUGE    sv_used              server connections that have been idle for more than server_check_delay (means have to run check query)
+#┃ GAUGE    sv_tested            server connections that are currently running reset or check query
+#┃ GAUGE    sv_login             server connections currently in the process of logging in
+#┃ GAUGE    maxwait              how long the first(oldest) client in the queue has waited, in seconds, key metric
+#┃ GAUGE    maxwait_us           microsecond part of the maximum waiting time.
+#┃ DISCARD  pool_mode            the pooling mode in use
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pgbouncer_pool_active_clients{datname,user}
+#┃ pgbouncer_pool_waiting_clients{datname,user}
+#┃ pgbouncer_pool_active_servers{datname,user}
+#┃ pgbouncer_pool_idle_servers{datname,user}
+#┃ pgbouncer_pool_used_servers{datname,user}
+#┃ pgbouncer_pool_tested_servers{datname,user}
+#┃ pgbouncer_pool_login_servers{datname,user}
+#┃ pgbouncer_pool_maxwait{datname,user}
+#┃ pgbouncer_pool_maxwait_us{datname,user}
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_pool:
+  name: pgbouncer_pool
   desc: "pgbouncer pool stats: http://www.pgbouncer.org/usage.html#show-pools"
 
   query: |
@@ -46,7 +36,6 @@ pgbouncer_pool:
   ttl: 5
   tags: [pgbouncer]
   min_version: 10800
-  fatal: true
 
   metrics:
     - database:

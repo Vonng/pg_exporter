@@ -1,35 +1,20 @@
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg_recovery
-#  ┃ PostgreSQL control recovery metrics since 9.6
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [cluster standby]
-#  ┃ TTL      ┆ 100
-#  ┃ Priority ┆ 105
-#  ┃ Timeout  ┆ 100ms
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 90600 ~ higher
-#  ┃ Source   ┆ 105-pg_recovery.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ COUNTER  min_timeline         pg control recovery min timeline
-#  ┃ COUNTER  min_lsn              pg control recovery min lsn
-#  ┃ COUNTER  backup_start_lsn     pg control recovery backup start lsn
-#  ┃ COUNTER  backup_end_lsn       pg control recovery backup end lsn
-#  ┃ GAUGE    require_record       do recovery need a end of backup record
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_recovery_min_timeline{}
-#  ┃ pg_recovery_min_lsn{}
-#  ┃ pg_recovery_backup_start_lsn{}
-#  ┃ pg_recovery_backup_end_lsn{}
-#  ┃ pg_recovery_require_record{}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT min_recovery_end_timeline    AS min_timeline,
-#  ┃        min_recovery_end_lsn - '0/0' AS min_lsn,
-#  ┃        backup_start_lsn - '0/0'     AS backup_start_lsn,
-#  ┃        backup_end_lsn - '0/0'       AS backup_end_lsn,
-#  ┃        end_of_backup_record_required AS require_record
-#  ┃ FROM pg_control_recovery();
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_recovery
+#┃ PostgreSQL control recovery metrics since 9.6
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ COUNTER  min_timeline         pg control recovery min timeline
+#┃ COUNTER  min_lsn              pg control recovery min lsn
+#┃ COUNTER  backup_start_lsn     pg control recovery backup start lsn
+#┃ COUNTER  backup_end_lsn       pg control recovery backup end lsn
+#┃ GAUGE    require_record       do recovery need a end of backup record
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_recovery_min_timeline{}
+#┃ pg_recovery_min_lsn{}
+#┃ pg_recovery_backup_start_lsn{}
+#┃ pg_recovery_backup_end_lsn{}
+#┃ pg_recovery_require_record{}
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 pg_recovery:
   name: pg_recovery

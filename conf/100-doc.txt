@@ -1,85 +1,141 @@
-###############################################################
-# PostgreSQL/Pgbouncer Metric Queries
-# Author:   Vonng (fengruohang@outlook.com)
-# Desc  :   pg_exporter metrics config files
-# Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+
-# Ctime :   2019-12-09
-# Mtime :   2020-01-08
-###############################################################
-
-#-------------------------------------------------------------#
-# Metric Query Example
-#-------------------------------------------------------------#
-
-#  pg_primary_only:       <---- Branch name, distinguish different branch of a metric query
-#    name: pg             <---- actual Query name, used as metric prefix, will set to branch if not provide
-#    desc: PostgreSQL basic information (on primary)                    <---- query description
-#    query: |                                                           <---- query string
-#
-#      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#             pg_current_wal_lsn() - '0/0'                           AS lsn,
-#             pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
-#             pg_current_wal_lsn() - '0/0'                           AS write_lsn,
-#             pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-#             extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
-#             extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
-#             pg_is_in_backup()                                      AS is_in_backup,
-#             extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-#
-#                                <---- following field are [OPTIONAL], control execution policy
-#    ttl: 10                     <---- cache ttl: how long will exporter cache it's result. set to 0 to disable cache
-#    timeout: 0.1                <---- timeout: in seconds, query execeed this will be canceled. default is 0.1, set to -1 to disable timeout
-#    min_version: 100000         <---- minimal supported version in server version number format, e.g  120001 = 12.1, 090601 = 9.6.1
-#    max_version: 130000         <---- maximal supported version in server version number format, boundary not include
-#    fatal: false                <---- if query marked fatal fail, this scrape will abort immidiately
-#
-#    tags: [cluster, primary]    <---- tags consist of one or more string, which could be:
-#                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
-#                                        * 'primary' marks this query can only run on a master instance (will not execute if pg_is_in_recovery())
-#                                        * 'standby' marks this query can only run on a recoverying instance (will execute if pg_is_in_recovery())
-#                                        * some special tag prefix will have special effect:
-#                                        * 'dbname:<dbname>' means this query will only execute on database with name '<dbname>'
-#                                        * 'username:<user>' means this query will only execute when connect with user '<user>'
-#                                        * 'extension:<extname>' means this query will only execute when extension '<extname>' is installed
-#                                        * 'schema:<nspname>' means this query will only execute when schema '<nspname>' exist
-#                                        * 'not:<negtag>' means this query will only execute when exporter is launch without tag '<negtag>'
-#                                        * '<tag>' means this query will only execute when exporter is launch with tag '<tag>'
-#                                           (tag could not be cluster,primary,standby or have special prefix)
-#
-#
-#    metrics:                    <---- this is a list of returned columns, each column must have a name, usage, could have an alias and description
-#      - timestamp:              <---- this is column name, should be exactly same as returned column name
-#          rename: ts            <---- rename is optional, will use this alias instead of column name
-#          usage: GAUGE          <---- usage could be
-#                                        * DISCARD: completely ignore this field
-#                                        * LABEL: use columnName:columnValue as a label in result
-#                                        * GAUGE: use this column as a metric, which is '<query.name>_<column.name>{<labels>} column.value'
-#                                        * COUNTER: same as GAUGE, except it is a counter.
-#
-#          description: database current timestamp
-#      - lsn:
-#          usage: COUNTER
-#          description: log sequence number, current write location (on primary)
-#      - insert_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal inserting
-#      - write_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal writing
-#      - flush_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal syncing
-#      - uptime:
-#          usage: GAUGE
-#          description: seconds since postmaster start
-#      - conf_reload_time:
-#          usage: GAUGE
-#          description: seconds since last configuration reload
-#      - is_in_backup:
-#          usage: GAUGE
-#          description: 1 if backup is in progress
-#      - backup_time:
-#          usage: GAUGE
-#          description: seconds since current backup start. null if don't have one
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ PostgreSQL/Pgbouncer Metric Queries
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ Author:   Vonng (fengruohang@outlook.com)
+#┃ Desc  :   pg_exporter metrics config files
+#┃ Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+
+#┃ Ctime :   2019-12-09
+#┃ Mtime :   2020-01-08
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Query Example
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃  pg_primary_only:       <---- Branch name, distinguish different branch of a metric query
+#┃    name: pg             <---- Query's real name, used as metric prefix, set to Branch Name by default
+#┃    desc: PostgreSQL basic information (on primary)                 <---- query description
+#┃    query: |                                                        <---- query string
+#┃
+#┃      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
+#┃             pg_current_wal_lsn() - '0/0'                           AS lsn,
+#┃             pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
+#┃             pg_current_wal_lsn() - '0/0'                           AS write_lsn,
+#┃             pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
+#┃             extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
+#┃             extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
+#┃             pg_is_in_backup()                                      AS is_in_backup,
+#┃             extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
+#┃
+#┃                                <---- following field are [OPTIONAL], control execution policy
+#┃    ttl: 10                     <---- cache ttl: how long will exporter cache it's result. set to 0 to disable cache
+#┃    timeout: 0.1                <---- timeout: in seconds, query execeed this will be canceled. default is 0.1, set to -1 to disable timeout
+#┃    min_version: 100000         <---- minimal supported version in server version number format, e.g  120001 = 12.1, 090601 = 9.6.1
+#┃    max_version: 130000         <---- maximal supported version in server version number format, boundary not include
+#┃    fatal: false                <---- if query marked fatal fail, this scrape will abort immediately
+#┃
+#┃    tags: [cluster, primary]    <---- tags consist of one or more string, which could be:
+#┃                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
+#┃                                        * 'primary' marks this query can only run on a master instance (will not execute if pg_is_in_recovery())
+#┃                                        * 'standby' marks this query can only run on a recovering instance (will execute if pg_is_in_recovery())
+#┃                                        * some special tag prefix will have special effect:
+#┃                                        * 'dbname:<dbname>' means this query will only execute on database with name '<dbname>'
+#┃                                        * 'username:<user>' means this query will only execute when connect with user '<user>'
+#┃                                        * 'extension:<extname>' means this query will only execute when extension '<extname>' is installed
+#┃                                        * 'schema:<nspname>' means this query will only execute when schema '<nspname>' exist
+#┃                                        * 'not:<negtag>' means this query will only execute when exporter is launch without tag '<negtag>'
+#┃                                        * '<tag>' means this query will only execute when exporter is launch with tag '<tag>'
+#┃                                           (tag could not be cluster,primary,standby or have special prefix)
+#┃
+#┃
+#┃    metrics:                    <---- this is a list of returned columns, each column must have a name, usage, could have an alias and description
+#┃      - timestamp:              <---- this is column name, should be exactly same as returned column name
+#┃          rename: ts            <---- rename is optional, will use this alias instead of column name
+#┃          usage: GAUGE          <---- usage could be
+#┃                                        * DISCARD: completely ignore this field
+#┃                                        * LABEL: use columnName:columnValue as a label in result
+#┃                                        * GAUGE: use this column as a metric, which is '<query.name>_<column.name>{<labels>} column.value'
+#┃                                        * COUNTER: same as GAUGE, except it is a counter.
+#┃
+#┃          description: database current timestamp
+#┃      - lsn:
+#┃          usage: COUNTER
+#┃          description: log sequence number, current write location (on primary)
+#┃      - insert_lsn:
+#┃          usage: COUNTER
+#┃          description: primary only, location of current wal inserting
+#┃      - write_lsn:
+#┃          usage: COUNTER
+#┃          description: primary only, location of current wal writing
+#┃      - flush_lsn:
+#┃          usage: COUNTER
+#┃          description: primary only, location of current wal syncing
+#┃      - uptime:
+#┃          usage: GAUGE
+#┃          description: seconds since postmaster start
+#┃      - conf_reload_time:
+#┃          usage: GAUGE
+#┃          description: seconds since last configuration reload
+#┃      - is_in_backup:
+#┃          usage: GAUGE
+#┃          description: 1 if backup is in progress
+#┃      - backup_time:
+#┃          usage: GAUGE
+#┃          description: seconds since current backup start. null if don't have one
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Query Definition
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_exporter is shipped with a series of preset configurations
+#┃ 101 ~ 120 are common, fast, cluster level metrics
+#┃ 121 ~ 128 are database level metrics (with additional datname label)
+#┃ 129       are special queries for shard, disable by default, enable by --tag=shard
+#┃ 130 ~ 133 are pgbouncer queries
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Queries Policy
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ By default, queries are categorized into 3 policy group
+#┃
+#┃ --tag=<none> default instance, enabling all default queries
+#┃ --tag=shard  sharding instance, replace some slow query with sampling version
+#┃ --tag=bulky  bulky instance, too much relation to scrape, disable slow queries
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Query Fatality
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ if query marked with Fatal failed, this scrape operation is marked as fail, and pg_up/pgbouncer_up is
+#┃ set to 0. It always good to setup at least one fatal queries. which is `pg.pg_primary_only` and
+#┃ `pgbouncer_list` by default.
+#┃
+#┃ if query without `fatal` flag fails, it will increase fail counter & stats. But the scrape operation
+#┃ will carry on, the entire query result will not be marked as fail, thus won't affect up metrics.
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Query Timeout
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ All query have a default timeout 100ms, if exceed, the query will be canceled immediately to avoid
+#┃ avalanche. You can explict overwrite that option. but be ware: in some extreme case, if all your
+#┃ timeout sum up greater your scrape/cache interval (usually 15s) , the query may still be jammed.
+#┃ or , you can just disable potential slow queries with --tag=bulky
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Query TTL
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ Cache is disabled for each query by default, it is enabled if you set a non-zero value for TTL
+#┃ It is recommend using cache to avoid query overhead, especially been scrapped by multiple prometheus
+#┃ Most (fast) query have 10s TTL, while some slow query have 100s TTL to reduce overhead.
+#┃ Sharding instance and bulky instance will have longer TTL because slow metrics query is expensive on them
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

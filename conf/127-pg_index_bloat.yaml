@@ -1,7 +1,17 @@
-#-------------------------------------------------------------#
-# pg_index_bloat
-# bloat index ratio, not all index are included (btree only)
-#-------------------------------------------------------------#
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_index_bloat.pg_index_bloat_shard
+#┃ PostgreSQL Index Bloat, btree only, db level, shard version
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ LABEL    datname              database name of this index
+#┃ LABEL    nspname              schema name of this index
+#┃ LABEL    relname              relation name of this index relation
+#┃ GAUGE    size                 total size in bytes of this index
+#┃ GAUGE    ratio                estimated bloat ratio of this index, 0~1
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_index_bloat_size{datname,nspname,relname}
+#┃ pg_index_bloat_ratio{datname,nspname,relname}
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_index_bloat:
   name: pg_index_bloat
   desc: PostgreSQL Index Bloat, btree only, db level, normal version
@@ -49,141 +59,7 @@ pg_index_bloat:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard, not:olap]
-  min_version: 090400
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: database name of this index
-    - nspname:
-        usage: LABEL
-        description: schema name of this index
-    - relname:
-        usage: LABEL
-        description: relation name of this index relation
-    - size:
-        usage: GAUGE
-        description: total size in bytes of this index
-    - ratio:
-        usage: GAUGE
-        description: estimated bloat ratio of this index, 0~1
-
-
-
-
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg_index_bloat.pg_index_bloat_shard
-#  ┃ PostgreSQL Index Bloat, btree only, db level, shard version
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [shard]
-#  ┃ TTL      ┆ 200
-#  ┃ Priority ┆ 127
-#  ┃ Timeout  ┆ 3s
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 90400 ~ higher
-#  ┃ Source   ┆ 127-pg_index_bloat.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ LABEL    datname              database name of this index
-#  ┃ LABEL    nspname              schema name of this index
-#  ┃ LABEL    relname              relation name of this index relation
-#  ┃ GAUGE    size                 total size in bytes of this index
-#  ┃ GAUGE    ratio                estimated bloat ratio of this index, 0~1
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_index_bloat_size{datname,nspname,relname}
-#  ┃ pg_index_bloat_ratio{datname,nspname,relname}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT CURRENT_CATALOG AS datname, nspname, idxname AS relname, relpages::BIGINT * bs AS size,
-#  ┃        COALESCE((relpages - ( reltuples * (6 + ma - (CASE WHEN index_tuple_hdr % ma = 0 THEN ma ELSE index_tuple_hdr % ma END)
-#  ┃                                                + nulldatawidth + ma - (CASE WHEN nulldatawidth % ma = 0 THEN ma ELSE nulldatawidth % ma END))
-#  ┃                                   / (bs - pagehdr)::FLOAT  + 1 )), 0) / relpages::FLOAT AS ratio
-#  ┃ FROM (
-#  ┃          SELECT nspname,
-#  ┃                 idxname,
-#  ┃                 reltuples,
-#  ┃                 relpages,
-#  ┃                 current_setting('block_size')::INTEGER                                                               AS bs,
-#  ┃                 (CASE WHEN version() ~ 'mingw32' OR version() ~ '64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END)  AS ma,
-#  ┃                 24                                                                                                   AS pagehdr,
-#  ┃                 (CASE WHEN max(COALESCE(pg_stats.null_frac, 0)) = 0 THEN 2 ELSE 6 END)                               AS index_tuple_hdr,
-#  ┃                 sum((1.0 - COALESCE(pg_stats.null_frac, 0.0)) *
-#  ┃                     COALESCE(pg_stats.avg_width, 1024))::INTEGER                                                     AS nulldatawidth
-#  ┃          FROM pg_attribute
-#  ┃                   JOIN (
-#  ┃              SELECT pg_namespace.nspname,
-#  ┃                     ic.relname                                                   AS idxname,
-#  ┃                     ic.reltuples,
-#  ┃                     ic.relpages,
-#  ┃                     pg_index.indrelid,
-#  ┃                     pg_index.indexrelid,
-#  ┃                     tc.relname                                                   AS tablename,
-#  ┃                     regexp_split_to_table(pg_index.indkey::TEXT, ' ') :: INTEGER AS attnum,
-#  ┃                     pg_index.indexrelid                                          AS index_oid
-#  ┃              FROM pg_index
-#  ┃                       JOIN pg_class ic ON pg_index.indexrelid = ic.oid
-#  ┃                       JOIN pg_class tc ON pg_index.indrelid = tc.oid
-#  ┃                       JOIN pg_namespace ON pg_namespace.oid = ic.relnamespace
-#  ┃                       JOIN pg_am ON ic.relam = pg_am.oid
-#  ┃              WHERE pg_am.amname = 'btree' AND ic.relpages > 0
-#  ┃                AND (nspname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR nspname = 'user_search')
-#  ┃          ) ind_atts ON pg_attribute.attrelid = ind_atts.indexrelid AND pg_attribute.attnum = ind_atts.attnum
-#  ┃                   JOIN pg_stats ON pg_stats.schemaname = ind_atts.nspname
-#  ┃              AND ((pg_stats.tablename = ind_atts.tablename AND pg_stats.attname = pg_get_indexdef(pg_attribute.attrelid, pg_attribute.attnum, TRUE))
-#  ┃                  OR (pg_stats.tablename = ind_atts.idxname AND pg_stats.attname = pg_attribute.attname))
-#  ┃          WHERE pg_attribute.attnum > 0
-#  ┃          GROUP BY 1, 2, 3, 4, 5, 6
-#  ┃      ) est;
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_index_bloat_shard:
-  name: pg_index_bloat
-  desc: PostgreSQL Index Bloat, btree only, db level, shard version
-
-  query: |
-    SELECT CURRENT_CATALOG AS datname, nspname, idxname AS relname, relpages::BIGINT * bs AS size,
-           COALESCE((relpages - ( reltuples * (6 + ma - (CASE WHEN index_tuple_hdr % ma = 0 THEN ma ELSE index_tuple_hdr % ma END)
-                                                   + nulldatawidth + ma - (CASE WHEN nulldatawidth % ma = 0 THEN ma ELSE nulldatawidth % ma END))
-                                      / (bs - pagehdr)::FLOAT  + 1 )), 0) / relpages::FLOAT AS ratio
-    FROM (
-             SELECT nspname,
-                    idxname,
-                    reltuples,
-                    relpages,
-                    current_setting('block_size')::INTEGER                                                               AS bs,
-                    (CASE WHEN version() ~ 'mingw32' OR version() ~ '64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END)  AS ma,
-                    24                                                                                                   AS pagehdr,
-                    (CASE WHEN max(COALESCE(pg_stats.null_frac, 0)) = 0 THEN 2 ELSE 6 END)                               AS index_tuple_hdr,
-                    sum((1.0 - COALESCE(pg_stats.null_frac, 0.0)) *
-                        COALESCE(pg_stats.avg_width, 1024))::INTEGER                                                     AS nulldatawidth
-             FROM pg_attribute
-                      JOIN (
-                 SELECT pg_namespace.nspname,
-                        ic.relname                                                   AS idxname,
-                        ic.reltuples,
-                        ic.relpages,
-                        pg_index.indrelid,
-                        pg_index.indexrelid,
-                        tc.relname                                                   AS tablename,
-                        regexp_split_to_table(pg_index.indkey::TEXT, ' ') :: INTEGER AS attnum,
-                        pg_index.indexrelid                                          AS index_oid
-                 FROM pg_index
-                          JOIN pg_class ic ON pg_index.indexrelid = ic.oid
-                          JOIN pg_class tc ON pg_index.indrelid = tc.oid
-                          JOIN pg_namespace ON pg_namespace.oid = ic.relnamespace
-                          JOIN pg_am ON ic.relam = pg_am.oid
-                 WHERE pg_am.amname = 'btree' AND ic.relpages > 0
-                   AND (nspname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR nspname = 'user_search')
-             ) ind_atts ON pg_attribute.attrelid = ind_atts.indexrelid AND pg_attribute.attnum = ind_atts.attnum
-                      JOIN pg_stats ON pg_stats.schemaname = ind_atts.nspname
-                 AND ((pg_stats.tablename = ind_atts.tablename AND pg_stats.attname = pg_get_indexdef(pg_attribute.attrelid, pg_attribute.attnum, TRUE))
-                     OR (pg_stats.tablename = ind_atts.idxname AND pg_stats.attname = pg_attribute.attname))
-             WHERE pg_attribute.attnum > 0
-             GROUP BY 1, 2, 3, 4, 5, 6
-         ) est;
-
-  ttl: 200
-  timeout: 3
-  tags: [shard, not:olap]
+  tags: [not:shard, not:bulky]
   min_version: 090400
 
   metrics:

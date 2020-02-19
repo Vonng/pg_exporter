@@ -1,55 +1,38 @@
-###############################################################
-# Cluster Level Metrics
-#   001 ~ 021 are cluster level metrics, which means they are
-#   identical and visible to all db in that cluster. Cluster
-#   query have tag 'cluster', and will only execute once on
-#   each database cluster (i.e. a PostgreSQL Server)
-###############################################################
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Cluster Level Metrics
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃   001 ~ 021 are cluster level metrics, which means they are
+#┃   identical and visible to all db in that cluster. Cluster
+#┃   query have tag 'cluster', and will only execute once on
+#┃   each database cluster (i.e. a PostgreSQL Server)
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg.pg_primary_only
-#  ┃ PostgreSQL basic information (on primary)
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [cluster primary]
-#  ┃ TTL      ┆ 10
-#  ┃ Priority ┆ 101
-#  ┃ Timeout  ┆ 100ms
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 100000 ~ higher
-#  ┃ Source   ┆ 101-pg.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ GAUGE    timestamp            database current timestamp
-#  ┃ COUNTER  lsn                  log sequence number, current write location (on primary)
-#  ┃ COUNTER  insert_lsn           primary only, location of current wal inserting
-#  ┃ COUNTER  write_lsn            primary only, location of current wal writing
-#  ┃ COUNTER  flush_lsn            primary only, location of current wal syncing
-#  ┃ GAUGE    uptime               seconds since postmaster start
-#  ┃ GAUGE    conf_reload_time     seconds since last configuration reload
-#  ┃ GAUGE    is_in_backup         1 if backup is in progress
-#  ┃ GAUGE    backup_time          seconds since current backup start. null if don't have one
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_timestamp{}
-#  ┃ pg_lsn{}
-#  ┃ pg_insert_lsn{}
-#  ┃ pg_write_lsn{}
-#  ┃ pg_flush_lsn{}
-#  ┃ pg_uptime{}
-#  ┃ pg_conf_reload_time{}
-#  ┃ pg_is_in_backup{}
-#  ┃ pg_backup_time{}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#  ┃        pg_current_wal_lsn() - '0/0'                           AS lsn,
-#  ┃        pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
-#  ┃        pg_current_wal_lsn() - '0/0'                           AS write_lsn,
-#  ┃        pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-#  ┃        extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
-#  ┃        extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
-#  ┃        pg_is_in_backup()                                      AS is_in_backup,
-#  ┃        extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg.pg_primary_only
+#┃ PostgreSQL basic information (on primary)
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ GAUGE    timestamp            database current timestamp
+#┃ COUNTER  lsn                  log sequence number, current write location (on primary)
+#┃ COUNTER  insert_lsn           primary only, location of current wal inserting
+#┃ COUNTER  write_lsn            primary only, location of current wal writing
+#┃ COUNTER  flush_lsn            primary only, location of current wal syncing
+#┃ GAUGE    uptime               seconds since postmaster start
+#┃ GAUGE    conf_reload_time     seconds since last configuration reload
+#┃ GAUGE    is_in_backup         1 if backup is in progress
+#┃ GAUGE    backup_time          seconds since current backup start. null if don't have one
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_timestamp{}
+#┃ pg_lsn{}
+#┃ pg_insert_lsn{}
+#┃ pg_write_lsn{}
+#┃ pg_flush_lsn{}
+#┃ pg_uptime{}
+#┃ pg_conf_reload_time{}
+#┃ pg_is_in_backup{}
+#┃ pg_backup_time{}
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_primary_only:
   name: pg
   desc: PostgreSQL basic information (on primary)
@@ -103,53 +86,32 @@ pg_primary_only:
 
 
 
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg.pg_standby_only
-#  ┃ PostgreSQL basic information (on standby)
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [cluster standby]
-#  ┃ TTL      ┆ 10
-#  ┃ Priority ┆ 101
-#  ┃ Timeout  ┆ 100ms
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 100000 ~ higher
-#  ┃ Source   ┆ 101-pg.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ GAUGE    timestamp            database current timestamp
-#  ┃ COUNTER  lsn                  log sequence number, current replay location (on standby)
-#  ┃ COUNTER  receive_lsn          location of wal synced to disk (standby only)
-#  ┃ COUNTER  replay_lsn           location of wal applied (on standby)
-#  ┃ GAUGE    uptime               seconds since postmaster start
-#  ┃ GAUGE    conf_reload_time     seconds since last configuration reload
-#  ┃ GAUGE    last_replay_time     time when last transaction been replayed
-#  ┃ GAUGE    lag                  replication lag in seconds from view of standby server
-#  ┃ GAUGE    is_in_backup         1 if backup is in progress
-#  ┃ GAUGE    backup_time          seconds since current backup start. null if don't have one
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_timestamp{}
-#  ┃ pg_lsn{}
-#  ┃ pg_receive_lsn{}
-#  ┃ pg_replay_lsn{}
-#  ┃ pg_uptime{}
-#  ┃ pg_conf_reload_time{}
-#  ┃ pg_last_replay_time{}
-#  ┃ pg_lag{}
-#  ┃ pg_is_in_backup{}
-#  ┃ pg_backup_time{}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                                    AS timestamp,
-#  ┃        pg_last_wal_replay_lsn() - '0/0'                                         AS lsn,
-#  ┃        pg_last_wal_receive_lsn() - '0/0'                                        AS receive_lsn,
-#  ┃        pg_last_wal_replay_lsn() - '0/0'                                         AS replay_lsn,
-#  ┃        extract(EPOCH FROM now() - pg_postmaster_start_time())                   AS uptime,
-#  ┃        extract(EPOCH FROM now() - pg_conf_load_time())                          AS conf_reload_time,
-#  ┃        extract(EPOCH FROM pg_last_xact_replay_timestamp())                      AS last_replay_time,
-#  ┃        CASE WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
-#  ┃            ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()) END AS lag,
-#  ┃        pg_is_in_backup()                                                        AS is_in_backup,
-#  ┃        extract(EPOCH FROM now() - pg_backup_start_time())                       AS backup_time;
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg.pg_standby_only
+#┃ PostgreSQL basic information (on standby)
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ GAUGE    timestamp            database current timestamp
+#┃ COUNTER  lsn                  log sequence number, current replay location (on standby)
+#┃ COUNTER  receive_lsn          location of wal synced to disk (standby only)
+#┃ COUNTER  replay_lsn           location of wal applied (on standby)
+#┃ GAUGE    uptime               seconds since postmaster start
+#┃ GAUGE    conf_reload_time     seconds since last configuration reload
+#┃ GAUGE    last_replay_time     time when last transaction been replayed
+#┃ GAUGE    lag                  replication lag in seconds from view of standby server
+#┃ GAUGE    is_in_backup         1 if backup is in progress
+#┃ GAUGE    backup_time          seconds since current backup start. null if don't have one
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_timestamp{}
+#┃ pg_lsn{}
+#┃ pg_receive_lsn{}
+#┃ pg_replay_lsn{}
+#┃ pg_uptime{}
+#┃ pg_conf_reload_time{}
+#┃ pg_last_replay_time{}
+#┃ pg_lag{}
+#┃ pg_is_in_backup{}
+#┃ pg_backup_time{}
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 pg_standby_only:
   name: pg
@@ -171,7 +133,7 @@ pg_standby_only:
   tags: [cluster, standby]
   min_version: 100000
   max_version: 0
-  fatal: false
+  fatal: true
 
   metrics:
     - timestamp:

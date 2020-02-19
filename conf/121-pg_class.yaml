@@ -1,52 +1,32 @@
-###############################################################
-# Database Level Metrics
-#   These metrics are unique for different database. So it will
-#   be executed for each database even they lies in same cluster
-#   note you'd better provide a datname label in your query in
-#   order to get rid of name collision
-###############################################################
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Database Level Metrics
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃   These metrics are unique for different database. So it will
+#┃   be executed for each database even they lies in same cluster
+#┃   note you'd better provide a datname label in your query in
+#┃   order to get rid of name collision
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg_class
-#  ┃ Postgres relation statistic, db level , normal version
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [not:shard]
-#  ┃ TTL      ┆ 100
-#  ┃ Priority ┆ 121
-#  ┃ Timeout  ┆ 1s
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 90400 ~ higher
-#  ┃ Source   ┆ 130-pg_class.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ LABEL    datname              database name of this relation
-#  ┃ LABEL    nspname              schema name of this relation
-#  ┃ LABEL    relname              relation name of this relation
-#  ┃ LABEL    relkind              relation type r-table i-index s-sequence m-mview t-toast
-#  ┃ GAUGE    relpages             exact page count of this relation
-#  ┃ GAUGE    reltuples            estimate relation tuples
-#  ┃ GAUGE    relage               age of non-index relation
-#  ┃ GAUGE    relsize              size of this relation
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_class_relpages{datname,nspname,relname,relkind}
-#  ┃ pg_class_reltuples{datname,nspname,relname,relkind}
-#  ┃ pg_class_relage{datname,nspname,relname,relkind}
-#  ┃ pg_class_relsize{datname,nspname,relname,relkind}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT CURRENT_CATALOG                                              AS datname,
-#  ┃        relnamespace::RegNamespace                                   AS nspname,
-#  ┃        relname,
-#  ┃        relkind,
-#  ┃        relpages,
-#  ┃        reltuples,
-#  ┃        CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,
-#  ┃        pg_relation_size(oid)                                        AS relsize
-#  ┃ FROM pg_class
-#  ┃ WHERE relnamespace NOT IN
-#  ┃       ('pg_catalog'::regnamespace::oid, 'information_schema'::regnamespace::oid, 'pg_toast'::regnamespace::oid)
-#  ┃   AND relkind IN ('r', 'i', 'm', 't')
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_class
+#┃ Postgres relation statistic, db level , normal version
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ LABEL    datname              database name of this relation
+#┃ LABEL    nspname              schema name of this relation
+#┃ LABEL    relname              relation name of this relation
+#┃ LABEL    relkind              relation type r-table i-index s-sequence m-mview t-toast
+#┃ GAUGE    relpages             exact page count of this relation
+#┃ GAUGE    reltuples            estimate relation tuples
+#┃ GAUGE    relage               age of non-index relation
+#┃ GAUGE    relsize              size of this relation
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_class_relpages{datname,nspname,relname,relkind}
+#┃ pg_class_reltuples{datname,nspname,relname,relkind}
+#┃ pg_class_relage{datname,nspname,relname,relkind}
+#┃ pg_class_relsize{datname,nspname,relname,relkind}
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 pg_class:
   name: pg_class
@@ -68,98 +48,7 @@ pg_class:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard, not:olap]
-  min_version: 090400
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: database name of this relation
-    - nspname:
-        usage: LABEL
-        description: schema name of this relation
-    - relname:
-        usage: LABEL
-        description: relation name of this relation
-    - relkind:
-        usage: LABEL
-        description: relation type r-table i-index s-sequence m-mview t-toast
-    - relpages:
-        usage: GAUGE
-        description: exact page count of this relation
-    - reltuples:
-        usage: GAUGE
-        description: estimate relation tuples
-    - relage:
-        usage: GAUGE
-        description: age of non-index relation
-    - relsize:
-        usage: GAUGE
-        description: size of this relation
-
-
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg_class.pg_class_shard
-#  ┃ Postgres relation statistic, db level , shard version
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [shard]
-#  ┃ TTL      ┆ 100
-#  ┃ Priority ┆ 121
-#  ┃ Timeout  ┆ 1s
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 90400 ~ higher
-#  ┃ Source   ┆ 121-pg_class.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ LABEL    datname              database name of this relation
-#  ┃ LABEL    nspname              schema name of this relation
-#  ┃ LABEL    relname              relation name of this relation
-#  ┃ LABEL    relkind              relation type r-table i-index s-sequence m-mview t-toast
-#  ┃ GAUGE    relpages             exact page count of this relation
-#  ┃ GAUGE    reltuples            estimate relation tuples
-#  ┃ GAUGE    relage               age of non-index relation
-#  ┃ GAUGE    relsize              size of this relation
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_class_relpages{datname,nspname,relname,relkind}
-#  ┃ pg_class_reltuples{datname,nspname,relname,relkind}
-#  ┃ pg_class_relage{datname,nspname,relname,relkind}
-#  ┃ pg_class_relsize{datname,nspname,relname,relkind}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT CURRENT_CATALOG                                              AS datname,
-#  ┃        relnamespace::RegNamespace                                   AS nspname,
-#  ┃        relname,
-#  ┃        relkind,
-#  ┃        relpages,
-#  ┃        reltuples,
-#  ┃        CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,
-#  ┃        pg_relation_size(pc.oid)                                     AS relsize
-#  ┃ FROM pg_class pc
-#  ┃          LEFT JOIN pg_namespace pn on pc.relnamespace = pn.oid
-#  ┃ WHERE (nspname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR nspname = 'user_search')
-#  ┃     AND relkind IN ('r', 'i', 'm', 't');
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-pg_class_shard:
-  name: pg_class
-  desc: Postgres relation statistic, db level , shard version
-
-  query: |
-    SELECT CURRENT_CATALOG                                              AS datname,
-           relnamespace::RegNamespace                                   AS nspname,
-           relname,
-           relkind,
-           relpages,
-           reltuples,
-           CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,
-           pg_relation_size(pc.oid)                                     AS relsize
-    FROM pg_class pc
-             LEFT JOIN pg_namespace pn on pc.relnamespace = pn.oid
-    WHERE (nspname IN (SELECT min(nspname) FROM pg_namespace WHERE nspname LIKE 'rel_8192_%' LIMIT 1) OR nspname = 'user_search')
-        AND relkind IN ('r', 'i', 'm', 't');
-
-  ttl: 100
-  timeout: 1
-  tags: [shard, not:olap]
+  tags: [not:shard, not:bulky]
   min_version: 090400
 
   metrics:

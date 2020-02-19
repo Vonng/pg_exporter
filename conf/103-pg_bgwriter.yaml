@@ -1,53 +1,32 @@
-#  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ┃ pg_bgwriter
-#  ┃ PostgreSQL background writer metrics: https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-BGWRITER-VIEW
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ Tags     ┆ [cluster]
-#  ┃ TTL      ┆ 10
-#  ┃ Priority ┆ 103
-#  ┃ Timeout  ┆ 1s
-#  ┃ Fatal    ┆ false
-#  ┃ Version  ┆ 90400 ~ higher
-#  ┃ Source   ┆ 103-pg_bgwriter.yaml
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ COUNTER  checkpoints_timed    scheduled checkpoints that have been performed
-#  ┃ COUNTER  checkpoints_req      requested checkpoints that have been performed
-#  ┃ COUNTER  checkpoint_write_time time spending on writing files to disk, in µs
-#  ┃ COUNTER  checkpoint_sync_time time spending on syncing files to disk, in µs
-#  ┃ COUNTER  buffers_checkpoint   buffers written during checkpoints
-#  ┃ COUNTER  buffers_clean        buffers written by the background writer
-#  ┃ COUNTER  buffers_backend      buffers written directly by a backend
-#  ┃ COUNTER  maxwritten_clean     times that bgwriter stopped a cleaning scan
-#  ┃ COUNTER  buffers_backend_fsync times a backend had to execute its own fsync
-#  ┃ COUNTER  buffers_alloc        buffers allocated
-#  ┃ COUNTER  stats_reset          time when statistics were last reset
-#  ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ pg_bgwriter_checkpoints_timed{}
-#  ┃ pg_bgwriter_checkpoints_req{}
-#  ┃ pg_bgwriter_checkpoint_write_time{}
-#  ┃ pg_bgwriter_checkpoint_sync_time{}
-#  ┃ pg_bgwriter_buffers_checkpoint{}
-#  ┃ pg_bgwriter_buffers_clean{}
-#  ┃ pg_bgwriter_buffers_backend{}
-#  ┃ pg_bgwriter_maxwritten_clean{}
-#  ┃ pg_bgwriter_buffers_backend_fsync{}
-#  ┃ pg_bgwriter_buffers_alloc{}
-#  ┃ pg_bgwriter_stats_reset{}
-#  ┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#  ┃ SELECT checkpoints_timed,
-#  ┃        checkpoints_req,
-#  ┃        checkpoint_write_time,
-#  ┃        checkpoint_sync_time,
-#  ┃        buffers_checkpoint,
-#  ┃        buffers_clean,
-#  ┃        buffers_backend,
-#  ┃        maxwritten_clean,
-#  ┃        buffers_backend_fsync,
-#  ┃        buffers_alloc,
-#  ┃        stats_reset
-#  ┃ FROM pg_stat_bgwriter;
-#  ┃
-#  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_bgwriter
+#┃ PostgreSQL background writer metrics: https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-BGWRITER-VIEW
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ COUNTER  checkpoints_timed    scheduled checkpoints that have been performed
+#┃ COUNTER  checkpoints_req      requested checkpoints that have been performed
+#┃ COUNTER  checkpoint_write_time time spending on writing files to disk, in µs
+#┃ COUNTER  checkpoint_sync_time time spending on syncing files to disk, in µs
+#┃ COUNTER  buffers_checkpoint   buffers written during checkpoints
+#┃ COUNTER  buffers_clean        buffers written by the background writer
+#┃ COUNTER  buffers_backend      buffers written directly by a backend
+#┃ COUNTER  maxwritten_clean     times that bgwriter stopped a cleaning scan
+#┃ COUNTER  buffers_backend_fsync times a backend had to execute its own fsync
+#┃ COUNTER  buffers_alloc        buffers allocated
+#┃ COUNTER  stats_reset          time when statistics were last reset
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_bgwriter_checkpoints_timed{}
+#┃ pg_bgwriter_checkpoints_req{}
+#┃ pg_bgwriter_checkpoint_write_time{}
+#┃ pg_bgwriter_checkpoint_sync_time{}
+#┃ pg_bgwriter_buffers_checkpoint{}
+#┃ pg_bgwriter_buffers_clean{}
+#┃ pg_bgwriter_buffers_backend{}
+#┃ pg_bgwriter_maxwritten_clean{}
+#┃ pg_bgwriter_buffers_backend_fsync{}
+#┃ pg_bgwriter_buffers_alloc{}
+#┃ pg_bgwriter_stats_reset{}
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 pg_bgwriter:
   desc: "PostgreSQL background writer metrics: https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-BGWRITER-VIEW"
