@@ -40,7 +40,7 @@ pg_wait:
   ttl: 10
   tags: [cluster]
   min_version: 090600
-  skip_errors: true
+
   metrics:
     - datname:
         usage: LABEL

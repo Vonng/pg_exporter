@@ -40,7 +40,6 @@ pg_xact:
   ttl: 10
   tags: [cluster]
   min_version: 090400
-  skip_errors: true
 
   metrics:
     - xmin:
