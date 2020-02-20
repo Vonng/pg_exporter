@@ -11,7 +11,7 @@
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_class
-#┃ Postgres relation statistic, db level , normal version
+#┃ Postgres relation statistic, db level
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ LABEL    datname              database name of this relation
 #┃ LABEL    nspname              schema name of this relation
@@ -27,7 +27,6 @@
 #┃ pg_class_relage{datname,nspname,relname,relkind}
 #┃ pg_class_relsize{datname,nspname,relname,relkind}
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pg_class:
   name: pg_class
   desc: Postgres relation statistic, db level , normal version
@@ -48,7 +47,7 @@ pg_class:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard, not:bulky]
+  tags: [not:bulky]
   min_version: 090400
 
   metrics:

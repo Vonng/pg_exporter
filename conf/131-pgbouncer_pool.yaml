@@ -41,10 +41,10 @@ pgbouncer_pool:
     - database:
         usage: LABEL
         rename: datname
-        description: database name of this relation
+        description: database name of this pool
     - user:
         usage: LABEL
-        description: user
+        description: user name of this pool
     - cl_active:
         usage: GAUGE
         rename: active_clients

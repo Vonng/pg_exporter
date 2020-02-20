@@ -23,7 +23,6 @@
 #┃ pgbouncer_database_paused{datname,host,port,real_datname}
 #┃ pgbouncer_database_disabled{datname,host,port,real_datname}
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pgbouncer_database:
   name: pgbouncer_database
   desc: "pgbouncer database stats: http://www.pgbouncer.org/usage.html#show-databases"

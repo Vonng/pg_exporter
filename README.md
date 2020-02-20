@@ -4,7 +4,7 @@
 
 Latest binaries can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. [Support](pg_exporter.yaml) for PostgreSQL 10+ & Pgbouncer 1.9+ is provided ([`conf`](conf/)).  Lower version support could be add in the future, or you can provide your own conf to achieve it.
 
-Latest version is v0.1.1. Here are how self monitoring dashboards looks like:
+Latest version is v0.1.2 Here are how self monitoring dashboards looks like:
 
 ![](doc/pg-exporter.png)
 
@@ -81,6 +81,18 @@ Flags:
 * `--metricPath` or `PG_EXPORTER_TELEMETRY_PATH` is the URL path under which to expose metrics.
 * `--dry-run` will print configuration files
 * `--explain` will actually connect to target server and planning queries for it. Then explain which queries are installed.
+
+#### Debug Interface
+
+```bash
+# Reload configuration
+curl localhost:9630/reload
+
+# Explain configuration
+curl localhost:9630/explain
+```
+
+
 
 ## Build
 

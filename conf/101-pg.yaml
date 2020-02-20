@@ -112,7 +112,6 @@ pg_primary_only:
 #┃ pg_is_in_backup{}
 #┃ pg_backup_time{}
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pg_standby_only:
   name: pg
   desc: PostgreSQL basic information (on standby)

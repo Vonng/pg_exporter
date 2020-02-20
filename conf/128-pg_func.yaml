@@ -1,7 +1,7 @@
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_func
-#┃ PostgreSQL Function execution statistics, db level, normal version
+#┃ PostgreSQL Function execution statistics, db level
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ LABEL    datname              database name of this function
 #┃ LABEL    nspname              schema name of this function
@@ -31,7 +31,7 @@ pg_func:
 
   ttl: 10
   timeout: 1
-  tags: [not:shard, not:bulky]
+  tags: [not:bulky]
   min_version: 090400
 
   metrics:

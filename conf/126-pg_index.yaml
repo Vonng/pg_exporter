@@ -41,7 +41,7 @@ pg_index:
 
   ttl: 10
   timeout: 1
-  tags: [not:shard, not:bulky]
+  tags: [not:bulky]
   min_version: 090400
 
   metrics:

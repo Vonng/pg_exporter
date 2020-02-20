@@ -11,7 +11,6 @@
 #┃ pg_xact_xmax{}
 #┃ pg_xact_xnum{}
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pg_xact:
   name: pg_xact
   desc: PostgreSQL transaction identifier information

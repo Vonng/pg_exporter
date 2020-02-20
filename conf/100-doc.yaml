@@ -5,7 +5,7 @@
 #┃ Desc  :   pg_exporter metrics config files
 #┃ Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+
 #┃ Ctime :   2019-12-09
-#┃ Mtime :   2020-01-08
+#┃ Mtime :   2020-02-20
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
@@ -29,7 +29,7 @@
 #┃
 #┃                                <---- following field are [OPTIONAL], control execution policy
 #┃    ttl: 10                     <---- cache ttl: how long will exporter cache it's result. set to 0 to disable cache
-#┃    timeout: 0.1                <---- timeout: in seconds, query execeed this will be canceled. default is 0.1, set to -1 to disable timeout
+#┃    timeout: 0.1                <---- timeout: in seconds, query execeed this will be canceled. default is 0.1 (100ms), set to -1 to disable timeout
 #┃    min_version: 100000         <---- minimal supported version in server version number format, e.g  120001 = 12.1, 090601 = 9.6.1
 #┃    max_version: 130000         <---- maximal supported version in server version number format, boundary not include
 #┃    fatal: false                <---- if query marked fatal fail, this scrape will abort immediately
@@ -89,25 +89,17 @@
 #┃ Query Definition
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ pg_exporter is shipped with a series of preset configurations
+#┃
 #┃ 101 ~ 120 are common, fast, cluster level metrics
 #┃ 121 ~ 128 are database level metrics (with additional datname label)
-#┃ 129       are special queries for shard, disable by default, enable by --tag=shard
 #┃ 130 ~ 133 are pgbouncer queries
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ Queries Policy
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ By default, queries are categorized into 3 policy group
 #┃
-#┃ --tag=<none> default instance, enabling all default queries
-#┃ --tag=shard  sharding instance, replace some slow query with sampling version
-#┃ --tag=bulky  bulky instance, too much relation to scrape, disable slow queries
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Note that 101 - 120 are cluster level queries (for a whole PostgreSQL server), and 121 ~ 129 are
+#┃ database level queries (means they are database-specific, may run multiple time on same cluster)
+#┃ database level queries usually are slow, if you want to disable them, just add a `--tag=bulky`
+#┃ when launching pg_exporter, so these database-level slow queries will not be installed
+#┃
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Query Fatality
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ if query marked with Fatal failed, this scrape operation is marked as fail, and pg_up/pgbouncer_up is
@@ -116,22 +108,14 @@
 #┃
 #┃ if query without `fatal` flag fails, it will increase fail counter & stats. But the scrape operation
 #┃ will carry on, the entire query result will not be marked as fail, thus won't affect up metrics.
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Query Timeout
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ All query have a default timeout 100ms, if exceed, the query will be canceled immediately to avoid
 #┃ avalanche. You can explict overwrite that option. but be ware: in some extreme case, if all your
 #┃ timeout sum up greater your scrape/cache interval (usually 15s) , the query may still be jammed.
 #┃ or , you can just disable potential slow queries with --tag=bulky
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Query TTL
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Cache is disabled for each query by default, it is enabled if you set a non-zero value for TTL
@@ -139,3 +123,5 @@
 #┃ Most (fast) query have 10s TTL, while some slow query have 100s TTL to reduce overhead.
 #┃ Sharding instance and bulky instance will have longer TTL because slow metrics query is expensive on them
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+

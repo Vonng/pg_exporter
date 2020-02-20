@@ -1,7 +1,7 @@
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_table_size
-#┃ PostgreSQL table size detail, db level, normal version
+#┃ PostgreSQL table size detail, db level
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ LABEL    datname              database name of this relation
 #┃ LABEL    nspname              schema name of this relation
@@ -16,7 +16,6 @@
 #┃ pg_table_size_indexsize{datname,nspname,relname}
 #┃ pg_table_size_toastsize{datname,nspname,relname}
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pg_table_size:
   name: pg_table_size
   desc: PostgreSQL table size detail, db level, normal version
@@ -36,7 +35,7 @@ pg_table_size:
 
   ttl: 100
   timeout: 1
-  tags: [not:shard, not:bulky]
+  tags: [not:bulky]
   min_version: 100000
 
   metrics:

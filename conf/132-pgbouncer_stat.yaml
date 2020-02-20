@@ -52,7 +52,7 @@ pgbouncer_stat:
         description: database name of this relation
     - total_xact_count:
         usage: GAUGE
-        description: total tr
+        description: total transaction count
     - total_query_count:
         usage: GAUGE
         description: relation name of this relation

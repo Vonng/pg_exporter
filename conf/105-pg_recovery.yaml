@@ -15,7 +15,6 @@
 #┃ pg_recovery_backup_end_lsn{}
 #┃ pg_recovery_require_record{}
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pg_recovery:
   name: pg_recovery
   desc: PostgreSQL control recovery metrics since 9.6

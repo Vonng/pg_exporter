@@ -46,7 +46,6 @@
 #┃ pg_checkpoint_time{}
 #┃ pg_checkpoint_elapse{}
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pg_checkpoint_10:
   name: pg_checkpoint
   desc: checkpoint information from pg_control_checkpoint since 10

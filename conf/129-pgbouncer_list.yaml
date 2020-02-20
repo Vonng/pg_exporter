@@ -24,7 +24,6 @@
 #┃ dns_queries:    Count of in-flight DNS queries.
 #┃ dns_pending:    not used
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 pgbouncer_list:
   name: pgbouncer_list
   desc: "pgbouncer entry list: http://www.pgbouncer.org/usage.html#show-lists"

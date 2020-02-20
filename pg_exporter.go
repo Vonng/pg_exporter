@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/lib/pq"
 	"io/ioutil"
@@ -11,21 +10,24 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
-	"text/template"
+	"syscall"
 	"time"
+	"text/template"
+	"database/sql"
 
 	_ "github.com/lib/pq"
+	"gopkg.in/yaml.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
+	"github.com/prometheus/common/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
-	"gopkg.in/alecthomas/kingpin.v2"
-	"gopkg.in/yaml.v2"
 )
 
 /**********************************************************************************************\
@@ -33,7 +35,7 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.1.1"
+var Version = "0.1.2"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
@@ -578,7 +580,7 @@ func (q *QueryInstance) sendMetrics(ch chan<- prometheus.Metric) {
 
 // Server represent a postgres connection, with additional fact, conf, runtime info
 type Server struct {
-	*sql.DB              // database instance
+	*sql.DB              // database instance (do not close this due to the stupid implementation in database/sql)
 	dsn     string       // data source name
 	lock    sync.RWMutex // server scrape lock
 	err     error        // last error
@@ -653,6 +655,7 @@ func PgbouncerPrecheck(s *Server) (err error) {
 		}
 		s.DB.SetMaxIdleConns(1)
 		s.DB.SetMaxOpenConns(1)
+		s.DB.SetConnMaxLifetime(60 * time.Second)
 	}
 
 	if _, err = s.DB.Exec(`SHOW VERSION;`); err != nil {
@@ -671,6 +674,7 @@ func PostgresPrecheck(s *Server) (err error) {
 		}
 		s.DB.SetMaxIdleConns(1)
 		s.DB.SetMaxOpenConns(1)
+		s.DB.SetConnMaxLifetime(60 * time.Second)
 	}
 
 	// retrieve version info
@@ -686,6 +690,11 @@ func PostgresPrecheck(s *Server) (err error) {
 		s.Planned = false
 	}
 	s.Version = version
+
+	// do not check here
+	if _, err = s.DB.Exec(`SET application_name = pg_exporter;`); err != nil {
+		return fmt.Errorf("fail settting application name: %w", err)
+	}
 
 	// get important metadata
 	var recovery bool
@@ -1670,6 +1679,46 @@ func DryRun() {
 
 }
 
+// PgExporter is the singleton of Exporter
+var PgExporter *Exporter
+var ReloadLock sync.Mutex
+
+// Reload will launch a new pg exporter instance
+func Reload() error {
+	ReloadLock.Lock()
+	defer ReloadLock.Unlock()
+	log.Debugf("reload request received, launch new exporter instance")
+
+	// create a new exporter
+	newExporter, err := NewExporter(
+		*pgURL,
+		WithConfig(*configPath),
+		WithConstLabels(*constLabels),
+		WithCacheDisabled(*disableCache),
+		WithFailFast(*failFast),
+		WithNamespace(*exporterNamespace),
+		WithAutoDiscovery(*autoDiscovery),
+		WithExcludeDatabases(*excludeDatabase),
+		WithTags(*serverTags),
+	)
+	// if launch new exporter failed, do nothing
+	if err != nil {
+		log.Errorf("fail to reload exporter: %s", err.Error())
+		return err
+	}
+
+	log.Debugf("shutdown old exporter instance")
+	// if older one exists, close and unregister it
+	if PgExporter != nil {
+		// do not close old exporter because the stupid implementation of sql.DB
+		// there connection will be automatically release after 1 min
+		prometheus.Unregister(PgExporter)
+	}
+	PgExporter = newExporter
+	log.Infof("server reloaded")
+	return nil
+}
+
 // Run pg exporter
 func Run() {
 	// explain config only
@@ -1678,7 +1727,8 @@ func Run() {
 	}
 
 	// create exporter: if target is down, exporter creation will wait until it backup online
-	exporter, err := NewExporter(
+	var err error
+	PgExporter, err = NewExporter(
 		*pgURL,
 		WithConfig(*configPath),
 		WithConstLabels(*constLabels),
@@ -1695,13 +1745,25 @@ func Run() {
 	}
 
 	if *explainOnly {
-		exporter.server.Plan() // trigger a manual planning before explain
-		fmt.Println(exporter.Explain())
+		PgExporter.server.Plan() // trigger a manual planning before explain
+		fmt.Println(PgExporter.Explain())
 		os.Exit(0)
 	}
 
-	prometheus.MustRegister(exporter)
-	defer exporter.Close()
+	prometheus.MustRegister(PgExporter)
+	defer PgExporter.Close()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGHUP)
+	go func() {
+		log.Info("SIGHUP received, reloading")
+		for sig := range sigs {
+			switch sig {
+			case syscall.SIGHUP:
+				Reload()
+			}
+		}
+	}()
 
 	// run http
 	http.Handle(*metricPath, promhttp.Handler())
@@ -1711,8 +1773,17 @@ func Run() {
 	})
 	http.HandleFunc("/explain", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		_, _ = w.Write([]byte(exporter.Explain()))
+		_, _ = w.Write([]byte(PgExporter.Explain()))
 	})
+	http.HandleFunc("/reload", func(w http.ResponseWriter, r *http.Request) {
+		response := `server reloaded`
+		if err := Reload(); err != nil {
+			response = fmt.Sprintf("fail to reload: %s", err.Error())
+		}
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		_, _ = w.Write([]byte(response))
+	})
+
 	log.Infof("pg_exporter for %s start, listen on http://%s%s", shadowDSN(*pgURL), *listenAddress, *metricPath)
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
