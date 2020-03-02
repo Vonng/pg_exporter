@@ -2,19 +2,15 @@
 
 [Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics. **Gives you complete insight on your favourate elephant!**
 
-Latest binaries can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. [Support](pg_exporter.yaml) for PostgreSQL 10+ & Pgbouncer 1.9+ is provided ([`conf`](conf/)).  Lower version support could be add in the future, or you can provide your own conf to achieve it.
+Latest binaries & rpm can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+ 
 
-Latest version is v0.1.2 Here are how self monitoring dashboards looks like:
+The latest version of `pg_exporter` is v0.2.0
 
-![](doc/pg-exporter.png)
+## Feature
 
-
-
-## Features
-
-* Support Postgres & Pgbouncer (pgbouncer mode is enabled when target dbname is `pgbouncer`)
-* Fine-grained execution control (Tags Filter, Facts Filter, Version Filter, Timeout, Cache, etc...)
+* Support both Postgres & Pgbouncer
 * Flexible: Almost all metrics are defined in customizable config files with SQL query. 
+* Fine-grained execution control (Tags Filter, Facts Filter, Version Filter, Timeout, Cache, etc...)
 * Dynamic Planning: User could provide multiple branches of a metric queries. Queries matches server version & fact & tag will be actually installed.
 * Configurable caching policy & query timeout
 * Rich metrics about `pg_exporter` itself.
@@ -24,12 +20,14 @@ Latest version is v0.1.2 Here are how self monitoring dashboards looks like:
 
 
 
+ (pgbouncer mode is enabled when target dbname is `pgbouncer`)
+
 ## Quick Start
 
 To run this exporter, you will need two things
 
 * **Where** to scrape:  A postgres or pgbouncer URL given via `PG_EXPORTER_URL`  or `--url`
-* **What** to scrape: A path to config file or directory, by default `./pg_exporter.yaml`
+* **What** to scrape: A path to config file or directory, by default `./pg_exporter.yaml` or `/etc/pg_exporter`
 
 ```bash
 export PG_EXPORTER_URL='postgres://postgres:password@localhost:5432/postgres'
@@ -116,6 +114,16 @@ Or [download](https://github.com/Vonng/pg_exporter/releases) latest prebuilt bin
 
 
 
+## Deploy
+
+A redhat7 rpm is provided on release page. Which include
+
+* [`/etc/default/pg_exporter`](service/pg_exporter.default)
+* [`/etc/pg_exporter/pg_exporter.yaml`](service/pg_exporter.default)
+* [`/usr/pg_exporter`](service/pg_exporter.default)
+
+
+
 ## Config
 
 Configs are core part of `pg_exporter`. Actually this project contains more lines of YAML than go.
@@ -126,9 +134,7 @@ Configs are core part of `pg_exporter`. Actually this project contains more line
 
 ### built-in configs
 
-Dashboard for monitoring pg_exporter itself: [`pg-exporter.json`](monitor/pg-exporter.json)
 
-![](doc/pg-exporter.png)
 
 Current `pg_exporter` is ship with 32 built-in metrics queries. 
 
@@ -162,90 +168,98 @@ Current `pg_exporter` is ship with 32 built-in metrics queries.
 * [pg_index_bloat](conf/127-pg_index_bloat.yaml)
 * [pg_func](conf/128-pg_func.yaml)
 * [pgbouncer_list](conf/129-pgbouncer_list.yaml)
-* [pgbouncer_stat](conf/130-pgbouncer_stat.yaml)
-* [pgbouncer_database](conf/131-pgbouncer_database.yaml)
-* [pgbouncer_pool](conf/132-pgbouncer_pool.yaml)
+* [pgbouncer_database](conf/130-pgbouncer_database.yaml)
+* [pgbouncer_pool](conf/131-pgbouncer_pool.yaml)
+* [pgbouncer_stat](conf/132-pgbouncer_stat.yaml)
 
 `pg_exporter` will generate approximately 200~300 metrics for completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate serveral 1k ~ 10k metrics. You may need modifying or disable some  database-level metrics on database with serveral thousands or more tables in order to complete scrape in time.
 
 Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir. and here is a [sample](conf/100-doc.txt) config.
 
 ```yaml
-#  pg_primary_only:       <---- Branch name, distinguish different branch of a metric query
-#    name: pg             <---- actual Query name, used as metric prefix, will set to branch if not provide
-#    desc: PostgreSQL basic information (on primary)                    <---- query description
-#    query: |                                                           <---- query string
-#
-#      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#             pg_current_wal_lsn() - '0/0'                           AS lsn,
-#             pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
-#             pg_current_wal_lsn() - '0/0'                           AS write_lsn,
-#             pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-#             extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
-#             extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
-#             pg_is_in_backup()                                      AS is_in_backup,
-#             extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-#
-#                                <---- following field are [OPTIONAL], control execution policy
-#    ttl: 10                     <---- cache ttl: how long will exporter cache it's result. set to 0 to disable cache
-#    timeout: 0.1                <---- timeout: in seconds, query execeed this will be canceled. default is 0.1, set to -1 to disable timeout
-#    min_version: 100000         <---- minimal supported version in server version number format, e.g  120001 = 12.1, 090601 = 9.6.1
-#    max_version: 130000         <---- maximal supported version in server version number format, boundary not include
-#    fatal: false                <---- if query marked fatal fail, this scrape will abort immidiately
-#
-#    tags: [cluster, primary]    <---- tags consist of one or more string, which could be:
-#                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
-#                                        * 'primary' marks this query can only run on a master instance (will not execute if pg_is_in_recovery())
-#                                        * 'standby' marks this query can only run on a recoverying instance (will execute if pg_is_in_recovery())
-#                                        * some special tag prefix will have special effect:
-#                                        * 'dbname:<dbname>' means this query will only execute on database with name '<dbname>'
-#                                        * 'username:<user>' means this query will only execute when connect with user '<user>'
-#                                        * 'extension:<extname>' means this query will only execute when extension '<extname>' is installed
-#                                        * 'schema:<nspname>' means this query will only execute when schema '<nspname>' exist
-#                                        * 'not:<negtag>' means this query will only execute when exporter is launch without tag '<negtag>'
-#                                        * '<tag>' means this query will only execute when exporter is launch with tag '<tag>'
-#                                           (tag could not be cluster,primary,standby or have special prefix)
-#
-#
-#    metrics:                    <---- this is a list of returned columns, each column must have a name, usage, could have an alias and description
-#      - timestamp:              <---- this is column name, should be exactly same as returned column name
-#          rename: ts            <---- rename is optional, will use this alias instead of column name
-#          usage: GAUGE          <---- usage could be
-#                                        * DISCARD: completely ignore this field
-#                                        * LABEL: use columnName:columnValue as a label in result
-#                                        * GAUGE: use this column as a metric, which is '<query.name>_<column.name>{<labels>} column.value'
-#                                        * COUNTER: same as GAUGE, except it is a counter.
-#
-#          description: database current timestamp
-#      - lsn:
-#          usage: COUNTER
-#          description: log sequence number, current write location (on primary)
-#      - insert_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal inserting
-#      - write_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal writing
-#      - flush_lsn:
-#          usage: COUNTER
-#          description: primary only, location of current wal syncing
-#      - uptime:
-#          usage: GAUGE
-#          description: seconds since postmaster start
-#      - conf_reload_time:
-#          usage: GAUGE
-#          description: seconds since last configuration reload
-#      - is_in_backup:
-#          usage: GAUGE
-#          description: 1 if backup is in progress
-#      - backup_time:
-#          usage: GAUGE
-#          description: seconds since current backup start. null if don't have one
+#┃ Query Example
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃  pg_primary_only:       <---- Branch name, distinguish different branch of a metric query
+#┃    name: pg             <---- Query's real name, used as metric prefix, set to Branch Name by default
+#┃    desc: PostgreSQL basic information (on primary)                 <---- query description
+#┃    query: |                                                        <---- query string
+#┃
+#┃      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
+#┃             pg_current_wal_lsn() - '0/0'                           AS lsn,
+#┃             pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
+#┃             pg_current_wal_lsn() - '0/0'                           AS write_lsn,
+#┃             pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
+#┃             extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
+#┃             extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
+#┃             pg_is_in_backup()                                      AS is_in_backup,
+#┃             extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
+#┃
+#┃                                <---- following field are [OPTIONAL], control execution policy
+#┃    ttl: 10                     <---- cache ttl: how long will exporter cache it's result. set to 0 to disable cache
+#┃    timeout: 0.1                <---- timeout: in seconds, query execeed this will be canceled. default is 0.1 (100ms), set to -1 to disable timeout
+#┃    min_version: 100000         <---- minimal supported version in server version number format, e.g  120001 = 12.1, 090601 = 9.6.1
+#┃    max_version: 130000         <---- maximal supported version in server version number format, boundary not include
+#┃    fatal: false                <---- if query marked fatal fail, this scrape will abort immediately
+#┃    skip: false                 <---- query marked skip will be omitted (during planning)
+#┃
+#┃    tags: [cluster, primary]    <---- tags consist of one or more string, which could be:
+#┃                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
+#┃                                        * 'primary' marks this query can only run on a master instance (will not execute if pg_is_in_recovery())
+#┃                                        * 'standby' marks this query can only run on a recovering instance (will execute if pg_is_in_recovery())
+#┃                                        * some special tag prefix will have special effect:
+#┃                                        * 'dbname:<dbname>' means this query will only execute on database with name '<dbname>'
+#┃                                        * 'username:<user>' means this query will only execute when connect with user '<user>'
+#┃                                        * 'extension:<extname>' means this query will only execute when extension '<extname>' is installed
+#┃                                        * 'schema:<nspname>' means this query will only execute when schema '<nspname>' exist
+#┃                                        * 'not:<negtag>' means this query will only execute when exporter is launch without tag '<negtag>'
+#┃                                        * '<tag>' means this query will only execute when exporter is launch with tag '<tag>'
+#┃                                           (tag could not be cluster,primary,standby or have special prefix)
+#┃
+#┃
+#┃    metrics:                    <---- this is a list of returned columns, each column must have a name, usage, could have an alias and description
+#┃      - timestamp:              <---- this is column name, should be exactly same as returned column name
+#┃          rename: ts            <---- rename is optional, will use this alias instead of column name
+#┃          usage: GAUGE          <---- usage could be
+#┃                                        * DISCARD: completely ignore this field
+#┃                                        * LABEL: use columnName:columnValue as a label in result
+#┃                                        * GAUGE: use this column as a metric, which is '<query.name>_<column.name>{<labels>} column.value'
+#┃                                        * COUNTER: same as GAUGE, except it is a counter.
+#┃
+#┃          description: database current timestamp
+#┃      - lsn:
+#┃          usage: COUNTER
+#┃          description: log sequence number, current write location (on primary)
+#┃      - insert_lsn:
+#┃          usage: COUNTER
+#┃          description: primary only, location of current wal inserting
+#┃      - write_lsn:
+#┃          usage: COUNTER
+#┃          description: primary only, location of current wal writing
+#┃      - flush_lsn:
+#┃          usage: COUNTER
+#┃          description: primary only, location of current wal syncing
+#┃      - uptime:
+#┃          usage: GAUGE
+#┃          description: seconds since postmaster start
+#┃      - conf_reload_time:
+#┃          usage: GAUGE
+#┃          description: seconds since last configuration reload
+#┃      - is_in_backup:
+#┃          usage: GAUGE
+#┃          description: 1 if backup is in progress
+#┃      - backup_time:
+#┃          usage: GAUGE
+#┃          description: seconds since current backup start. null if don't have one
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 
 
-## Visualize
+## VisualizATION
+
+![](doc/pg-exporter.png)
+
+
 
 Users could visualize these metrics via fancy grafana dashboards.
 

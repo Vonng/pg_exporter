@@ -33,6 +33,7 @@
 #┃    min_version: 100000         <---- minimal supported version in server version number format, e.g  120001 = 12.1, 090601 = 9.6.1
 #┃    max_version: 130000         <---- maximal supported version in server version number format, boundary not include
 #┃    fatal: false                <---- if query marked fatal fail, this scrape will abort immediately
+#┃    skip: false                 <---- query marked skip will be omitted (during planning)
 #┃
 #┃    tags: [cluster, primary]    <---- tags consist of one or more string, which could be:
 #┃                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
@@ -1843,6 +1844,7 @@ pg_query:
 
   ttl: 100
   timeout: 2
+  skip: false
   tags: [cluster, extension:pg_stat_statements , schema:monitor, not:shard, not:bulky]
   min_version: 090400
 
@@ -2663,6 +2665,7 @@ pg_table_size:
 
   ttl: 100
   timeout: 1
+  skip: false
   tags: [not:bulky]
   min_version: 100000
 
@@ -2797,6 +2800,7 @@ pg_table_bloat:
 
   ttl: 100
   timeout: 1
+  skip: false
   tags: [not:bulky]
   min_version: 090400
 
@@ -2955,6 +2959,7 @@ pg_index_bloat:
 
   ttl: 100
   timeout: 1
+  skip: false
   tags: [not:bulky]
   min_version: 090400
 

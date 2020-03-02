@@ -35,6 +35,7 @@ pg_table_size:
 
   ttl: 100
   timeout: 1
+  skip: false
   tags: [not:bulky]
   min_version: 100000
 

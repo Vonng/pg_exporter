@@ -35,14 +35,14 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.1.2"
+var Version = "0.2.0"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
 var (
 	// exporter settings
 	pgURL             = kingpin.Flag("url", "postgres target url").String()
-	configPath        = kingpin.Flag("config", "path to config dir or file").Default("pg_exporter.yaml").Envar("PG_EXPORTER_CONFIG").String()
+	configPath        = kingpin.Flag("config", "path to config dir or file").String()
 	constLabels       = kingpin.Flag("label", "constant lables:comma separated list of label=value pair").Default("").Envar("PG_EXPORTER_LABEL").String()
 	serverTags        = kingpin.Flag("tag", "tags,comma separated list of server tag").Default("").Envar("PG_EXPORTER_TAG").String()
 	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_DISABLE_CACHE").Bool()
@@ -123,6 +123,7 @@ type Query struct {
 	MinVersion int      `yaml:"min_version"` // minimal supported version, include
 	MaxVersion int      `yaml:"max_version"` // maximal supported version, not include
 	Fatal      bool     `yaml:"fatal"`       // if query marked fatal fail, entire scrape will fail
+	Skip       bool     `yaml:"skip"`        // if query marked skip, it will be omit while loading
 
 	Metrics []map[string]*Column `yaml:"metrics"` // metric definition list
 
@@ -820,6 +821,11 @@ func (s *Server) ResetStats() {
 
 // Compatible tells whether a query is compatible with current server
 func (s *Server) Compatible(query *Query) (res bool, reason string) {
+	// check skip flag
+	if query.Skip {
+		return false, fmt.Sprintf("query %s is marked skip", query.Name)
+	}
+
 	// check mode
 	if pgbouncerQuery := query.HasTag("pgbouncer"); pgbouncerQuery != s.PgbouncerMode {
 		if s.PgbouncerMode {
@@ -1642,6 +1648,28 @@ func RetrieveTargetURL() (res string) {
 	return defaultPGURL
 }
 
+// RetrieveConfig config path
+func RetrieveConfig() (res string) {
+	// priority: cli-args > env  > default settings (check exist)
+	if res = *configPath; res != "" {
+		log.Infof("retrieve config path %s from command line", res)
+		return res
+	}
+	if res = os.Getenv("PG_EXPORTER_CONFIG"); res != "" {
+		log.Infof("retrieve config path %s from PG_EXPORTER_CONFIG", res)
+		return res
+	}
+
+	candidate := []string{"pg_exporter.yaml", "pg_exporter.yml", "/etc/pg_exporter.yaml", "/etc/pg_exporter"}
+	for _, res = range candidate {
+		if _, err := os.Stat(res); err == nil { // default1 exist
+			log.Infof("fallback on default config path: %s", res)
+			return res
+		}
+	}
+	return ""
+}
+
 /**********************************************************************************************\
 *                                        Main                                                  *
 \**********************************************************************************************/
@@ -1654,6 +1682,7 @@ func init() {
 	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, autoDiscovery=%v, excludeDatabase=%v listenAdress=%v metricPath=%v",
 		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *listenAddress, *metricPath)
 	*pgURL = RetrieveTargetURL()
+	*configPath = RetrieveConfig()
 }
 
 // DryRun will explain all query fetched from configs
@@ -1726,6 +1755,11 @@ func Run() {
 		DryRun()
 	}
 
+	if *configPath == "" {
+		log.Errorf("no valid config path, exit")
+		os.Exit(1)
+	}
+
 	// create exporter: if target is down, exporter creation will wait until it backup online
 	var err error
 	PgExporter, err = NewExporter(
@@ -1753,14 +1787,15 @@ func Run() {
 	prometheus.MustRegister(PgExporter)
 	defer PgExporter.Close()
 
+	// reload conf when receiving SIGHUP or SIGUSR1
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGHUP)
 	go func() {
-		log.Info("SIGHUP received, reloading")
 		for sig := range sigs {
 			switch sig {
 			case syscall.SIGHUP:
-				Reload()
+				log.Infof("%v received, reloading", sig)
+				_ = Reload()
 			}
 		}
 	}()

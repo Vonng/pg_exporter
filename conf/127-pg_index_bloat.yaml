@@ -60,6 +60,7 @@ pg_index_bloat:
 
   ttl: 100
   timeout: 1
+  skip: false
   tags: [not:bulky]
   min_version: 090400
 

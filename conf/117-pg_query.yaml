@@ -61,6 +61,7 @@ pg_query:
 
   ttl: 100
   timeout: 2
+  skip: false
   tags: [cluster, extension:pg_stat_statements , schema:monitor, not:shard, not:bulky]
   min_version: 090400
 

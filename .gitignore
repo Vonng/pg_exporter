@@ -1,15 +1,26 @@
+# binary files
 bin/
+pg_exporter
+
+# IDE files
 .vscode/
 .idea/
 pg_exporter.iml
+
+# rpm files
+rpmbuild/
+make-rpm.sh
+
+# go files
 go.mod
 go.sum
 vendor/
-pg_exporter
+
+# mac os files
 .DS_Store
+
+# test files
 pg_exporter_test.go
 test/
 deploy/
 upload.sh
-
-conf/adhoc/

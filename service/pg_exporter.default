@@ -1,0 +1,12 @@
+PG_EXPORTER_URL='postgres://:5432/?sslmode=disable&host=/var/run/postgresql'
+PG_EXPORTER_CONFIG=/etc/pg_exporter
+PG_EXPORTER_LABEL=""
+PG_EXPORTER_TAG=""
+PG_EXPORTER_DISABLE_CACHE=false
+PG_EXPORTER_AUTO_DISCOVERY=false
+PG_EXPORTER_EXCLUDE_DATABASE="template0,template1"
+PG_EXPORTER_NAMESPACE="pg"
+PG_EXPORTER_FAIL_FAST=false
+PG_EXPORTER_LISTEN_ADDRESS=":9630"
+PG_EXPORTER_TELEMETRY_PATH="/metrics"
+PG_EXPORTER_OPTS='--log.level=info --log.format="logger:syslog?appname=prometheus&local=7"'
