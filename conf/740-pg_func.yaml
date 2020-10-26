@@ -1,0 +1,43 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_func
+#┃ PostgreSQL function statistics, db level, normal version
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_func_calls{datname,nspname,funcname}       COUNTER  how many times this function has been called
+#┃ pg_func_total_time{datname,nspname,funcname}  COUNTER  how much time spent in this function and it's child function, in ms
+#┃ pg_func_self_time{datname,nspname,funcname}   COUNTER  how much time spent in this function itself (other func not included), in ms
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_func:
+  desc: PostgreSQL function statistics, db level, normal version
+  query: |
+    SELECT CURRENT_CATALOG AS datname,
+           schemaname      AS nspname,
+           funcname,
+           calls,
+           total_time,
+           self_time
+    FROM pg_stat_user_functions
+    ORDER BY 4 DESC LIMIT 128;
+
+  ttl: 10
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this relation
+    - nspname:
+        usage: LABEL
+        description: schema name of this relation
+    - funcname:
+        usage: LABEL
+        description: relation name of this relation
+    - calls:
+        usage: COUNTER
+        description: how many times this function has been called
+    - total_time:
+        usage: COUNTER
+        description: how much time spent in this function and it's child function, in ms
+    - self_time:
+        usage: COUNTER
+        description: how much time spent in this function itself (other func not included), in ms

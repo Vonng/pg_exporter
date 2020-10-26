@@ -1,0 +1,30 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_size
+#┃ PostgreSQL Database, WAL, Log size since 10
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_size_bytes{datname}  GAUGE    file size in bytes
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_size:
+  name: pg_size
+  desc: PostgreSQL Database, WAL, Log size since 10
+
+  query: |
+    SELECT datname, pg_database_size(oid) AS bytes FROM pg_database UNION ALL
+    SELECT 'log' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_logdir()) AS bytes UNION ALL
+    SELECT 'wal' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_waldir()) AS bytes;
+
+  ttl: 60
+  timeout: 1
+  min_version: 100000
+  tags:
+    - cluster
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name or 'wal' or 'log'
+    - bytes:
+        usage: GAUGE
+        description: file size in bytes
+

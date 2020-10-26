@@ -1,0 +1,42 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_backup
+#┃ PostgreSQL basebackup progress since 13
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_backup_phase{pid}        GAUGE    0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive
+#┃ pg_backup_total_bytes{pid}  GAUGE    Total amount of data that will be streamed
+#┃ pg_backup_sent_bytes{pid}   GAUGE    Amount of data streamed
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_backup:
+  name: pg_backup
+  desc: PostgreSQL basebackup progress since 13
+  query: |
+    SELECT s.pid,
+           s.param1 AS phase,
+           CASE s.param2
+               WHEN -1::integer THEN NULL::bigint
+               ELSE s.param2
+               END  AS total_bytes,
+           s.param3 AS sent_bytes
+    FROM pg_stat_get_progress_info('BASEBACKUP') s(pid, datid, relid, param1, param2, param3, param4, param5, param6,
+                                                   param7, param8, param9, param10, param11, param12, param13, param14,
+                                                   param15, param16, param17, param18, param19, param20);
+
+  ttl: 10
+  min_version: 130000
+  tags:
+    - cluster
+
+  metrics:
+    - pid:
+        usage: LABEL
+        description: process id of basebackup sender
+    - phase:
+        usage: GAUGE
+        description: 0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive
+    - total_bytes:
+        usage: GAUGE
+        description: Total amount of data that will be streamed
+    - sent_bytes:
+        usage: GAUGE
+        description: Amount of data streamed

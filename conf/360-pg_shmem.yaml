@@ -1,0 +1,33 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_shmem
+#┃ Allocations made from the server's main shared memory segment
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_shmem_offset{name}          GAUGE    The offset at which the allocation starts
+#┃ pg_shmem_size{name}            GAUGE    Size of the allocation
+#┃ pg_shmem_allocated_size{name}  GAUGE    Size of the allocation including padding
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_shmem:
+  name: pg_shmem
+  desc: Allocations made from the server's main shared memory segment
+  query: SELECT coalesce(name, 'Free') AS name, off AS offset, size, allocated_size FROM monitor.pg_shmem();
+
+  ttl: 60
+  min_version: 130000
+  tags:
+    - cluster
+
+  metrics:
+    - name:
+        usage: LABEL
+        description: The name of the shared memory allocation
+    - offset:
+        usage: GAUGE
+        description: The offset at which the allocation starts
+    - size:
+        usage: GAUGE
+        description: Size of the allocation
+    - allocated_size:
+        usage: GAUGE
+        description: Size of the allocation including padding
+

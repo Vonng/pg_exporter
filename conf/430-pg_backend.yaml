@@ -1,0 +1,27 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_backend
+#┃ PostgreSQL backend client count group by wait event type since 9.6
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_backend_count{backend_type}  GAUGE    backend process count
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_backend:
+  name: pg_backend
+  desc: PostgreSQL backend client count group by wait event type since 9.6
+
+  query: |
+    SELECT backend_type, count(*) AS count
+    FROM pg_stat_activity GROUP BY backend_type;
+
+  ttl: 10
+  min_version: 090600
+  tags:
+    - cluster
+
+  metrics:
+    - backend_type:
+        usage: LABEL
+        description: database backend type
+    - count:
+        usage: GAUGE
+        description: backend process count

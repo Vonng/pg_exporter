@@ -1,0 +1,35 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_wait
+#┃ PostgreSQL backend client count group by wait event type since 9.6
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_wait_count{datname,event}  GAUGE    wait event type count
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_wait:
+  name: pg_wait
+  desc: PostgreSQL backend client count group by wait event type since 9.6
+
+  query: |
+    SELECT datname, wait_event_type AS event, count(*) AS count
+    FROM pg_stat_activity
+    WHERE datname NOT IN ('postgres', 'template0', 'template1')
+      AND backend_type = 'client backend'
+      AND pid <> pg_backend_pid()
+    GROUP BY datname, wait_event_type;
+
+  ttl: 10
+  tags:
+    - cluster
+  min_version: 090600
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name
+    - event:
+        usage: LABEL
+        description: wait event type, LWLock, Lock, BufferPin, Activity, Extension, Client, IPC, Timeout, IO
+    - count:
+        usage: GAUGE
+        description: wait event type count
+

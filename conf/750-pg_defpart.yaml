@@ -1,0 +1,40 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_defpart
+#┃ PostgreSQL default partition tuples
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_defpart_tuples{datname,nspname,relname}  GAUGE    number of tuples in this partition
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_defpart:
+  name: pg_defpart
+  desc: PostgreSQL default partition tuples
+
+  query: |
+    SELECT CURRENT_CATALOG            AS datname,
+           relnamespace::RegNamespace AS nspname,
+           relname,
+           reltuples                  AS tuples
+    FROM pg_class
+    WHERE relpartbound IS NOT NULL
+      AND pg_catalog.pg_get_expr(relpartbound, oid) = 'DEFAULT'
+    ORDER BY 4 DESC LIMIT 64;
+
+  ttl: 60
+  timeout: 1
+  min_version: 110000
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this relation
+    - nspname:
+        usage: LABEL
+        description: schema name of this relation
+    - relname:
+        usage: LABEL
+        description: relation name of this relation
+    - tuples:
+        usage: GAUGE
+        description: number of tuples in this partition
+
+

@@ -1,12 +1,15 @@
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ PostgreSQL/Pgbouncer Metric Queries
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Author:   Vonng (fengruohang@outlook.com)
-#┃ Desc  :   pg_exporter metrics config files
-#┃ Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+
-#┃ Ctime :   2019-12-09
-#┃ Mtime :   2020-02-20
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#################################################################
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓#
+#┃ PostgreSQL/Pgbouncer Metric Queries                         ┃#
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┫#
+#┃ Author:   Vonng (fengruohang@outlook.com)                   ┃#
+#┃ Desc  :   pg_exporter metrics definition                    ┃#
+#┃ Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+             ┃#
+#┃ Ctime :   2019-12-09                                        ┃#
+#┃ Mtime :   2020-02-20                                        ┃#
+#┃ Copyright (C) 2019-2020 Ruohang Feng                        ┃#
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛#
+#################################################################
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -91,9 +94,18 @@
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ pg_exporter is shipped with a series of preset configurations
 #┃
-#┃ 101 ~ 120 are common, fast, cluster level metrics
-#┃ 121 ~ 128 are database level metrics (with additional datname label)
-#┃ 130 ~ 133 are pgbouncer queries
+#┃ 100-599 Metrics for entire database cluster  (without datname label)
+#┃ 600-899 Metrics for single database instance (with datname label)
+#┃
+#┃ 1xx  Common, basic information
+#┃ 2xx  Replication metrics:  sender, receiver, downstream, sync standby, slots
+#┃ 3xx  Persist metrics:      size, background writer, checkpoint, recovery, cache, shmem usage
+#┃ 4xx  Activity metrics:     backend count group by state, wait event, locks, xacts, queries
+#┃ 5xx  Maintenance metrics:  progress of vacuum, indexing, clustering, and basebackup
+#┃ 6xx  Database metrics:     pg_database and pg_stat_database
+#┃ 7xx  Object metrics:       pg_class, table, index, function, partition table
+#┃ 8xx  Optional metrics:     optional metrics collector (usually slow)
+#┃ 9xx  Pgbouncer metrics:    metrics from admin database `pgbouncer`
 #┃
 #┃ Note that 101 - 120 are cluster level queries (for a whole PostgreSQL server), and 121 ~ 129 are
 #┃ database level queries (means they are database-specific, may run multiple time on same cluster)
@@ -108,7 +120,7 @@
 #┃ `pgbouncer_list` by default.
 #┃
 #┃ if query without `fatal` flag fails, it will increase fail counter & stats. But the scrape operation
-#┃ will carry on, the entire query result will not be marked as fail, thus won't affect up metrics.
+#┃ will carry on, the entire query result will not be marked as fail, thus won't affect pg_up metrics.
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Query Timeout
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
@@ -137,204 +149,325 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
+
+
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg.pg_primary_only
 #┃ PostgreSQL basic information (on primary)
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ GAUGE    timestamp            database current timestamp
-#┃ COUNTER  lsn                  log sequence number, current write location (on primary)
+#┃ Tags     ┆ [cluster primary]
+#┃ TTL      ┆ 10
+#┃ Priority ┆ 0
+#┃ Timeout  ┆ 100ms
+#┃ Fatal    ┆ true
+#┃ Version  ┆ 100000 ~ higher
+#┃ Source   ┆ 110-pg.yaml
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ GAUGE    timestamp            current database timestamp in unix epoch
+#┃ GAUGE    uptime               seconds since postmaster start
+#┃ GAUGE    boot_time            postmaster boot timestamp in unix epoch
+#┃ COUNTER  lsn                  log sequence number, current write location
 #┃ COUNTER  insert_lsn           primary only, location of current wal inserting
 #┃ COUNTER  write_lsn            primary only, location of current wal writing
 #┃ COUNTER  flush_lsn            primary only, location of current wal syncing
-#┃ GAUGE    uptime               seconds since postmaster start
+#┃ COUNTER  receive_lsn          replica only, location of wal synced to disk
+#┃ COUNTER  replay_lsn           replica only, location of wal applied
 #┃ GAUGE    conf_reload_time     seconds since last configuration reload
+#┃ GAUGE    last_replay_time     time when last transaction been replayed
+#┃ GAUGE    lag                  replica only, replication lag in seconds
+#┃ GAUGE    is_in_recovery       1 if in recovery mode
+#┃ GAUGE    is_wal_replay_paused 1 if wal play is paused
 #┃ GAUGE    is_in_backup         1 if backup is in progress
-#┃ GAUGE    backup_time          seconds since current backup start. null if don't have one
+#┃ GAUGE    backup_time          seconds since current backup start
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_timestamp{}
-#┃ pg_lsn{}
-#┃ pg_insert_lsn{}
-#┃ pg_write_lsn{}
-#┃ pg_flush_lsn{}
-#┃ pg_uptime{}
-#┃ pg_conf_reload_time{}
-#┃ pg_is_in_backup{}
-#┃ pg_backup_time{}
+#┃ pg_timestamp{}             GAUGE    current database timestamp in unix epoch
+#┃ pg_uptime{}                GAUGE    seconds since postmaster start
+#┃ pg_boot_time{}             GAUGE    postmaster boot timestamp in unix epoch
+#┃ pg_lsn{}                   COUNTER  log sequence number, current write location
+#┃ pg_insert_lsn{}            COUNTER  primary only, location of current wal inserting
+#┃ pg_write_lsn{}             COUNTER  primary only, location of current wal writing
+#┃ pg_flush_lsn{}             COUNTER  primary only, location of current wal syncing
+#┃ pg_receive_lsn{}           COUNTER  replica only, location of wal synced to disk
+#┃ pg_replay_lsn{}            COUNTER  replica only, location of wal applied
+#┃ pg_conf_reload_time{}      GAUGE    seconds since last configuration reload
+#┃ pg_last_replay_time{}      GAUGE    time when last transaction been replayed
+#┃ pg_lag{}                   GAUGE    replica only, replication lag in seconds
+#┃ pg_is_in_recovery{}        GAUGE    1 if in recovery mode
+#┃ pg_is_wal_replay_paused{}  GAUGE    1 if wal play is paused
+#┃ pg_is_in_backup{}          GAUGE    1 if backup is in progress
+#┃ pg_backup_time{}           GAUGE    seconds since current backup start
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
+#┃        extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
+#┃        extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
+#┃        pg_current_wal_lsn() - '0/0'                           AS lsn,
+#┃        pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
+#┃        pg_current_wal_lsn() - '0/0'                           AS write_lsn,
+#┃        pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
+#┃        NULL::BIGINT                                           AS receive_lsn,
+#┃        NULL::BIGINT                                           AS replay_lsn,
+#┃        extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
+#┃        NULL::FLOAT                                            AS last_replay_time,
+#┃        0::FLOAT                                               AS lag,
+#┃        pg_is_in_recovery()                                    AS is_in_recovery,
+#┃        FALSE                                                  AS is_wal_replay_paused,
+#┃        pg_is_in_backup()                                      AS is_in_backup,
+#┃        extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
+#┃
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_primary_only:
   name: pg
   desc: PostgreSQL basic information (on primary)
   query: |
     SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
+           extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
+           extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
            pg_current_wal_lsn() - '0/0'                           AS lsn,
            pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
            pg_current_wal_lsn() - '0/0'                           AS write_lsn,
            pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-           extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
+           NULL::BIGINT                                           AS receive_lsn,
+           NULL::BIGINT                                           AS replay_lsn,
            extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
+           NULL::FLOAT                                            AS last_replay_time,
+           0::FLOAT                                               AS lag,
+           pg_is_in_recovery()                                    AS is_in_recovery,
+           FALSE                                                  AS is_wal_replay_paused,
            pg_is_in_backup()                                      AS is_in_backup,
            extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-
+  tags:
+    - cluster
+    - primary
   ttl: 10
   timeout: 0.1
-  tags: [cluster, primary]
   min_version: 100000
   max_version: 0
-  fatal: false
-
+  fatal: true
+  skip: false
   metrics:
     - timestamp:
+        name: timestamp
+        description: current database timestamp in unix epoch
         usage: GAUGE
-        description: database current timestamp
-    - lsn:
-        usage: COUNTER
-        description: log sequence number, current write location (on primary)
-    - insert_lsn:
-        usage: COUNTER
-        description: primary only, location of current wal inserting
-    - write_lsn:
-        usage: COUNTER
-        description: primary only, location of current wal writing
-    - flush_lsn:
-        usage: COUNTER
-        description: primary only, location of current wal syncing
     - uptime:
-        usage: GAUGE
+        name: uptime
         description: seconds since postmaster start
+        usage: GAUGE
+    - boot_time:
+        name: boot_time
+        description: postmaster boot timestamp in unix epoch
+        usage: GAUGE
+    - lsn:
+        name: lsn
+        description: log sequence number, current write location
+        usage: COUNTER
+    - insert_lsn:
+        name: insert_lsn
+        description: primary only, location of current wal inserting
+        usage: COUNTER
+    - write_lsn:
+        name: write_lsn
+        description: primary only, location of current wal writing
+        usage: COUNTER
+    - flush_lsn:
+        name: flush_lsn
+        description: primary only, location of current wal syncing
+        usage: COUNTER
+    - receive_lsn:
+        name: receive_lsn
+        description: replica only, location of wal synced to disk
+        usage: COUNTER
+    - replay_lsn:
+        name: replay_lsn
+        description: replica only, location of wal applied
+        usage: COUNTER
     - conf_reload_time:
-        usage: GAUGE
+        name: conf_reload_time
         description: seconds since last configuration reload
+        usage: GAUGE
+    - last_replay_time:
+        name: last_replay_time
+        description: time when last transaction been replayed
+        usage: GAUGE
+    - lag:
+        name: lag
+        description: replica only, replication lag in seconds
+        usage: GAUGE
+    - is_in_recovery:
+        name: is_in_recovery
+        description: 1 if in recovery mode
+        usage: GAUGE
+    - is_wal_replay_paused:
+        name: is_wal_replay_paused
+        description: 1 if wal play is paused
+        usage: GAUGE
     - is_in_backup:
-        usage: GAUGE
+        name: is_in_backup
         description: 1 if backup is in progress
-    - backup_time:
         usage: GAUGE
-        description: seconds since current backup start. null if don't have one
-
+    - backup_time:
+        name: backup_time
+        description: seconds since current backup start
+        usage: GAUGE
 
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg.pg_standby_only
-#┃ PostgreSQL basic information (on standby)
+#┃ pg.pg_replica_only
+#┃ PostgreSQL basic information (on replica)
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ GAUGE    timestamp            database current timestamp
-#┃ COUNTER  lsn                  log sequence number, current replay location (on standby)
-#┃ COUNTER  receive_lsn          location of wal synced to disk (standby only)
-#┃ COUNTER  replay_lsn           location of wal applied (on standby)
-#┃ GAUGE    uptime               seconds since postmaster start
-#┃ GAUGE    conf_reload_time     seconds since last configuration reload
-#┃ GAUGE    last_replay_time     time when last transaction been replayed
-#┃ GAUGE    lag                  replication lag in seconds from view of standby server
-#┃ GAUGE    is_in_backup         1 if backup is in progress
-#┃ GAUGE    backup_time          seconds since current backup start. null if don't have one
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_timestamp{}
-#┃ pg_lsn{}
-#┃ pg_receive_lsn{}
-#┃ pg_replay_lsn{}
-#┃ pg_uptime{}
-#┃ pg_conf_reload_time{}
-#┃ pg_last_replay_time{}
-#┃ pg_lag{}
-#┃ pg_is_in_backup{}
-#┃ pg_backup_time{}
+#┃ pg_timestamp{}             GAUGE    database current timestamp
+#┃ pg_uptime{}                GAUGE    seconds since postmaster start
+#┃ pg_boot_time{}             GAUGE    unix timestamp when postmaster boot
+#┃ pg_lsn{}                   COUNTER  log sequence number, current write location
+#┃ pg_insert_lsn{}            COUNTER  primary only, location of current wal inserting
+#┃ pg_write_lsn{}             COUNTER  primary only, location of current wal writing
+#┃ pg_flush_lsn{}             COUNTER  primary only, location of current wal syncing
+#┃ pg_receive_lsn{}           COUNTER  replica only, location of wal synced to disk
+#┃ pg_replay_lsn{}            COUNTER  replica only, location of wal applied
+#┃ pg_conf_reload_time{}      GAUGE    seconds since last configuration reload
+#┃ pg_last_replay_time{}      GAUGE    time when last transaction been replayed
+#┃ pg_lag{}                   GAUGE    replica only, replication lag in seconds
+#┃ pg_is_in_recovery{}        GAUGE    1 if in recovery mode
+#┃ pg_is_wal_replay_paused{}  GAUGE    1 if wal play paused
+#┃ pg_is_in_backup{}          GAUGE    1 if backup is in progress
+#┃ pg_backup_time{}           GAUGE    seconds since current backup start
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_standby_only:
+pg_replica_only:
   name: pg
-  desc: PostgreSQL basic information (on standby)
+  desc: PostgreSQL basic information (on replica)
   query: |
     SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                                    AS timestamp,
+           extract(EPOCH FROM now() - pg_postmaster_start_time())                   AS uptime,
+           extract(EPOCH FROM pg_postmaster_start_time())                           AS boot_time,
            pg_last_wal_replay_lsn() - '0/0'                                         AS lsn,
+           NULL::BIGINT                                                             AS insert_lsn,
+           NULL::BIGINT                                                             AS write_lsn,
+           NULL::BIGINT                                                             AS flush_lsn,
            pg_last_wal_receive_lsn() - '0/0'                                        AS receive_lsn,
            pg_last_wal_replay_lsn() - '0/0'                                         AS replay_lsn,
-           extract(EPOCH FROM now() - pg_postmaster_start_time())                   AS uptime,
            extract(EPOCH FROM now() - pg_conf_load_time())                          AS conf_reload_time,
            extract(EPOCH FROM pg_last_xact_replay_timestamp())                      AS last_replay_time,
-           CASE WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
+           CASE
+               WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
                ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()) END AS lag,
+           pg_is_in_recovery()                                                      AS is_in_recovery,
+           pg_is_wal_replay_paused()                                                AS is_wal_replay_paused,
            pg_is_in_backup()                                                        AS is_in_backup,
            extract(EPOCH FROM now() - pg_backup_start_time())                       AS backup_time;
-
+  tags:
+    - cluster
+    - standby
   ttl: 10
-  tags: [cluster, standby]
+  timeout: 0.1
   min_version: 100000
   max_version: 0
   fatal: true
-
+  skip: false
   metrics:
     - timestamp:
-        usage: GAUGE
+        name: timestamp
         description: database current timestamp
-    - lsn:
-        usage: COUNTER
-        description: log sequence number, current replay location (on standby)
-    - receive_lsn:
-        usage: COUNTER
-        description: location of wal synced to disk (standby only)
-    - replay_lsn:
-        usage: COUNTER
-        description: location of wal applied (on standby)
+        usage: GAUGE
     - uptime:
-        usage: GAUGE
+        name: uptime
         description: seconds since postmaster start
+        usage: GAUGE
+    - boot_time:
+        name: boot_time
+        description: unix timestamp when postmaster boot
+        usage: GAUGE
+    - lsn:
+        name: lsn
+        description: log sequence number, current write location
+        usage: COUNTER
+    - insert_lsn:
+        name: insert_lsn
+        description: primary only, location of current wal inserting
+        usage: COUNTER
+    - write_lsn:
+        name: write_lsn
+        description: primary only, location of current wal writing
+        usage: COUNTER
+    - flush_lsn:
+        name: flush_lsn
+        description: primary only, location of current wal syncing
+        usage: COUNTER
+    - receive_lsn:
+        name: receive_lsn
+        description: replica only, location of wal synced to disk
+        usage: COUNTER
+    - replay_lsn:
+        name: replay_lsn
+        description: replica only, location of wal applied
+        usage: COUNTER
     - conf_reload_time:
-        usage: GAUGE
+        name: conf_reload_time
         description: seconds since last configuration reload
+        usage: GAUGE
     - last_replay_time:
-        usage: GAUGE
+        name: last_replay_time
         description: time when last transaction been replayed
+        usage: GAUGE
     - lag:
+        name: lag
+        description: replica only, replication lag in seconds
         usage: GAUGE
-        description: replication lag in seconds from view of standby server
+    - is_in_recovery:
+        name: is_in_recovery
+        description: 1 if in recovery mode
+        usage: GAUGE
+    - is_wal_replay_paused:
+        name: is_wal_replay_paused
+        description: 1 if wal play paused
+        usage: GAUGE
     - is_in_backup:
-        usage: GAUGE
+        name: is_in_backup
         description: 1 if backup is in progress
-    - backup_time:
         usage: GAUGE
-        description: seconds since current backup start. null if don't have one
+    - backup_time:
+        name: backup_time
+        description: seconds since current backup start
+        usage: GAUGE
 
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_meta
-#┃ PostgreSQL meta info (semi-constant)
+#┃ PostgreSQL meta info
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    cluster_id           cluster system identifier
-#┃ LABEL    port                 listen port
-#┃ LABEL    data_dir             data directory path
-#┃ LABEL    conf_path            postgresql.conf path
-#┃ LABEL    hba_path             pg_hba.conf path
-#┃ LABEL    wal_level            wal level
-#┃ LABEL    version              server version in human readable format
-#┃ LABEL    ver_num              server version number in machine readable format
-#┃ GAUGE    info                 constant 1
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_meta_info{cluster_id,port,data_dir,conf_path,hba_path,wal_level,version,ver_num}
+#┃ pg_meta_info{cluster_id,cluster_name,listen_port,data_dir,conf_path,hba_path,wal_level,version,ver_num,extensions,primary_conninfo}  GAUGE    constant 1
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_meta:
   name: pg_meta
-  desc: PostgreSQL meta info (pg_control_system() is provisioned since 9.6)
+  desc: PostgreSQL meta info
   query: |
     SELECT (SELECT system_identifier FROM pg_control_system()) AS cluster_id,
-           current_setting('port')                             AS port,
+           current_setting('cluster_name')                     AS cluster_name,
+           current_setting('port')                             AS listen_port,
            current_setting('data_directory')                   AS data_dir,
            current_setting('config_file')                      AS conf_path,
            current_setting('hba_file')                         AS hba_path,
            current_setting('wal_level')                        AS wal_level,
            current_setting('server_version')                   AS version,
            current_setting('server_version_num')               AS ver_num,
+           current_setting('shared_preload_libraries')         AS extensions,
+           current_setting('primary_conninfo')                 AS primary_conninfo,
            1                                                   AS info
 
-  ttl: 100
-  tags: [cluster]
+  ttl: 10
   min_version: 090600
+  tags:
+    - cluster
 
   metrics:
     - cluster_id:
         usage: LABEL
         description: cluster system identifier
-    - port:
+    - cluster_name:
+        usage: LABEL
+        description: cluster name
+    - listen_port:
         usage: LABEL
         description: listen port
     - data_dir:
@@ -355,38 +488,637 @@ pg_meta:
     - ver_num:
         usage: LABEL
         description: server version number in machine readable format
+    - extensions:
+        usage: LABEL
+        description: server installed preload libraries
+    - primary_conninfo:
+        usage: LABEL
+        description: connection string to upstream (do not set password here)
     - info:
         usage: GAUGE
         description: constant 1
+
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_setting
+#┃ Important postgres setting entries that must kept same on entire cluster
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_setting_max_connections{}            GAUGE    number of concurrent connections to the database server
+#┃ pg_setting_max_prepared_transactions{}  GAUGE    maximum number of transactions that can be in the prepared state simultaneously
+#┃ pg_setting_max_worker_processes{}       GAUGE    maximum number of background processes that the system can support
+#┃ pg_setting_max_replication_slots{}      GAUGE    maximum number of replication slots
+#┃ pg_setting_max_wal_senders{}            GAUGE    maximum number of concurrent connections from standby servers
+#┃ pg_setting_max_locks_per_transaction{}  GAUGE    no more than this many distinct objects can be locked at any one time
+#┃ pg_setting_block_size{}                 GAUGE    pg page block size, 8192 by default
+#┃ pg_setting_data_checksums{}             GAUGE    whether data checksum is enabled, 1 enabled 0 disabled
+#┃ pg_setting_wal_log_hints{}              GAUGE    whether wal_log_hints is enabled, 1 enabled 0 disabled
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_setting:
+  name: pg_setting
+  desc: Important postgres setting entries that must kept same on entire cluster
+  query: |
+    SELECT current_setting('max_connections')           AS max_connections,
+           current_setting('max_prepared_transactions') AS max_prepared_transactions,
+           current_setting('max_worker_processes')      AS max_worker_processes,
+           current_setting('max_replication_slots')     AS max_replication_slots,
+           current_setting('max_wal_senders')           AS max_wal_senders,
+           current_setting('max_locks_per_transaction') AS max_locks_per_transaction,
+           current_setting('block_size')                AS block_size,
+           CASE current_setting('data_checksums') WHEN 'on' THEN 1 ELSE 0 END AS data_checksums,
+           CASE current_setting('wal_log_hints') WHEN 'on' THEN 1 ELSE 0 END AS wal_log_hints;
+
+  ttl: 10
+  tags:
+    - cluster
+  min_version: 090600
+
+  metrics:
+    - max_connections:
+        usage: GAUGE
+        description: number of concurrent connections to the database server
+    - max_prepared_transactions:
+        usage: GAUGE
+        description: maximum number of transactions that can be in the prepared state simultaneously
+    - max_worker_processes:
+        usage: GAUGE
+        description: maximum number of background processes that the system can support
+    - max_replication_slots:
+        usage: GAUGE
+        description: maximum number of replication slots
+    - max_wal_senders:
+        usage: GAUGE
+        description: maximum number of concurrent connections from standby servers
+    - max_locks_per_transaction:
+        usage: GAUGE
+        description: no more than this many distinct objects can be locked at any one time
+    - block_size:
+        usage: GAUGE
+        description: pg page block size, 8192 by default
+    - data_checksums:
+        usage: GAUGE
+        description: whether data checksum is enabled, 1 enabled 0 disabled
+    - wal_log_hints:
+        usage: GAUGE
+        description: whether wal_log_hints is enabled, 1 enabled 0 disabled
+
+
+
+
+###############################################################
+#                  2. Replication Metrics                     #
+###############################################################
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_replication
+#┃ PostgreSQL replication metrics 10+, https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW"
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_replication_lsn{pid,client_addr,application_name,state,sync_state}             COUNTER  current log position on this server
+#┃ pg_replication_sent_diff{pid,client_addr,application_name,state,sync_state}       GAUGE    last log position sent to this standby server diff with current lsn
+#┃ pg_replication_write_diff{pid,client_addr,application_name,state,sync_state}      GAUGE    last log position written to disk by this standby server diff with current lsn
+#┃ pg_replication_flush_diff{pid,client_addr,application_name,state,sync_state}      GAUGE    last log position flushed to disk by this standby server diff with current lsn
+#┃ pg_replication_replay_diff{pid,client_addr,application_name,state,sync_state}     GAUGE    last log position replayed into the database on this standby server diff with current lsn
+#┃ pg_replication_sent_lsn{pid,client_addr,application_name,state,sync_state}        COUNTER  last log position sent to this standby server
+#┃ pg_replication_write_lsn{pid,client_addr,application_name,state,sync_state}       COUNTER  last log position written to disk by this standby server
+#┃ pg_replication_flush_lsn{pid,client_addr,application_name,state,sync_state}       COUNTER  last log position flushed to disk by this standby server
+#┃ pg_replication_replay_lsn{pid,client_addr,application_name,state,sync_state}      COUNTER  last log position replayed into the database on this standby server
+#┃ pg_replication_write_lag{pid,client_addr,application_name,state,sync_state}       GAUGE    latest ACK lsn diff with write (sync-remote-write lag)
+#┃ pg_replication_flush_lag{pid,client_addr,application_name,state,sync_state}       GAUGE    latest ACK lsn diff with flush (sync-remote-flush lag)
+#┃ pg_replication_replay_lag{pid,client_addr,application_name,state,sync_state}      GAUGE    latest ACK lsn diff with replay (sync-remote-apply lag)
+#┃ pg_replication_backend_uptime{pid,client_addr,application_name,state,sync_state}  GAUGE    how long since standby connect to this server
+#┃ pg_replication_backend_xmin{pid,client_addr,application_name,state,sync_state}    GAUGE    this standby's xmin horizon reported by hot_standby_feedback.
+#┃ pg_replication_sync_priority{pid,client_addr,application_name,state,sync_state}   GAUGE    priority of being chosen as synchronous standby
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_replication:
+  name: pg_replication
+  desc: PostgreSQL replication metrics 10+, https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW"
+
+  query: |
+    SELECT pid,client_addr,application_name,state,sync_state,lsn,
+           lsn - sent_lsn   as sent_diff,
+           lsn - write_lsn  as write_diff,
+           lsn - flush_lsn  as flush_diff,
+           lsn - replay_lsn as replay_diff,
+           sent_lsn,write_lsn,flush_lsn,replay_lsn,
+           write_lag,flush_lag,replay_lag,
+           backend_uptime,backend_xmin,sync_priority
+    FROM (
+        SELECT pid,
+             client_addr,
+             application_name,
+             state,
+             sync_state,
+             CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END - '0/0' AS lsn,
+             sent_lsn - '0/0'                          AS sent_lsn,
+             write_lsn - '0/0'                         AS write_lsn,
+             flush_lsn - '0/0'                         AS flush_lsn,
+             replay_lsn - '0/0'                        AS replay_lsn,
+             coalesce(extract(EPOCH FROM write_lag) ,0) AS write_lag,
+             coalesce(extract(EPOCH FROM flush_lag) ,0) AS flush_lag,
+             coalesce(extract(EPOCH FROM replay_lag),0) AS replay_lag,
+             extract(EPOCH FROM now() - backend_start) AS backend_uptime,
+             backend_xmin::TEXT::BIGINT                AS backend_xmin,
+             sync_priority
+        FROM pg_stat_replication) t;
+
+  ttl: 10
+  min_version: 100000
+  tags:
+    - cluster
+
+  metrics:
+    - pid:
+        usage: LABEL
+        description: unique walsender pid
+    - client_addr:
+        usage: LABEL
+        description: client address of wal receiver
+    - application_name:
+        usage: LABEL
+        description: application name of standby
+    - state:
+        usage: LABEL
+        description: replication state startup|catchup|streaming|backup|stopping
+    - sync_state:
+        usage: LABEL
+        description: replication sync state async|potential|sync|quorum
+    - lsn:
+        usage: COUNTER
+        description: current log position on this server
+    - sent_diff:
+        usage: GAUGE
+        description: last log position sent to this standby server diff with current lsn
+    - write_diff:
+        usage: GAUGE
+        description: last log position written to disk by this standby server diff with current lsn
+    - flush_diff:
+        usage: GAUGE
+        description: last log position flushed to disk by this standby server diff with current lsn
+    - replay_diff:
+        usage: GAUGE
+        description: last log position replayed into the database on this standby server diff with current lsn
+    - sent_lsn:
+        usage: COUNTER
+        description: last log position sent to this standby server
+    - write_lsn:
+        usage: COUNTER
+        description: last log position written to disk by this standby server
+    - flush_lsn:
+        usage: COUNTER
+        description: last log position flushed to disk by this standby server
+    - replay_lsn:
+        usage: COUNTER
+        description: last log position replayed into the database on this standby server
+    - write_lag:
+        usage: GAUGE
+        description: latest ACK lsn diff with write (sync-remote-write lag)
+    - flush_lag:
+        usage: GAUGE
+        description: latest ACK lsn diff with flush (sync-remote-flush lag)
+    - replay_lag:
+        usage: GAUGE
+        description: latest ACK lsn diff with replay (sync-remote-apply lag)
+    - backend_uptime:
+        usage: GAUGE
+        description: how long since standby connect to this server
+    - backend_xmin:
+        usage: GAUGE
+        description: this standby's xmin horizon reported by hot_standby_feedback.
+    - sync_priority:
+        usage: GAUGE
+        description: priority of being chosen as synchronous standby
+
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_sync_standby
+#┃ PostgreSQL synchronous standby status and names
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_sync_standby_disabled{names}  GAUGE    1 if disabled, 0 if enabled
+#┃ pg_sync_standby_enabled{names}   GAUGE    1 if enabled, 0 if disabled
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_sync_standby:
+  name: pg_sync_standby
+  desc: PostgreSQL synchronous standby status and names
+  query: |
+    SELECT CASE names WHEN NULL THEN '""' WHEN '' THEN 'null' ELSE names END AS names,
+           CASE names WHEN NULL THEN 1 WHEN '' THEN 1 ELSE 0 END               AS disabled,
+           CASE names WHEN NULL THEN 0 WHEN '' THEN 0 ELSE 1 END               AS enabled
+    FROM (SELECT current_setting('synchronous_standby_names') AS names) t;
+
+  ttl: 10
+  min_version: 090400
+  tags:
+    - cluster
+
+  metrics:
+    - names:
+        usage: LABEL
+        description: a list of standby servers that can support synchronous replication, empty if not enabled
+    - disabled:
+        usage: GAUGE
+        description: 1 if disabled, 0 if enabled
+    - enabled:
+        usage: GAUGE
+        description: 1 if enabled, 0 if disabled
+
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_downstream
+#┃ PostgreSQL replication client count group by state
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_downstream_count{state}  GAUGE    count of corresponding replication state
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_downstream:
+  name: pg_downstream
+  desc: PostgreSQL replication client count group by state
+  query: |
+    SELECT l.state, coalesce(count, 0 ) AS count
+      FROM unnest(ARRAY ['streaming','startup','catchup', 'backup', 'stopping']) l(state)
+    LEFT JOIN (SELECT state, count(*) AS count FROM pg_stat_replication GROUP BY state)r ON l.state =  r.state
+
+  ttl: 10
+  min_version: 090400
+  tags:
+    - cluster
+
+  metrics:
+    - state:
+        usage: LABEL
+        description: replication state startup|catchup|streaming|backup|stopping
+    - count:
+        usage: GAUGE
+        description: count of corresponding replication state
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_slot
+#┃ PostgreSQL replication slot metrics 10+
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_slot_active{slot_name,datname}          GAUGE    whether the slot is currently being used
+#┃ pg_slot_temporary{slot_name,datname}       GAUGE    whether the slot is a temporary replication slot
+#┃ pg_slot_xmin{slot_name,datname}            GAUGE    oldest txid that this slot needs the database to retain
+#┃ pg_slot_catalog_xmin{slot_name,datname}    GAUGE    oldest txid that this slot needs the database to retain for catalog
+#┃ pg_slot_restart_lsn{slot_name,datname}     COUNTER  lsn that needs retain, wal after that will be kept
+#┃ pg_slot_confirm_lsn{slot_name,datname}     COUNTER  lsn that confirmed by logical standby, null for physical slot
+#┃ pg_slot_retained_bytes{slot_name,datname}  GAUGE    bytes retained for this slot
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_slot:
+  name: pg_slot
+  desc: PostgreSQL replication slot metrics 10+
+  query: |
+    SELECT slot_name,
+           database                    AS datname,
+           active,
+           temporary,
+           xmin::TEXT::BIGINT          AS xmin,
+           catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
+           restart_lsn - '0/0'         AS restart_lsn,
+           confirmed_flush_lsn - '0/0' AS confirm_lsn,
+           CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn()
+               ELSE pg_current_wal_lsn() END - restart_lsn
+                                       AS retained_bytes
+    FROM pg_replication_slots;
+
+  ttl: 10
+  min_version: 100000
+  tags:
+    - cluster
+
+  metrics:
+    - slot_name:
+        usage: LABEL
+        description: replication slot name
+    - datname:
+        usage: LABEL
+        description: associated database name, only logical slot have this
+    - active:
+        usage: GAUGE
+        description: whether the slot is currently being used
+    - temporary:
+        usage: GAUGE
+        description: whether the slot is a temporary replication slot
+    - xmin:
+        usage: GAUGE
+        description: oldest txid that this slot needs the database to retain
+    - catalog_xmin:
+        usage: GAUGE
+        description: oldest txid that this slot needs the database to retain for catalog
+    - restart_lsn:
+        usage: COUNTER
+        description: lsn that needs retain, wal after that will be kept
+    - confirm_lsn:
+        usage: COUNTER
+        description: lsn that confirmed by logical standby, null for physical slot
+    - retained_bytes:
+        usage: GAUGE
+        description: bytes retained for this slot
+
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_walreceiver.pg_walreceiver_13
+#┃ PostgreSQL walreceiver metrics since 13 (add sender host and port)
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_walreceiver_init_lsn{pid,status,sender_host,sender_port,slot_name}    COUNTER  first time received lsn when WAL receiver is started
+#┃ pg_walreceiver_init_tli{pid,status,sender_host,sender_port,slot_name}    GAUGE    first time received timeline number when WAL receiver is started
+#┃ pg_walreceiver_last_lsn{pid,status,sender_host,sender_port,slot_name}    COUNTER  latest lsn that already flushed to standby disk
+#┃ pg_walreceiver_last_tli{pid,status,sender_host,sender_port,slot_name}    GAUGE    latest timeline that already flushed to standby disk
+#┃ pg_walreceiver_send_ts{pid,status,sender_host,sender_port,slot_name}     GAUGE    send time of last message received from origin WAL sender
+#┃ pg_walreceiver_receive_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    receipt time of last message received from origin WAL sender
+#┃ pg_walreceiver_report_lsn{pid,status,sender_host,sender_port,slot_name}  COUNTER  with time zone	Time of last write-ahead log location reported to origin WAL sender
+#┃ pg_walreceiver_report_ts{pid,status,sender_host,sender_port,slot_name}   GAUGE    timestamp of last time reporting to sender
+#┃ pg_walreceiver_current_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    current_timestamp
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_walreceiver_13:
+  name: pg_walreceiver
+  desc: PostgreSQL walreceiver metrics since 13 (add sender host and port)
+  query: |
+    SELECT pid,
+           status,
+           coalesce(sender_host, (regexp_match(conninfo, '.*host=(\S+).*'))[1])       AS sender_host,
+           coalesce(sender_port::TEXT, (regexp_match(conninfo, '.*port=(\S+).*'))[1]) AS sender_port,
+           slot_name,
+           receive_start_lsn - '0/0'                                                  AS init_lsn,
+           receive_start_tli                                                          AS init_tli,
+           flushed_lsn - '0/0'                                                        AS last_lsn,
+           received_tli                                                               AS last_tli,
+           last_msg_send_time                                                         AS send_ts,
+           last_msg_receipt_time                                                      AS receive_ts,
+           latest_end_lsn - '0/0'                                                     AS report_lsn,
+           latest_end_time                                                            AS report_ts,
+           now()                                                                      AS current_ts
+    FROM pg_stat_wal_receiver;
+
+  ttl: 10
+  tags:
+    - cluster
+    - standby
+  min_version: 130000
+
+  metrics:
+    - pid:
+        usage: LABEL
+        description: pid of the WAL receiver process
+    - status:
+        usage: LABEL
+        description: status of the WAL receiver process
+    - sender_host:
+        usage: LABEL
+        description: location this WAL receiver is connected to
+    - sender_port:
+        usage: LABEL
+        description: location port number this WAL receiver is connected to
+    - slot_name:
+        usage: LABEL
+        description: Replication slot name used by this WAL receiver
+    - init_lsn:
+        usage: COUNTER
+        description: first time received lsn when WAL receiver is started
+    - init_tli:
+        usage: GAUGE
+        description: first time received timeline number when WAL receiver is started
+    - last_lsn:
+        usage: COUNTER
+        description: latest lsn that already flushed to standby disk
+    - last_tli:
+        usage: GAUGE
+        description: latest timeline that already flushed to standby disk
+    - send_ts:
+        usage: GAUGE
+        description: send time of last message received from origin WAL sender
+    - receive_ts:
+        usage: GAUGE
+        description: receipt time of last message received from origin WAL sender
+    - report_lsn:
+        usage: COUNTER
+        description: with time zone	Time of last write-ahead log location reported to origin WAL sender
+    - report_ts:
+        usage: GAUGE
+        description: timestamp of last time reporting to sender
+    - current_ts:
+        usage: GAUGE
+        description: current_timestamp
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_walreceiver.pg_walreceiver_11
+#┃ PostgreSQL walreceiver metrics since 11 (add sender host and port)
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_walreceiver_init_lsn{pid,status,sender_host,sender_port,slot_name}    COUNTER  first time received lsn when WAL receiver is started
+#┃ pg_walreceiver_init_tli{pid,status,sender_host,sender_port,slot_name}    GAUGE    first time received timeline number when WAL receiver is started
+#┃ pg_walreceiver_last_lsn{pid,status,sender_host,sender_port,slot_name}    COUNTER  latest lsn that already flushed to standby disk
+#┃ pg_walreceiver_last_tli{pid,status,sender_host,sender_port,slot_name}    GAUGE    latest timeline that already flushed to standby disk
+#┃ pg_walreceiver_send_ts{pid,status,sender_host,sender_port,slot_name}     GAUGE    send time of last message received from origin WAL sender
+#┃ pg_walreceiver_receive_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    receipt time of last message received from origin WAL sender
+#┃ pg_walreceiver_report_lsn{pid,status,sender_host,sender_port,slot_name}  COUNTER  with time zone	Time of last write-ahead log location reported to origin WAL sender
+#┃ pg_walreceiver_report_ts{pid,status,sender_host,sender_port,slot_name}   GAUGE    timestamp of last time reporting to sender
+#┃ pg_walreceiver_current_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    current_timestamp
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_walreceiver_11:
+  name: pg_walreceiver
+  desc: PostgreSQL walreceiver metrics since 11 (add sender host and port)
+  query: |
+    SELECT pid,
+           status,
+           coalesce(sender_host, (regexp_match(conninfo, '.*host=(\S+).*'))[1])       AS sender_host,
+           coalesce(sender_port::TEXT, (regexp_match(conninfo, '.*port=(\S+).*'))[1]) AS sender_port,
+           slot_name,
+           receive_start_lsn - '0/0'                                                  AS init_lsn,
+           receive_start_tli                                                          AS init_tli,
+           received_lsn - '0/0'                                                       AS last_lsn,
+           received_tli                                                               AS last_tli,
+           last_msg_send_time                                                         AS send_ts,
+           last_msg_receipt_time                                                      AS receive_ts,
+           latest_end_lsn - '0/0'                                                     AS report_lsn,
+           latest_end_time                                                            AS report_ts,
+           now()                                                                      AS current_ts
+    FROM pg_stat_wal_receiver;
+
+  ttl: 10
+  min_version: 110000
+  max_version: 130000
+  tags:
+    - cluster
+    - standby
+
+  metrics:
+    - pid:
+        usage: LABEL
+        description: pid of the WAL receiver process
+    - status:
+        usage: LABEL
+        description: status of the WAL receiver process
+    - sender_host:
+        usage: LABEL
+        description: location this WAL receiver is connected to
+    - sender_port:
+        usage: LABEL
+        description: location port number this WAL receiver is connected to
+    - slot_name:
+        usage: LABEL
+        description: Replication slot name used by this WAL receiver
+    - init_lsn:
+        usage: COUNTER
+        description: first time received lsn when WAL receiver is started
+    - init_tli:
+        usage: GAUGE
+        description: first time received timeline number when WAL receiver is started
+    - last_lsn:
+        usage: COUNTER
+        description: latest lsn that already flushed to standby disk
+    - last_tli:
+        usage: GAUGE
+        description: latest timeline that already flushed to standby disk
+    - send_ts:
+        usage: GAUGE
+        description: send time of last message received from origin WAL sender
+    - receive_ts:
+        usage: GAUGE
+        description: receipt time of last message received from origin WAL sender
+    - report_lsn:
+        usage: COUNTER
+        description: with time zone	Time of last write-ahead log location reported to origin WAL sender
+    - report_ts:
+        usage: GAUGE
+        description: timestamp of last time reporting to sender
+    - current_ts:
+        usage: GAUGE
+        description: current_timestamp
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_walreceiver.pg_walreceiver_96
+#┃ PostgreSQL walreceiver metrics 9.6~10: https://www.postgresql.org/docs/9.6/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_walreceiver_init_lsn{pid,status,sender_host,sender_port,slot_name}    COUNTER  first time received lsn when WAL receiver is started
+#┃ pg_walreceiver_init_tli{pid,status,sender_host,sender_port,slot_name}    GAUGE    first time received timeline number when WAL receiver is started
+#┃ pg_walreceiver_last_lsn{pid,status,sender_host,sender_port,slot_name}    COUNTER  latest lsn that already flushed to standby disk
+#┃ pg_walreceiver_last_tli{pid,status,sender_host,sender_port,slot_name}    GAUGE    latest timeline that already flushed to standby disk
+#┃ pg_walreceiver_send_ts{pid,status,sender_host,sender_port,slot_name}     GAUGE    send time of last message received from origin WAL sender
+#┃ pg_walreceiver_receive_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    receipt time of last message received from origin WAL sender
+#┃ pg_walreceiver_report_lsn{pid,status,sender_host,sender_port,slot_name}  COUNTER  with time zone	Time of last write-ahead log location reported to origin WAL sender
+#┃ pg_walreceiver_report_ts{pid,status,sender_host,sender_port,slot_name}   GAUGE    timestamp of last time reporting to sender
+#┃ pg_walreceiver_current_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    current_timestamp
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_walreceiver_96:
+  name: pg_walreceiver
+  desc: "PostgreSQL walreceiver metrics 9.6~10: https://www.postgresql.org/docs/9.6/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW"
+  query: |
+    SELECT pid,
+           status,
+           (regexp_match(conninfo, '.*host=(\S+).*'))[1] AS sender_host,
+           (regexp_match(conninfo, '.*port=(\S+).*'))[1] AS sender_port,
+           slot_name,
+           receive_start_lsn - '0/0'                     AS init_lsn,
+           receive_start_tli                             AS init_tli,
+           received_lsn - '0/0'                          AS last_lsn,
+           received_tli                                  AS last_tli,
+           last_msg_send_time                            AS send_ts,
+           last_msg_receipt_time                         AS receive_ts,
+           latest_end_lsn - '0/0'                        AS report_lsn,
+           latest_end_time                               AS report_ts,
+           now()                                         AS current_ts
+    FROM pg_stat_wal_receiver;
+
+  ttl: 10
+  skip_errors: true
+  min_version: 090600
+  max_version: 110000
+  tags:
+    - cluster
+    - standby
+
+  metrics:
+    - pid:
+        usage: LABEL
+        description: pid of the WAL receiver process
+    - status:
+        usage: LABEL
+        description: status of the WAL receiver process
+    - sender_host:
+        usage: LABEL
+        description: location this WAL receiver is connected to
+    - sender_port:
+        usage: LABEL
+        description: location port number this WAL receiver is connected to
+    - slot_name:
+        usage: LABEL
+        description: Replication slot name used by this WAL receiver
+    - init_lsn:
+        usage: COUNTER
+        description: first time received lsn when WAL receiver is started
+    - init_tli:
+        usage: GAUGE
+        description: first time received timeline number when WAL receiver is started
+    - last_lsn:
+        usage: COUNTER
+        description: latest lsn that already flushed to standby disk
+    - last_tli:
+        usage: GAUGE
+        description: latest timeline that already flushed to standby disk
+    - send_ts:
+        usage: GAUGE
+        description: send time of last message received from origin WAL sender
+    - receive_ts:
+        usage: GAUGE
+        description: receipt time of last message received from origin WAL sender
+    - report_lsn:
+        usage: COUNTER
+        description: with time zone	Time of last write-ahead log location reported to origin WAL sender
+    - report_ts:
+        usage: GAUGE
+        description: timestamp of last time reporting to sender
+    - current_ts:
+        usage: GAUGE
+        description: current_timestamp
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_size
+#┃ PostgreSQL Database, WAL, Log size since 10
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_size_bytes{datname}  GAUGE    file size in bytes
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_size:
+  name: pg_size
+  desc: PostgreSQL Database, WAL, Log size since 10
+
+  query: |
+    SELECT datname, pg_database_size(oid) AS bytes FROM pg_database UNION ALL
+    SELECT 'log' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_logdir()) AS bytes UNION ALL
+    SELECT 'wal' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_waldir()) AS bytes;
+
+  ttl: 60
+  timeout: 1
+  min_version: 100000
+  tags:
+    - cluster
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name or 'wal' or 'log'
+    - bytes:
+        usage: GAUGE
+        description: file size in bytes
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_bgwriter
 #┃ PostgreSQL background writer metrics: https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-BGWRITER-VIEW
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ COUNTER  checkpoints_timed    scheduled checkpoints that have been performed
-#┃ COUNTER  checkpoints_req      requested checkpoints that have been performed
-#┃ COUNTER  checkpoint_write_time time spending on writing files to disk, in µs
-#┃ COUNTER  checkpoint_sync_time time spending on syncing files to disk, in µs
-#┃ COUNTER  buffers_checkpoint   buffers written during checkpoints
-#┃ COUNTER  buffers_clean        buffers written by the background writer
-#┃ COUNTER  buffers_backend      buffers written directly by a backend
-#┃ COUNTER  maxwritten_clean     times that bgwriter stopped a cleaning scan
-#┃ COUNTER  buffers_backend_fsync times a backend had to execute its own fsync
-#┃ COUNTER  buffers_alloc        buffers allocated
-#┃ COUNTER  stats_reset          time when statistics were last reset
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_bgwriter_checkpoints_timed{}
-#┃ pg_bgwriter_checkpoints_req{}
-#┃ pg_bgwriter_checkpoint_write_time{}
-#┃ pg_bgwriter_checkpoint_sync_time{}
-#┃ pg_bgwriter_buffers_checkpoint{}
-#┃ pg_bgwriter_buffers_clean{}
-#┃ pg_bgwriter_buffers_backend{}
-#┃ pg_bgwriter_maxwritten_clean{}
-#┃ pg_bgwriter_buffers_backend_fsync{}
-#┃ pg_bgwriter_buffers_alloc{}
-#┃ pg_bgwriter_stats_reset{}
+#┃ pg_bgwriter_checkpoints_timed{}      COUNTER  scheduled checkpoints that have been performed
+#┃ pg_bgwriter_checkpoints_req{}        COUNTER  requested checkpoints that have been performed
+#┃ pg_bgwriter_checkpoint_write_time{}  COUNTER  time spending on writing files to disk, in µs
+#┃ pg_bgwriter_checkpoint_sync_time{}   COUNTER  time spending on syncing files to disk, in µs
+#┃ pg_bgwriter_buffers_checkpoint{}     COUNTER  buffers written during checkpoints
+#┃ pg_bgwriter_buffers_clean{}          COUNTER  buffers written by the background writer
+#┃ pg_bgwriter_buffers_backend{}        COUNTER  buffers written directly by a backend
+#┃ pg_bgwriter_maxwritten_clean{}       COUNTER  times that bgwriter stopped a cleaning scan
+#┃ pg_bgwriter_buffers_backend_fsync{}  COUNTER  times a backend had to execute its own fsync
+#┃ pg_bgwriter_buffers_alloc{}          COUNTER  buffers allocated
+#┃ pg_bgwriter_stats_reset{}            COUNTER  time when statistics were last reset
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_bgwriter:
   desc: "PostgreSQL background writer metrics: https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-BGWRITER-VIEW"
@@ -405,8 +1137,6 @@ pg_bgwriter:
     FROM pg_stat_bgwriter;
 
   ttl: 10
-  timeout: 1
-  tags: [cluster]
   min_version: 090400
 
   metrics:
@@ -446,53 +1176,74 @@ pg_bgwriter:
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_checkpoint.pg_checkpoint_10
-#┃ checkpoint information from pg_control_checkpoint since 10 (prior_lsn is not fetched)
-#┃ 96 introduced 19 fields
-#┃ 10  checkpoint_location/prior_location/redo_location location to lsn
-#┃ 11 remove prior_lsn fields
+#┃ pg_recovery
+#┃ PostgreSQL control recovery metrics since 9.6
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ COUNTER  checkpoint_lsn       lsn of checkpoint
-#┃ COUNTER  redo_lsn             redo start LSN
-#┃ GAUGE    tli                  current WAL timeline
-#┃ GAUGE    prev_tli             previous WAL timeline
-#┃ GAUGE    full_page_writes     is full page write enabled ?
-#┃ GAUGE    next_xid_epoch       next xid epoch since this checkpoint
-#┃ GAUGE    next_xid             next xid since this checkpoint
-#┃ GAUGE    next_oid             next object id since this checkpoint
-#┃ GAUGE    next_multixact_id    next multixact id of this checkpoint
-#┃ GAUGE    next_multi_offset    next multixact id offset of this checkpoint
-#┃ GAUGE    oldest_xid           oldest existing xid of the checkpoint
-#┃ GAUGE    oldest_xid_dbid      which db contains the oldest xid
-#┃ GAUGE    oldest_active_xid    oldest active xid of the checkpoint
-#┃ GAUGE    oldest_multi_xid     oldest active multi xid of the checkpoint
-#┃ GAUGE    oldest_multi_dbid    which db contins the oldest multi xid
-#┃ GAUGE    oldest_commit_ts_xid xid with oldest commit ts by the checkpoint
-#┃ GAUGE    newest_commit_ts_xid xid with newest commit ts by the checkpoint
-#┃ GAUGE    time                 timestamp of this checkpoint
-#┃ GAUGE    elapse               time elapsed since this checkpoint in seconds
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_checkpoint_checkpoint_lsn{}
-#┃ pg_checkpoint_redo_lsn{}
-#┃ pg_checkpoint_tli{}
-#┃ pg_checkpoint_prev_tli{}
-#┃ pg_checkpoint_full_page_writes{}
-#┃ pg_checkpoint_next_xid_epoch{}
-#┃ pg_checkpoint_next_xid{}
-#┃ pg_checkpoint_next_oid{}
-#┃ pg_checkpoint_next_multixact_id{}
-#┃ pg_checkpoint_next_multi_offset{}
-#┃ pg_checkpoint_oldest_xid{}
-#┃ pg_checkpoint_oldest_xid_dbid{}
-#┃ pg_checkpoint_oldest_active_xid{}
-#┃ pg_checkpoint_oldest_multi_xid{}
-#┃ pg_checkpoint_oldest_multi_dbid{}
-#┃ pg_checkpoint_oldest_commit_ts_xid{}
-#┃ pg_checkpoint_newest_commit_ts_xid{}
-#┃ pg_checkpoint_time{}
-#┃ pg_checkpoint_elapse{}
+#┃ pg_recovery_min_timeline{}      COUNTER  pg control recovery min timeline
+#┃ pg_recovery_min_lsn{}           COUNTER  pg control recovery min lsn
+#┃ pg_recovery_backup_start_lsn{}  COUNTER  pg control recovery backup start lsn
+#┃ pg_recovery_backup_end_lsn{}    COUNTER  pg control recovery backup end lsn
+#┃ pg_recovery_require_record{}    GAUGE    do recovery need a end of backup record
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_checkpoint_10:
+pg_recovery:
+  name: pg_recovery
+  desc: PostgreSQL control recovery metrics since 9.6
+
+  query: |
+    SELECT min_recovery_end_timeline    AS min_timeline,
+           min_recovery_end_lsn - '0/0' AS min_lsn,
+           backup_start_lsn - '0/0'     AS backup_start_lsn,
+           backup_end_lsn - '0/0'       AS backup_end_lsn,
+           end_of_backup_record_required AS require_record
+    FROM pg_control_recovery();
+
+  ttl: 10
+  min_version: 090600
+  tags:
+    - cluster
+    - standby
+
+  metrics:
+    - min_timeline:
+        usage: COUNTER
+        description: pg control recovery min timeline
+    - min_lsn:
+        usage: COUNTER
+        description: pg control recovery min lsn
+    - backup_start_lsn:
+        usage: COUNTER
+        description: pg control recovery backup start lsn
+    - backup_end_lsn:
+        usage: COUNTER
+        description: pg control recovery backup end lsn
+    - require_record:
+        usage: GAUGE
+        description: do recovery need a end of backup record
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_checkpoint
+#┃ checkpoint information from pg_control_checkpoint since 10
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_checkpoint_checkpoint_lsn{}        COUNTER  lsn of checkpoint
+#┃ pg_checkpoint_redo_lsn{}              COUNTER  redo start LSN
+#┃ pg_checkpoint_tli{}                   GAUGE    current WAL timeline
+#┃ pg_checkpoint_prev_tli{}              GAUGE    previous WAL timeline
+#┃ pg_checkpoint_full_page_writes{}      GAUGE    is full page write enabled ?
+#┃ pg_checkpoint_next_xid_epoch{}        GAUGE    next xid epoch since this checkpoint
+#┃ pg_checkpoint_next_xid{}              GAUGE    next xid since this checkpoint
+#┃ pg_checkpoint_next_oid{}              GAUGE    next object id since this checkpoint
+#┃ pg_checkpoint_next_multixact_id{}     GAUGE    next multixact id of this checkpoint
+#┃ pg_checkpoint_next_multi_offset{}     GAUGE    next multixact id offset of this checkpoint
+#┃ pg_checkpoint_oldest_xid{}            GAUGE    oldest existing xid of the checkpoint
+#┃ pg_checkpoint_oldest_xid_dbid{}       GAUGE    which db contains the oldest xid
+#┃ pg_checkpoint_oldest_active_xid{}     GAUGE    oldest active xid of the checkpoint
+#┃ pg_checkpoint_oldest_multi_xid{}      GAUGE    oldest active multi xid of the checkpoint
+#┃ pg_checkpoint_oldest_multi_dbid{}     GAUGE    which db contins the oldest multi xid
+#┃ pg_checkpoint_oldest_commit_ts_xid{}  GAUGE    xid with oldest commit ts by the checkpoint
+#┃ pg_checkpoint_newest_commit_ts_xid{}  GAUGE    xid with newest commit ts by the checkpoint
+#┃ pg_checkpoint_time{}                  GAUGE    timestamp of this checkpoint
+#┃ pg_checkpoint_elapse{}                GAUGE    time elapsed since this checkpoint in seconds
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_checkpoint:
   name: pg_checkpoint
   desc: checkpoint information from pg_control_checkpoint since 10
   query: |
@@ -517,9 +1268,10 @@ pg_checkpoint_10:
            extract(epoch from now() - checkpoint_time) AS elapse
     FROM pg_control_checkpoint();
 
-  ttl: 100
-  tags: [cluster]
+  ttl: 60
   min_version: 100000
+  tags:
+    - cluster
 
   metrics:
     - checkpoint_lsn:
@@ -580,886 +1332,109 @@ pg_checkpoint_10:
         usage: GAUGE
         description: time elapsed since this checkpoint in seconds
 
-
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_checkpoint.pg_checkpoint_96
-#┃ checkpoint information from pg_control_checkpoint on PostgreSQL 9.6: https://www.postgresql.org/docs/9.6/functions-info.html#FUNCTIONS-PG-CONTROL-CHECKPOINT
+#┃ pg_slru
+#┃ System view to monitor internal SLRU caches
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ COUNTER  checkpoint_lsn       lsn of checkpoint
-#┃ COUNTER  prior_lsn            prior checkpoint lsn
-#┃ COUNTER  redo_lsn             redo start LSN
-#┃ GAUGE    tli                  current WAL timeline
-#┃ GAUGE    prev_tli             previous WAL timeline
-#┃ GAUGE    full_page_writes     is full page write enabled ?
-#┃ GAUGE    next_xid_epoch       next xid epoch since this checkpoint
-#┃ GAUGE    next_xid             next xid since this checkpoint
-#┃ GAUGE    next_oid             next object id since this checkpoint
-#┃ GAUGE    next_multixact_id    next multixact id of this checkpoint
-#┃ GAUGE    next_multi_offset    next multixact id offset of this checkpoint
-#┃ GAUGE    oldest_xid           oldest existing xid of the checkpoint
-#┃ GAUGE    oldest_xid_dbid      which db contains the oldest xid
-#┃ GAUGE    oldest_active_xid    oldest active xid of the checkpoint
-#┃ GAUGE    oldest_multi_xid     oldest active multi xid of the checkpoint
-#┃ GAUGE    oldest_multi_dbid    which db contins the oldest multi xid
-#┃ GAUGE    oldest_commit_ts_xid xid with oldest commit ts by the checkpoint
-#┃ GAUGE    newest_commit_ts_xid xid with newest commit ts by the checkpoint
-#┃ GAUGE    time                 timestamp of this checkpoint
-#┃ GAUGE    elapse               time elapsed since this checkpoint in seconds
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_checkpoint_checkpoint_lsn{}
-#┃ pg_checkpoint_prior_lsn{}
-#┃ pg_checkpoint_redo_lsn{}
-#┃ pg_checkpoint_tli{}
-#┃ pg_checkpoint_prev_tli{}
-#┃ pg_checkpoint_full_page_writes{}
-#┃ pg_checkpoint_next_xid_epoch{}
-#┃ pg_checkpoint_next_xid{}
-#┃ pg_checkpoint_next_oid{}
-#┃ pg_checkpoint_next_multixact_id{}
-#┃ pg_checkpoint_next_multi_offset{}
-#┃ pg_checkpoint_oldest_xid{}
-#┃ pg_checkpoint_oldest_xid_dbid{}
-#┃ pg_checkpoint_oldest_active_xid{}
-#┃ pg_checkpoint_oldest_multi_xid{}
-#┃ pg_checkpoint_oldest_multi_dbid{}
-#┃ pg_checkpoint_oldest_commit_ts_xid{}
-#┃ pg_checkpoint_newest_commit_ts_xid{}
-#┃ pg_checkpoint_time{}
-#┃ pg_checkpoint_elapse{}
+#┃ pg_slru_blks_zeroed{name}   COUNTER  Number of blocks zeroed during initializations
+#┃ pg_slru_blks_hit{name}      COUNTER  Number of times disk blocks were found already in the SLRU, so that a read was not necessary
+#┃ pg_slru_blks_read{name}     COUNTER  Number of disk blocks read for this SLRU
+#┃ pg_slru_blks_written{name}  COUNTER  Number of disk blocks written for this SLRU
+#┃ pg_slru_blks_exists{name}   COUNTER  Number of blocks checked for existence for this SLRU
+#┃ pg_slru_flushes{name}       COUNTER  Number of flushes of dirty data for this SLRU
+#┃ pg_slru_truncates{name}     COUNTER  Number of truncates for this SLRU
+#┃ pg_slru_stats_reset{name}   COUNTER  Time at which these statistics were last reset
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_checkpoint_96:
-  name: pg_checkpoint
-  desc: "checkpoint information from pg_control_checkpoint on PostgreSQL 9.6: https://www.postgresql.org/docs/9.6/functions-info.html#FUNCTIONS-PG-CONTROL-CHECKPOINT"
+pg_slru:
+  name: pg_slru
+  desc: System view to monitor internal SLRU caches
   query: |
-    SELECT checkpoint_location - '0/0'                 AS checkpoint_lsn,
-           prior_location - '0/0'                      AS prior_lsn,
-           redo_location - '0/0'                       AS redo_lsn,
-           timeline_id                                 AS tli,
-           prev_timeline_id                            AS prev_tli,
-           full_page_writes,
-           split_part(next_xid, ':', 1)                AS next_xid_epoch,
-           split_part(next_xid, ':', 2)                AS next_xid,
-           next_oid::BIGINT,
-           next_multixact_id::text::BIGINT,
-           next_multi_offset::text::BIGINT,
-           oldest_xid::text::BIGINT,
-           oldest_xid_dbid::text::BIGINT,
-           oldest_active_xid::text::BIGINT,
-           oldest_multi_xid::text::BIGINT,
-           oldest_multi_dbid::BIGINT,
-           oldest_commit_ts_xid::text::BIGINT,
-           newest_commit_ts_xid::text::BIGINT,
-           checkpoint_time                             AS time,
-           extract(epoch from now() - checkpoint_time) AS elapse
-    FROM pg_control_checkpoint();
+    SELECT
+      name,
+      blks_zeroed,
+      blks_hit,
+      blks_read,
+      blks_written,
+      blks_exists,
+      flushes,
+      truncates,
+      extract(EPOCH FROM stats_reset) AS stats_reset
+    FROM pg_stat_slru;
 
-  ttl: 100
-  tags: [cluster]
-  min_version: 090600
-  max_version: 100000
+  ttl: 60
+  min_version: 130000
+  tags:
+    - cluster
 
   metrics:
-    - checkpoint_lsn:
+    - name:
+        usage: LABEL
+        description: name of the SLRU
+    - blks_zeroed:
         usage: COUNTER
-        description: lsn of checkpoint
-    - prior_lsn:
+        description: Number of blocks zeroed during initializations
+    - blks_hit:
         usage: COUNTER
-        description: prior checkpoint lsn
-    - redo_lsn:
+        description: Number of times disk blocks were found already in the SLRU, so that a read was not necessary
+    - blks_read:
         usage: COUNTER
-        description: redo start LSN
-    - tli:
-        usage: GAUGE
-        description: current WAL timeline
-    - prev_tli:
-        usage: GAUGE
-        description: previous WAL timeline
-    - full_page_writes:
-        usage: GAUGE
-        description: is full page write enabled ?
-    - next_xid_epoch:
-        usage: GAUGE
-        description: next xid epoch since this checkpoint
-    - next_xid:
-        usage: GAUGE
-        description: next xid since this checkpoint
-    - next_oid:
-        usage: GAUGE
-        description: next object id since this checkpoint
-    - next_multixact_id:
-        usage: GAUGE
-        description: next multixact id of this checkpoint
-    - next_multi_offset:
-        usage: GAUGE
-        description: next multixact id offset of this checkpoint
-    - oldest_xid:
-        usage: GAUGE
-        description: oldest existing xid of the checkpoint
-    - oldest_xid_dbid:
-        usage: GAUGE
-        description: which db contains the oldest xid
-    - oldest_active_xid:
-        usage: GAUGE
-        description: oldest active xid of the checkpoint
-    - oldest_multi_xid:
-        usage: GAUGE
-        description: oldest active multi xid of the checkpoint
-    - oldest_multi_dbid:
-        usage: GAUGE
-        description: which db contins the oldest multi xid
-    - oldest_commit_ts_xid:
-        usage: GAUGE
-        description: xid with oldest commit ts by the checkpoint
-    - newest_commit_ts_xid:
-        usage: GAUGE
-        description: xid with newest commit ts by the checkpoint
-    - time:
-        usage: GAUGE
-        description: timestamp of this checkpoint
-    - elapse:
-        usage: GAUGE
-        description: time elapsed since this checkpoint in seconds
-
-
+        description: Number of disk blocks read for this SLRU
+    - blks_written:
+        usage: COUNTER
+        description: Number of disk blocks written for this SLRU
+    - blks_exists:
+        usage: COUNTER
+        description: Number of blocks checked for existence for this SLRU
+    - flushes:
+        usage: COUNTER
+        description: Number of flushes of dirty data for this SLRU
+    - truncates:
+        usage: COUNTER
+        description: Number of truncates for this SLRU
+    - stats_reset:
+        usage: COUNTER
+        description: Time at which these statistics were last reset
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_recovery
-#┃ PostgreSQL control recovery metrics since 9.6
+#┃ pg_shmem
+#┃ Allocations made from the server's main shared memory segment
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ COUNTER  min_timeline         pg control recovery min timeline
-#┃ COUNTER  min_lsn              pg control recovery min lsn
-#┃ COUNTER  backup_start_lsn     pg control recovery backup start lsn
-#┃ COUNTER  backup_end_lsn       pg control recovery backup end lsn
-#┃ GAUGE    require_record       do recovery need a end of backup record
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_recovery_min_timeline{}
-#┃ pg_recovery_min_lsn{}
-#┃ pg_recovery_backup_start_lsn{}
-#┃ pg_recovery_backup_end_lsn{}
-#┃ pg_recovery_require_record{}
+#┃ pg_shmem_offset{name}          GAUGE    The offset at which the allocation starts
+#┃ pg_shmem_size{name}            GAUGE    Size of the allocation
+#┃ pg_shmem_allocated_size{name}  GAUGE    Size of the allocation including padding
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_recovery:
-  name: pg_recovery
-  desc: PostgreSQL control recovery metrics since 9.6
+pg_shmem:
+  name: pg_shmem
+  desc: Allocations made from the server's main shared memory segment
+  query: SELECT coalesce(name, 'Free') AS name, off AS offset, size, allocated_size FROM monitor.pg_shmem();
 
-  query: |
-    SELECT min_recovery_end_timeline    AS min_timeline,
-           min_recovery_end_lsn - '0/0' AS min_lsn,
-           backup_start_lsn - '0/0'     AS backup_start_lsn,
-           backup_end_lsn - '0/0'       AS backup_end_lsn,
-           end_of_backup_record_required AS require_record
-    FROM pg_control_recovery();
-
-  ttl: 100
-  tags: [cluster, standby]
-  min_version: 090600
+  ttl: 60
+  min_version: 130000
+  tags:
+    - cluster
 
   metrics:
-    - min_timeline:
-        usage: COUNTER
-        description: pg control recovery min timeline
-    - min_lsn:
-        usage: COUNTER
-        description: pg control recovery min lsn
-    - backup_start_lsn:
-        usage: COUNTER
-        description: pg control recovery backup start lsn
-    - backup_end_lsn:
-        usage: COUNTER
-        description: pg control recovery backup end lsn
-    - require_record:
-        usage: GAUGE
-        description: do recovery need a end of backup record
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_standby.pg_standby_11
-#┃ PostgreSQL walreceiver metrics since 11 (add sender host and port)
-#┃ pg_stat_wal_receiver is introduced in 9.6
-#┃ add 2 new fields sender host/port in 11
-#┃ https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    pid                  pid of the WAL receiver process
-#┃ LABEL    status               status of the WAL receiver process
-#┃ LABEL    host                 location this WAL receiver is connected to
-#┃ LABEL    port                 location port number this WAL receiver is connected to
-#┃ LABEL    slot_name            Replication slot name used by this WAL receiver
-#┃ COUNTER  init_lsn             first time received lsn when WAL receiver is started
-#┃ GAUGE    init_tli             first time received timeline number when WAL receiver is started
-#┃ COUNTER  last_lsn             latest lsn that already flushed to standby disk
-#┃ GAUGE    last_tli             latest timeline that already flushed to standby disk
-#┃ GAUGE    send_ts              send time of last message received from origin WAL sender
-#┃ GAUGE    receive_ts           receipt time of last message received from origin WAL sender
-#┃ COUNTER  report_lsn           with time zone	Time of last write-ahead log location reported to origin WAL sender
-#┃ GAUGE    report_ts            timestamp of last time reporting to sender
-#┃ GAUGE    current_ts           current_timestamp
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_standby_init_lsn{pid,status,host,port,slot_name}
-#┃ pg_standby_init_tli{pid,status,host,port,slot_name}
-#┃ pg_standby_last_lsn{pid,status,host,port,slot_name}
-#┃ pg_standby_last_tli{pid,status,host,port,slot_name}
-#┃ pg_standby_send_ts{pid,status,host,port,slot_name}
-#┃ pg_standby_receive_ts{pid,status,host,port,slot_name}
-#┃ pg_standby_report_lsn{pid,status,host,port,slot_name}
-#┃ pg_standby_report_ts{pid,status,host,port,slot_name}
-#┃ pg_standby_current_ts{pid,status,host,port,slot_name}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_standby_11:
-  name: pg_standby
-  desc: PostgreSQL walreceiver metrics since 11 (add sender host and port)
-
-  query: |
-    SELECT pid,
-           status,
-           coalesce(sender_host, (regexp_match(conninfo, '.*host=(\S+).*'))[1])       AS host,
-           coalesce(sender_port::TEXT, (regexp_match(conninfo, '.*port=(\S+).*'))[1]) AS port,
-           slot_name,
-           receive_start_lsn - '0/0'                                                  AS init_lsn,
-           receive_start_tli                                                          AS init_tli,
-           received_lsn - '0/0'                                                       AS last_lsn,
-           received_tli                                                               AS last_tli,
-           last_msg_send_time                                                         AS send_ts,
-           last_msg_receipt_time                                                      AS receive_ts,
-           latest_end_lsn - '0/0'                                                     AS report_lsn,
-           latest_end_time                                                            AS report_ts,
-           now()                                                                      AS current_ts
-    FROM pg_stat_wal_receiver;
-
-  ttl: 10
-  tags: [cluster, standby]
-  min_version: 110000
-
-  metrics:
-    - pid:
+    - name:
         usage: LABEL
-        description: pid of the WAL receiver process
-    - status:
-        usage: LABEL
-        description: status of the WAL receiver process
-    - host:
-        usage: LABEL
-        description:  location this WAL receiver is connected to
-    - port:
-        usage: LABEL
-        description:  location port number this WAL receiver is connected to
-    - slot_name:
-        usage: LABEL
-        description:  Replication slot name used by this WAL receiver
-    - init_lsn:
-        usage: COUNTER
-        description: first time received lsn when WAL receiver is started
-    - init_tli:
+        description: The name of the shared memory allocation
+    - offset:
         usage: GAUGE
-        description: first time received timeline number when WAL receiver is started
-    - last_lsn:
-        usage: COUNTER
-        description: latest lsn that already flushed to standby disk
-    - last_tli:
+        description: The offset at which the allocation starts
+    - size:
         usage: GAUGE
-        description: latest timeline that already flushed to standby disk
-    - send_ts:
+        description: Size of the allocation
+    - allocated_size:
         usage: GAUGE
-        description: send time of last message received from origin WAL sender
-    - receive_ts:
-        usage: GAUGE
-        description: receipt time of last message received from origin WAL sender
-    - report_lsn:
-        usage: COUNTER
-        description: with time zone	Time of last write-ahead log location reported to origin WAL sender
-    - report_ts:
-        usage: GAUGE
-        description: timestamp of last time reporting to sender
-    - current_ts:
-        usage: GAUGE
-        description: current_timestamp
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_standby.pg_standby_96
-#┃ PostgreSQL walreceiver metrics 9.6~10: https://www.postgresql.org/docs/9.6/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    pid                  pid of the WAL receiver process
-#┃ LABEL    status               status of the WAL receiver process
-#┃ LABEL    host                 location this WAL receiver is connected to
-#┃ LABEL    port                 location port number this WAL receiver is connected to
-#┃ LABEL    slot_name            Replication slot name used by this WAL receiver
-#┃ COUNTER  init_lsn             first time received lsn when WAL receiver is started
-#┃ GAUGE    init_tli             first time received timeline number when WAL receiver is started
-#┃ COUNTER  last_lsn             latest lsn that already flushed to standby disk
-#┃ GAUGE    last_tli             latest timeline that already flushed to standby disk
-#┃ GAUGE    send_ts              send time of last message received from origin WAL sender
-#┃ GAUGE    receive_ts           receipt time of last message received from origin WAL sender
-#┃ COUNTER  report_lsn           with time zone	Time of last write-ahead log location reported to origin WAL sender
-#┃ GAUGE    report_ts            timestamp of last time reporting to sender
-#┃ GAUGE    current_ts           current_timestamp
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_standby_init_lsn{pid,status,host,port,slot_name}
-#┃ pg_standby_init_tli{pid,status,host,port,slot_name}
-#┃ pg_standby_last_lsn{pid,status,host,port,slot_name}
-#┃ pg_standby_last_tli{pid,status,host,port,slot_name}
-#┃ pg_standby_send_ts{pid,status,host,port,slot_name}
-#┃ pg_standby_receive_ts{pid,status,host,port,slot_name}
-#┃ pg_standby_report_lsn{pid,status,host,port,slot_name}
-#┃ pg_standby_report_ts{pid,status,host,port,slot_name}
-#┃ pg_standby_current_ts{pid,status,host,port,slot_name}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_standby_96:
-  name: pg_standby
-  desc: "PostgreSQL walreceiver metrics 9.6~10: https://www.postgresql.org/docs/9.6/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW"
-
-  query: |
-    SELECT pid,
-           status,
-           (regexp_match(conninfo, '.*host=(\S+).*'))[1] AS host,
-           (regexp_match(conninfo, '.*port=(\S+).*'))[1] AS port,
-           slot_name,
-           receive_start_lsn - '0/0'                     AS init_lsn,
-           receive_start_tli                             AS init_tli,
-           received_lsn - '0/0'                          AS last_lsn,
-           received_tli                                  AS last_tli,
-           last_msg_send_time                            AS send_ts,
-           last_msg_receipt_time                         AS receive_ts,
-           latest_end_lsn - '0/0'                        AS report_lsn,
-           latest_end_time                               AS report_ts,
-           now()                                         AS current_ts
-    FROM pg_stat_wal_receiver;
-
-  ttl: 10
-  tags: [cluster, standby]
-  min_version: 090600
-  max_version: 110000
-
-  metrics:
-    - pid:
-        usage: LABEL
-        description: pid of the WAL receiver process
-    - status:
-        usage: LABEL
-        description: status of the WAL receiver process
-    - host:
-        usage: LABEL
-        description:  location this WAL receiver is connected to
-    - port:
-        usage: LABEL
-        description:  location port number this WAL receiver is connected to
-    - slot_name:
-        usage: LABEL
-        description:  Replication slot name used by this WAL receiver
-    - init_lsn:
-        usage: COUNTER
-        description: first time received lsn when WAL receiver is started
-    - init_tli:
-        usage: GAUGE
-        description: first time received timeline number when WAL receiver is started
-    - last_lsn:
-        usage: COUNTER
-        description: latest lsn that already flushed to standby disk
-    - last_tli:
-        usage: GAUGE
-        description: latest timeline that already flushed to standby disk
-    - send_ts:
-        usage: GAUGE
-        description: send time of last message received from origin WAL sender
-    - receive_ts:
-        usage: GAUGE
-        description: receipt time of last message received from origin WAL sender
-    - report_lsn:
-        usage: COUNTER
-        description: with time zone	Time of last write-ahead log location reported to origin WAL sender
-    - report_ts:
-        usage: GAUGE
-        description: timestamp of last time reporting to sender
-    - current_ts:
-        usage: GAUGE
-        description: current_timestamp
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_repl.pg_repl_10
-#┃ PostgreSQL replication metrics 10~12: https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    pid                  unique walsender pid
-#┃ LABEL    client_addr          client address of wal receiver
-#┃ LABEL    application_name     application name of standby
-#┃ LABEL    state                replication state startup|catchup|streaming|backup|stopping
-#┃ COUNTER  lsn                  current log position on this server
-#┃ COUNTER  sent_lsn             last log position sent to this standby server
-#┃ COUNTER  write_lsn            last log position written to disk by this standby server
-#┃ COUNTER  flush_lsn            last log position flushed to disk by this standby server
-#┃ COUNTER  replay_lsn           last log position replayed into the database on this standby server
-#┃ GAUGE    write_lag            latest ACK lsn diff with write (sync-remote-write lag)
-#┃ GAUGE    flush_lag            latest ACK lsn diff with flush (sync-remote-flush lag)
-#┃ GAUGE    replay_lag           latest ACK lsn diff with replay (sync-remote-apply lag)
-#┃ GAUGE    backend_uptime       how long since standby connect to this server
-#┃ GAUGE    backend_xmin         this standby's xmin horizon reported by hot_standby_feedback.
-#┃ GAUGE    sync_priority        priority of being chosen as synchronous standby
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_repl_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_sent_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_write_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_flush_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_replay_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_write_lag{pid,client_addr,application_name,state}
-#┃ pg_repl_flush_lag{pid,client_addr,application_name,state}
-#┃ pg_repl_replay_lag{pid,client_addr,application_name,state}
-#┃ pg_repl_backend_uptime{pid,client_addr,application_name,state}
-#┃ pg_repl_backend_xmin{pid,client_addr,application_name,state}
-#┃ pg_repl_sync_priority{pid,client_addr,application_name,state}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_repl_10:
-  name: pg_repl
-  desc: "PostgreSQL replication metrics 10~12: https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW"
-
-  query: |
-    SELECT pid,
-      client_addr,
-      application_name,
-      state,
-      CASE WHEN pg_is_in_recovery()
-      THEN pg_last_wal_replay_lsn()
-      ELSE pg_current_wal_lsn() END - '0/0' AS lsn,
-      sent_lsn - '0/0'                          AS sent_lsn,
-      write_lsn - '0/0'                         AS write_lsn,
-      flush_lsn - '0/0'                         AS flush_lsn,
-      replay_lsn - '0/0'                        AS replay_lsn,
-      extract(EPOCH FROM write_lag)             AS write_lag,
-      extract(EPOCH FROM flush_lag)             AS flush_lag,
-      extract(EPOCH FROM replay_lag)            AS replay_lag,
-      extract(EPOCH FROM now() - backend_start) AS backend_uptime,
-      backend_xmin::TEXT::BIGINT                AS backend_xmin,
-      sync_priority
-      FROM pg_stat_replication;
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 100000
-
-
-  metrics:
-    - pid:
-        usage: LABEL
-        description: unique walsender pid
-    - client_addr:
-        usage: LABEL
-        description: client address of wal receiver
-    - application_name:
-        usage: LABEL
-        description: application name of standby
-    - state:
-        usage: LABEL
-        description: replication state startup|catchup|streaming|backup|stopping
-    - lsn:
-        usage: COUNTER
-        description: current log position on this server
-    - sent_lsn:
-        usage: COUNTER
-        description: last log position sent to this standby server
-    - write_lsn:
-        usage: COUNTER
-        description: last log position written to disk by this standby server
-    - flush_lsn:
-        usage: COUNTER
-        description: last log position flushed to disk by this standby server
-    - replay_lsn:
-        usage: COUNTER
-        description: last log position replayed into the database on this standby server
-    - write_lag:
-        usage: GAUGE
-        description: latest ACK lsn diff with write (sync-remote-write lag)
-    - flush_lag:
-        usage: GAUGE
-        description: latest ACK lsn diff with flush (sync-remote-flush lag)
-    - replay_lag:
-        usage: GAUGE
-        description: latest ACK lsn diff with replay (sync-remote-apply lag)
-    - backend_uptime:
-        usage: GAUGE
-        description: how long since standby connect to this server
-    - backend_xmin:
-        usage: GAUGE
-        description: this standby's xmin horizon reported by hot_standby_feedback.
-    - sync_priority:
-        usage: GAUGE
-        description: priority of being chosen as synchronous standby
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_repl.pg_repl_94
-#┃ PostgreSQL replication metrics 9.4~9.6: https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STAT-REPLICATION-VIEW
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    pid                  unique walsender pid
-#┃ LABEL    client_addr          client address of wal receiver
-#┃ LABEL    application_name     application name of standby
-#┃ LABEL    state                replication state startup|catchup|streaming|backup|stopping
-#┃ COUNTER  lsn                  current log position on this server
-#┃ COUNTER  sent_lsn             last log position sent to this standby server
-#┃ COUNTER  write_lsn            last log position written to disk by this standby server
-#┃ COUNTER  flush_lsn            last log position flushed to disk by this standby server
-#┃ COUNTER  replay_lsn           last log position replayed into the database on this standby server
-#┃ GAUGE    backend_uptime       how long since standby connect to this server
-#┃ GAUGE    backend_xmin         this standby's xmin horizon reported by hot_standby_feedback.
-#┃ GAUGE    sync_priority        priority of being chosen as synchronous standby
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_repl_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_sent_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_write_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_flush_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_replay_lsn{pid,client_addr,application_name,state}
-#┃ pg_repl_backend_uptime{pid,client_addr,application_name,state}
-#┃ pg_repl_backend_xmin{pid,client_addr,application_name,state}
-#┃ pg_repl_sync_priority{pid,client_addr,application_name,state}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_repl_94:
-  name: pg_repl
-  desc: "PostgreSQL replication metrics 9.4~9.6: https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STAT-REPLICATION-VIEW"
-  query: |
-    SELECT pid,
-      client_addr,
-      application_name,
-      state,
-      CASE WHEN pg_is_in_recovery()
-      THEN pg_last_xlog_replay_location()
-      ELSE pg_current_wal_lsn() END - '0/0' AS lsn,
-      sent_lsn - '0/0'                          AS sent_lsn,
-      write_lsn - '0/0'                         AS write_lsn,
-      flush_lsn - '0/0'                         AS flush_lsn,
-      replay_lsn - '0/0'                        AS replay_lsn,
-      extract(EPOCH FROM now() - backend_start) AS backend_uptime,
-      backend_xmin::TEXT::BIGINT                AS backend_xmin,
-      sync_priority
-      FROM pg_stat_replication;
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 090400
-  max_version: 100000
-
-  metrics:
-    - pid:
-        usage: LABEL
-        description: unique walsender pid
-    - client_addr:
-        usage: LABEL
-        description: client address of wal receiver
-    - application_name:
-        usage: LABEL
-        description: application name of standby
-    - state:
-        usage: LABEL
-        description: replication state startup|catchup|streaming|backup|stopping
-    - lsn:
-        usage: COUNTER
-        description: current log position on this server
-    - sent_lsn:
-        usage: COUNTER
-        description: last log position sent to this standby server
-    - write_lsn:
-        usage: COUNTER
-        description: last log position written to disk by this standby server
-    - flush_lsn:
-        usage: COUNTER
-        description: last log position flushed to disk by this standby server
-    - replay_lsn:
-        usage: COUNTER
-        description: last log position replayed into the database on this standby server
-    - backend_uptime:
-        usage: GAUGE
-        description: how long since standby connect to this server
-    - backend_xmin:
-        usage: GAUGE
-        description: this standby's xmin horizon reported by hot_standby_feedback.
-    - sync_priority:
-        usage: GAUGE
-        description: priority of being chosen as synchronous standby
-
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_repl_state
-#┃ PostgreSQL replication client count group by state
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    state                replication state startup|catchup|streaming|backup|stopping
-#┃ GAUGE    count                count of corresponding replication state
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_repl_state_count{state}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_repl_state:
-  name: pg_repl_state
-  desc: PostgreSQL replication client count group by state
-
-  query: |
-    SELECT l.state, coalesce(count, 0 ) AS count
-    FROM unnest(ARRAY ['streaming','startup','catchup', 'backup', 'stopping']) l(state)
-    LEFT JOIN (SELECT state, count(*) AS count FROM pg_stat_replication GROUP BY state)r ON l.state =  r.state
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 090400
-
-  metrics:
-    - state:
-        usage: LABEL
-        description: replication state startup|catchup|streaming|backup|stopping
-    - count:
-        usage: GAUGE
-        description: count of corresponding replication state
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_slot.pg_slot_10
-#┃ PostgreSQL replication slot metrics 10+
-#┃ replication slots
-#┃ https://www.postgresql.org/docs/12/view-pg-replication-slots.html
-#┃ 9.4 has 9 fields: slot_name, plugin, slot_type, datoid, database, active, xmin, catalog_xmin, restart_lsn
-#┃ 9.5 add 1: active_pid
-#┃ 9.6 add 1: confirmed_flush_lsn
-#┃ 10  add 1: temporary
-#┃ 10 - 12 : fixed 12 fields
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    slot_name            replication slot name
-#┃ LABEL    datname              associated database name, only logical slot have this
-#┃ GAUGE    active               whether the slot is currently being used
-#┃ GAUGE    temporary            whether the slot is a temporary replication slot
-#┃ GAUGE    xmin                 oldest txid that this slot needs the database to retain
-#┃ GAUGE    catalog_xmin         oldest txid that this slot needs the database to retain for catalog
-#┃ COUNTER  restart_lsn          lsn that needs retain, wal after that will be kept
-#┃ COUNTER  confirm_lsn          lsn that confirmed by logical standby, null for physical slot
-#┃ GAUGE    retained_bytes       bytes retained for this slot
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_slot_active{slot_name,datname}
-#┃ pg_slot_temporary{slot_name,datname}
-#┃ pg_slot_xmin{slot_name,datname}
-#┃ pg_slot_catalog_xmin{slot_name,datname}
-#┃ pg_slot_restart_lsn{slot_name,datname}
-#┃ pg_slot_confirm_lsn{slot_name,datname}
-#┃ pg_slot_retained_bytes{slot_name,datname}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_slot_10:
-  name: pg_slot
-  desc: PostgreSQL replication slot metrics 10+
-  query: |
-    SELECT slot_name,
-      database                    AS datname,
-      active,
-      temporary,
-      xmin::TEXT::BIGINT          AS xmin,
-      catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
-      restart_lsn - '0/0'         AS restart_lsn,
-      confirmed_flush_lsn - '0/0' AS confirm_lsn,
-      CASE WHEN pg_is_in_recovery()
-      THEN pg_last_wal_replay_lsn()
-      ELSE pg_current_wal_lsn() END - restart_lsn
-      AS retained_bytes
-    FROM pg_replication_slots;
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 100000
-
-  metrics:
-    - slot_name:
-        usage: LABEL
-        description: replication slot name
-    - datname:
-        usage: LABEL
-        description: associated database name, only logical slot have this
-    - active:
-        usage: GAUGE
-        description: whether the slot is currently being used
-    - temporary:
-        usage: GAUGE
-        description: whether the slot is a temporary replication slot
-    - xmin:
-        usage: GAUGE
-        description: oldest txid that this slot needs the database to retain
-    - catalog_xmin:
-        usage: GAUGE
-        description: oldest txid that this slot needs the database to retain for catalog
-    - restart_lsn:
-        usage: COUNTER
-        description: lsn that needs retain, wal after that will be kept
-    - confirm_lsn:
-        usage: COUNTER
-        description: lsn that confirmed by logical standby, null for physical slot
-    - retained_bytes:
-        usage: GAUGE
-        description: bytes retained for this slot
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_slot.pg_slot_96
-#┃ PostgreSQL replication slot metrics for 9.6
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Tags     ┆ [cluster]
-#┃ TTL      ┆ 10
-#┃ Priority ┆ 109
-#┃ Timeout  ┆ 100ms
-#┃ Fatal    ┆ false
-#┃ Version  ┆ 90600 ~ 100000
-#┃ Source   ┆ 109-pg_slot.yaml
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    slot_name            replication slot name
-#┃ LABEL    datname              associated database name, only logical slot have this
-#┃ GAUGE    active               whether the slot is currently being used
-#┃ GAUGE    xmin                 oldest txid that this slot needs the database to retain
-#┃ GAUGE    catalog_xmin         oldest txid that this slot needs the database to retain for catalog
-#┃ COUNTER  restart_lsn          lsn that needs retain, wal after that will be kept
-#┃ COUNTER  confirm_lsn          lsn that confirmed by logical standby, null for physical slot
-#┃ GAUGE    retained_bytes       bytes retained for this slot
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_slot_active{slot_name,datname}
-#┃ pg_slot_xmin{slot_name,datname}
-#┃ pg_slot_catalog_xmin{slot_name,datname}
-#┃ pg_slot_restart_lsn{slot_name,datname}
-#┃ pg_slot_confirm_lsn{slot_name,datname}
-#┃ pg_slot_retained_bytes{slot_name,datname}
-#┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ SELECT slot_name,
-#┃   database                    AS datname,
-#┃   active,
-#┃   xmin::TEXT::BIGINT          AS xmin,
-#┃   catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
-#┃   restart_lsn - '0/0'         AS restart_lsn,
-#┃   confirmed_flush_lsn - '0/0' AS confirm_lsn,
-#┃   CASE WHEN pg_is_in_recovery()
-#┃   THEN pg_last_xlog_replay_location()
-#┃   ELSE pg_current_xlog_location() END - restart_lsn
-#┃   AS retained_bytes
-#┃ FROM pg_replication_slots;
-#┃
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_slot_96:
-  name: pg_slot
-  desc: PostgreSQL replication slot metrics for 9.6
-
-  query: |
-    SELECT slot_name,
-      database                    AS datname,
-      active,
-      xmin::TEXT::BIGINT          AS xmin,
-      catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
-      restart_lsn - '0/0'         AS restart_lsn,
-      confirmed_flush_lsn - '0/0' AS confirm_lsn,
-      CASE WHEN pg_is_in_recovery()
-      THEN pg_last_xlog_replay_location()
-      ELSE pg_current_xlog_location() END - restart_lsn
-      AS retained_bytes
-    FROM pg_replication_slots;
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 090600
-  max_version: 100000
-
-  metrics:
-    - slot_name:
-        usage: LABEL
-        description: replication slot name
-    - datname:
-        usage: LABEL
-        description: associated database name, only logical slot have this
-    - active:
-        usage: GAUGE
-        description: whether the slot is currently being used
-    - xmin:
-        usage: GAUGE
-        description: oldest txid that this slot needs the database to retain
-    - catalog_xmin:
-        usage: GAUGE
-        description: oldest txid that this slot needs the database to retain for catalog
-    - restart_lsn:
-        usage: COUNTER
-        description: lsn that needs retain, wal after that will be kept
-    - confirm_lsn:
-        usage: COUNTER
-        description: lsn that confirmed by logical standby, null for physical slot
-    - retained_bytes:
-        usage: GAUGE
-        description: bytes retained for this slot
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_slot.pg_slot_94
-#┃ PostgreSQL replication slot metrics 9.4/9.5
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    slot_name            replication slot name
-#┃ LABEL    datname              associated database name, only logical slot have this
-#┃ GAUGE    active               whether the slot is currently being used
-#┃ GAUGE    xmin                 oldest txid that this slot needs the database to retain
-#┃ GAUGE    catalog_xmin         oldest txid that this slot needs the database to retain for catalog
-#┃ COUNTER  restart_lsn          lsn that needs retain, wal after that will be kept
-#┃ GAUGE    retained_bytes       bytes retained for this slot
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_slot_active{slot_name,datname}
-#┃ pg_slot_xmin{slot_name,datname}
-#┃ pg_slot_catalog_xmin{slot_name,datname}
-#┃ pg_slot_restart_lsn{slot_name,datname}
-#┃ pg_slot_retained_bytes{slot_name,datname}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_slot_94:
-  name: pg_slot
-  desc: PostgreSQL replication slot metrics 9.4/9.5
-
-  query: |
-    SELECT slot_name,
-      database                    AS datname,
-      active,
-      xmin::TEXT::BIGINT          AS xmin,
-      catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
-      restart_lsn - '0/0'         AS restart_lsn,
-      CASE WHEN pg_is_in_recovery()
-      THEN pg_last_wal_replay_lsn()
-      ELSE pg_current_xlog_location() END - restart_lsn
-      AS retained_bytes
-    FROM pg_replication_slots;
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 090400
-  max_version: 090600
-
-  metrics:
-    - slot_name:
-        usage: LABEL
-        description: replication slot name
-    - datname:
-        usage: LABEL
-        description: associated database name, only logical slot have this
-    - active:
-        usage: GAUGE
-        description: whether the slot is currently being used
-    - xmin:
-        usage: GAUGE
-        description: oldest txid that this slot needs the database to retain
-    - catalog_xmin:
-        usage: GAUGE
-        description: oldest txid that this slot needs the database to retain for catalog
-    - restart_lsn:
-        usage: COUNTER
-        description: lsn that needs retain, wal after that will be kept
-    - retained_bytes:
-        usage: GAUGE
-        description: bytes retained for this slot
+        description: Size of the allocation including padding
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_activity
 #┃ PostgreSQL backend activity group by state
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name
-#┃ LABEL    state                client backend connection state
-#┃ GAUGE    count                connection count of given (datname,state)
-#┃ GAUGE    max_duration         max duration since state change among (datname, state)
-#┃ GAUGE    max_tx_duration      max transaction duration since state change among (datname, state)
-#┃ GAUGE    max_conn_duration    max backend session duration since state change among (datname, state)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_activity_count{datname,state}
-#┃ pg_activity_max_duration{datname,state}
-#┃ pg_activity_max_tx_duration{datname,state}
-#┃ pg_activity_max_conn_duration{datname,state}
+#┃ pg_activity_count{datname,state}              GAUGE    connection count of given (datname,state)
+#┃ pg_activity_max_duration{datname,state}       GAUGE    max duration since state change among (datname, state)
+#┃ pg_activity_max_tx_duration{datname,state}    GAUGE    max transaction duration since state change among (datname, state)
+#┃ pg_activity_max_conn_duration{datname,state}  GAUGE    max backend session duration since state change among (datname, state)
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_activity:
   name: pg_activity
@@ -1487,8 +1462,9 @@ pg_activity:
     ) a USING (datname, state);
 
   ttl: 10
-  tags: [cluster]
   min_version: 090400
+  tags:
+    - cluster
 
   metrics:
     - datname:
@@ -1510,17 +1486,11 @@ pg_activity:
         usage: GAUGE
         description: max backend session duration since state change among (datname, state)
 
-
-
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_wait
 #┃ PostgreSQL backend client count group by wait event type since 9.6
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name
-#┃ LABEL    event                wait event type, LWLock, Lock, BufferPin, Activity, Extension, Client, IPC, Timeout, IO
-#┃ GAUGE    count                wait event type count
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_wait_count{datname,event}
+#┃ pg_wait_count{datname,event}  GAUGE    wait event type count
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_wait:
   name: pg_wait
@@ -1535,7 +1505,8 @@ pg_wait:
     GROUP BY datname, wait_event_type;
 
   ttl: 10
-  tags: [cluster]
+  tags:
+    - cluster
   min_version: 090600
 
   metrics:
@@ -1551,17 +1522,31 @@ pg_wait:
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_xact
-#┃ PostgreSQL transaction identifier information
+#┃ pg_backend
+#┃ PostgreSQL backend client count group by wait event type since 9.6
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ GAUGE    xmin                 earliest txid that is still active
-#┃ GAUGE    xmax                 first as-yet-unassigned txid. txid >= this are invisible.
-#┃ GAUGE    xnum                 current active transaction count
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_xact_xmin{}
-#┃ pg_xact_xmax{}
-#┃ pg_xact_xnum{}
+#┃ pg_backend_count{backend_type}  GAUGE    backend process count
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_backend:
+  name: pg_backend
+  desc: PostgreSQL backend client count group by wait event type since 9.6
+
+  query: |
+    SELECT backend_type, count(*) AS count
+    FROM pg_stat_activity GROUP BY backend_type;
+
+  ttl: 10
+  min_version: 090600
+  tags:
+    - cluster
+
+  metrics:
+    - backend_type:
+        usage: LABEL
+        description: database backend type
+    - count:
+        usage: GAUGE
+        description: backend process count
 pg_xact:
   name: pg_xact
   desc: PostgreSQL transaction identifier information
@@ -1575,8 +1560,9 @@ pg_xact:
     SELECT xmin.v AS xmin, xmax.v AS xmax, xnum.v AS xnum FROM xmin, xmax, xnum;
 
   ttl: 10
-  tags: [cluster]
   min_version: 090400
+  tags:
+    - cluster
 
   metrics:
     - xmin:
@@ -1590,15 +1576,12 @@ pg_xact:
         description: current active transaction count
 
 
+
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_lock
 #┃ PostgreSQL lock distribution by mode
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              Name of the database
-#┃ LABEL    mode                 Type of lock
-#┃ COUNTER  count                Number of locks of corresponding mode
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_lock_count{datname,mode}
+#┃ pg_lock_count{datname,mode}  COUNTER  Number of locks of corresponding mode
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_lock:
   name: pg_lock
@@ -1614,8 +1597,9 @@ pg_lock:
              WHERE database IS NOT NULL GROUP BY database, mode) cnt USING (database, mode);
 
   ttl: 10
-  tags: [cluster]
   min_version: 090400
+  tags:
+    - cluster
 
   metrics:
     - datname:
@@ -1629,226 +1613,43 @@ pg_lock:
         description: Number of locks of corresponding mode
 
 
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_vacuuming
-#┃ PostgreSQL vacuum progress since 9.6
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name
-#┃ LABEL    pid                  process id of indexing table
-#┃ DISCARD  relid                relation id of indexed table
-#┃ LABEL    relname              relation name of indexed table
-#┃ LABEL    phase                index building phase
-#┃ GAUGE    progress             the actual progress
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_vacuuming_progress{datname,pid,relname,phase}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_vacuuming:
-  name: pg_vacuuming
-  desc: PostgreSQL vacuum progress since 9.6
-  query: |
-    SELECT pid,
-           datname,
-           relid,
-           relname,
-           phase,
-           CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_vacuumed / heap_blks_total ELSE 0 END AS progress
-    FROM pg_stat_progress_vacuum pspv,
-         LATERAL (SELECT relname FROM pg_class c WHERE c.oid = pspv.relid) n;
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 120000
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: database name
-    - pid:
-        usage: LABEL
-        description: process id of indexing table
-    - relid:
-        usage: DISCARD
-        description: relation id of indexed table
-    - relname:
-        usage: LABEL
-        description: relation name of indexed table
-    - phase:
-        usage: LABEL
-        description: index building phase
-    - progress:
-        usage: GAUGE
-        description: the actual progress
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_indexing
-#┃ PostgreSQL index creating progress since 12
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name
-#┃ LABEL    pid                  process id of indexing table
-#┃ DISCARD  relid                relation id of indexed table
-#┃ LABEL    relname              relation name of indexed table
-#┃ LABEL    phase                index building phase
-#┃ GAUGE    progress             the actual progress
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_indexing_progress{datname,pid,relname,phase}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_indexing:
-  name: pg_indexing
-  desc: PostgreSQL index creating progress since 12
-
-  query: |
-    SELECT datname, pid, relid, relname, phase,
-           coalesce((CASE WHEN blocks_total > 0 THEN 1.0 * blocks_done / blocks_total ELSE NULL END),
-                    (CASE WHEN tuples_total > 0 THEN 1.0 * tuples_done / tuples_total ELSE NULL END),
-                    (CASE WHEN partitions_total > 0 THEN 1.0 * partitions_done / partitions_total ELSE NULL END),
-                    (CASE WHEN lockers_total > 0 THEN 1.0 * lockers_done / lockers_total ELSE NULL END)) AS progress
-    FROM pg_stat_progress_create_index pspci,
-         LATERAL (SELECT relname FROM pg_class c WHERE c.oid = pspci.relid) n;
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 120000
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: database name
-    - pid:
-        usage: LABEL
-        description: process id of indexing table
-    - relid:
-        usage: DISCARD
-        description: relation id of indexed table
-    - relname:
-        usage: LABEL
-        description: relation name of indexed table
-    - phase:
-        usage: LABEL
-        description: index building phase
-    - progress:
-        usage: GAUGE
-        description: the actual progress
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_clustering
-#┃ PostgreSQL cluster/vacuum full progress since 12
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name
-#┃ LABEL    pid                  process id of indexing table
-#┃ DISCARD  relid                relation id of indexed table
-#┃ LABEL    relname              relation name of indexed table
-#┃ LABEL    phase                index building phase
-#┃ GAUGE    progress             the actual progress
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_clustering_progress{datname,pid,relname,phase}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_clustering:
-  name: pg_clustering
-  desc: PostgreSQL cluster/vacuum full progress since 12
-
-  query: |
-    SELECT pid,
-           datname,
-           relid,
-           relname,
-           phase,
-           CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0 END AS progress
-    FROM pg_stat_progress_cluster pspc,
-         LATERAL (SELECT relname FROM pg_class c WHERE c.oid = pspc.relid) n;
-
-  ttl: 10
-  tags: [cluster]
-  min_version: 120000
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: database name
-    - pid:
-        usage: LABEL
-        description: process id of indexing table
-    - relid:
-        usage: DISCARD
-        description: relation id of indexed table
-    - relname:
-        usage: LABEL
-        description: relation name of indexed table
-    - phase:
-        usage: LABEL
-        description: index building phase
-    - progress:
-        usage: GAUGE
-        description: the actual progress
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_query
-#┃ PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor, normal version
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    query                query identifier, bigint
-#┃ COUNTER  calls                times been executed
-#┃ COUNTER  total_time           Total time spent in the statement, in µs
-#┃ GAUGE    min_time             Minimum time spent in the statement, in µs
-#┃ GAUGE    max_time             Maximum time spent in the statement, in µs
-#┃ GAUGE    mean_time            Mean time spent in the statement, in µs
-#┃ GAUGE    stddev_time          Population standard deviation of time spent in the statement, in µs
-#┃ COUNTER  rows                 rows retrieved or affected by the statement
-#┃ COUNTER  shared_blks_hit      shared block cache hits by the statement
-#┃ COUNTER  shared_blks_read     shared blocks read by the statement
-#┃ COUNTER  shared_blks_access   shared blocks accessed by the statement
-#┃ COUNTER  shared_blks_dirtied  shared blocks dirtied by the statement
-#┃ COUNTER  shared_blks_written  shared blocks written by the statement
-#┃ COUNTER  blk_read_time        time spent reading blocks, in µs (if track_io_timing is enabled)
-#┃ COUNTER  blk_write_time       time spent writing blocks, in µs (if track_io_timing is enabled)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_query_calls{query}
-#┃ pg_query_total_time{query}
-#┃ pg_query_min_time{query}
-#┃ pg_query_max_time{query}
-#┃ pg_query_mean_time{query}
-#┃ pg_query_stddev_time{query}
-#┃ pg_query_rows{query}
-#┃ pg_query_shared_blks_hit{query}
-#┃ pg_query_shared_blks_read{query}
-#┃ pg_query_shared_blks_access{query}
-#┃ pg_query_shared_blks_dirtied{query}
-#┃ pg_query_shared_blks_written{query}
-#┃ pg_query_blk_read_time{query}
-#┃ pg_query_blk_write_time{query}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_query:
   name: pg_query
-  desc: PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor, normal version
+  desc: PostgreSQL statement metrics, require pg_stat_statements installed in schema monitor, 9.4 ~ 12
   query: |
-    SELECT queryid                                      AS query,
-           sum(calls)                                   AS calls,
-           sum(total_time)                              AS total_time,
-           avg(min_time)                                AS min_time,
-           avg(max_time)                                AS max_time,
-           avg(mean_time)                               AS mean_time,
-           avg(stddev_time)                             AS stddev_time,
-           sum(rows)                                    AS rows,
-           sum(shared_blks_hit)                         AS shared_blks_hit,
-           sum(shared_blks_read)                        AS shared_blks_read,
-           sum(shared_blks_read) + sum(shared_blks_hit) AS shared_blks_access,
-           sum(shared_blks_dirtied)                     AS shared_blks_dirtied,
-           sum(shared_blks_written)                     AS shared_blks_written,
-           sum(blk_read_time)                           AS blk_read_time,
-           sum(blk_write_time)                          AS blk_write_time
-    FROM monitor.pg_stat_statements s
-    WHERE calls > 4096
-    GROUP BY queryid
-    ORDER BY total_time DESC
-    LIMIT 32;
+    SELECT datname, query, calls, total_time, min_time, max_time, mean_time, stddev_time, rows, blk_io_time FROM
+      (SELECT dbid,
+          queryid               AS query,
+          sum(calls)            AS calls,
+          sum(total_time)       AS total_time,
+          min(min_time)         AS min_time,
+          max(max_time)         AS max_time,
+          max(mean_time)        AS mean_time,
+          max(stddev_time)      AS stddev_time,
+          sum(rows)             AS rows,
+          sum(blk_read_time) + sum(blk_write_time) AS blk_io_time
+      FROM pg_stat_statements(false) pg_stat_statements(userid, dbid, queryid, query, calls,
+          total_time, min_time, max_time, mean_time, stddev_time, rows,
+          shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written,
+          local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written,
+          blk_read_time, blk_write_time)
+      WHERE dbid != 1 AND userid != 10 AND calls > 4
+      GROUP BY dbid, queryid ORDER BY total_time DESC LIMIT 64
+    ) q NATURAL JOIN (SELECT oid AS dbid, datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1')) d;
 
-  ttl: 100
-  timeout: 2
-  skip: false
-  tags: [cluster, extension:pg_stat_statements , schema:monitor, not:shard, not:bulky]
+  ttl: 10
+  timeout: 1
   min_version: 090400
+  max_version: 130000
+  tags:
+    - cluster
+    - extension:pg_stat_statements
+
 
   metrics:
+    - datname:
+        usage: LABEL
+        description: database name
     - query:
         usage: LABEL
         description: query identifier, bigint
@@ -1873,93 +1674,274 @@ pg_query:
     - rows:
         usage: COUNTER
         description: rows retrieved or affected by the statement
-    - shared_blks_hit:
+    - blk_io_time:
         usage: COUNTER
-        description: shared block cache hits by the statement
-    - shared_blks_read:
-        usage: COUNTER
-        description: shared blocks read by the statement
-    - shared_blks_access:
-        usage: COUNTER
-        description: shared blocks accessed by the statement
-    - shared_blks_dirtied:
-        usage: COUNTER
-        description: shared blocks dirtied by the statement
-    - shared_blks_written:
-        usage: COUNTER
-        description: shared blocks written by the statement
-    - blk_read_time:
-        usage: COUNTER
-        description: time spent reading blocks, in µs (if track_io_timing is enabled)
-    - blk_write_time:
-        usage: COUNTER
-        description: time spent writing blocks, in µs (if track_io_timing is enabled)
+        description: time spent reading/writing blocks in µs (if track_io_timing is enabled)
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_size
-#┃ PostgreSQL Database, WAL, Log size since 10
+#┃ pg_query.pg_query_13
+#┃ PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor, pg13
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ GAUGE    log                  database log file size in bytes
-#┃ GAUGE    wal                  WAL file size in bytes
-#┃ GAUGE    database             all database size in bytes
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_size_log{}
-#┃ pg_size_wal{}
-#┃ pg_size_database{}
+#┃ pg_query_calls{datname,query}        COUNTER  times been executed
+#┃ pg_query_total_time{datname,query}   COUNTER  Total time spent in the statement, in µs
+#┃ pg_query_min_time{datname,query}     GAUGE    Minimum time spent in the statement, in µs
+#┃ pg_query_max_time{datname,query}     GAUGE    Maximum time spent in the statement, in µs
+#┃ pg_query_mean_time{datname,query}    GAUGE    Mean time spent in the statement, in µs
+#┃ pg_query_stddev_time{datname,query}  GAUGE    Population standard deviation of time spent in the statement, in µs
+#┃ pg_query_rows{datname,query}         COUNTER  rows retrieved or affected by the statement
+#┃ pg_query_blk_io_time{datname,query}  COUNTER  time spent reading/writing blocks in µs (if track_io_timing is enabled)
+#┃ pg_query_wal_bytes{datname,query}    COUNTER  Total amount of WAL bytes generated by the statement
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_size:
-  name: pg_size
-  desc: PostgreSQL Database, WAL, Log size since 10
-
+pg_query_13:
+  name: pg_query
+  desc: PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor, pg13
   query: |
-    SELECT (SELECT (coalesce(sum(size), 0)) FROM pg_ls_logdir())          AS log,
-           (SELECT coalesce(sum(size), 0) FROM pg_catalog.pg_ls_waldir()) AS wal,
-           (SELECT sum(pg_database_size(oid)) FROM pg_database)           AS database;
+    SELECT datname, query, calls, total_time, min_time, max_time, mean_time, stddev_time, rows, blk_io_time FROM
+    (SELECT dbid,
+            queryid               AS query,
+            sum(calls)            AS calls,
+            sum(total_exec_time)  AS total_time,
+            min(min_exec_time)    AS min_time,
+            max(max_exec_time)    AS max_time,
+            max(mean_exec_time)   AS mean_time,
+            max(stddev_exec_time) AS stddev_time,
+            sum(rows)             AS rows,
+            sum(blk_read_time) + sum(blk_write_time) AS blk_io_time,
+            sum(wal_bytes)        AS wal_bytes
+     FROM pg_stat_statements(false)
+     WHERE dbid != 1 AND userid != 10 AND calls > 4 -- omit postgres db/user and one-time query
+     GROUP BY dbid, queryid ORDER BY total_time DESC LIMIT 64
+    ) q NATURAL JOIN (SELECT oid AS dbid, datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1')) d;
 
-  ttl: 100
+  ttl: 10
   timeout: 1
-  tags: [cluster]
-  min_version: 100000
+  min_version: 130000
+  tags:
+    - cluster
+    - extension:pg_stat_statements
+
 
   metrics:
-    - log:
+    - datname:
+        usage: LABEL
+        description: database name
+    - query:
+        usage: LABEL
+        description: query identifier, bigint
+    - calls:
+        usage: COUNTER
+        description: times been executed
+    - total_time:
+        usage: COUNTER
+        description: Total time spent in the statement, in µs
+    - min_time:
         usage: GAUGE
-        description: database log file size in bytes
-    - wal:
+        description: Minimum time spent in the statement, in µs
+    - max_time:
         usage: GAUGE
-        description: WAL file size in bytes
-    - database:
+        description: Maximum time spent in the statement, in µs
+    - mean_time:
         usage: GAUGE
-        description: all database size in bytes
+        description: Mean time spent in the statement, in µs
+    - stddev_time:
+        usage: GAUGE
+        description: Population standard deviation of time spent in the statement, in µs
+    - rows:
+        usage: COUNTER
+        description: rows retrieved or affected by the statement
+    - blk_io_time:
+        usage: COUNTER
+        description: time spent reading/writing blocks in µs (if track_io_timing is enabled)
+    - wal_bytes:
+        usage: COUNTER
+        description: Total amount of WAL bytes generated by the statement
 
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_vacuuming
+#┃ PostgreSQL vacuum progress since 9.6
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_vacuuming_progress{datname,pid,relname}  GAUGE    the actual progress
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_vacuuming:
+  name: pg_vacuuming
+  desc: PostgreSQL vacuum progress since 9.6
+  query: |
+    SELECT datname, pid, relid::RegClass AS relname,
+        CASE phase WHEN 'scanning heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0.0 END)
+        WHEN 'vacuuming heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_vacuumed / heap_blks_total ELSE 0 END)
+        ELSE NULL END AS progress
+      FROM pg_stat_progress_vacuum pspv;
+
+  ttl: 10
+  min_version: 120000
+  tags:
+    - cluster
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name
+    - pid:
+        usage: LABEL
+        description: process id of indexing table
+    - relname:
+        usage: LABEL
+        description: relation name of indexed table
+    - progress:
+        usage: GAUGE
+        description: the actual progress
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_indexing
+#┃ PostgreSQL index creating progress since 12
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_indexing_blocks{datname,pid,relname}      GAUGE    percent of blocks been proceeded
+#┃ pg_indexing_tuples{datname,pid,relname}      GAUGE    percent of tuples been proceeded
+#┃ pg_indexing_partitions{datname,pid,relname}  GAUGE    percent of partitions been proceeded
+#┃ pg_indexing_lockers{datname,pid,relname}     GAUGE    percent of lockers been proceeded
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_indexing:
+  name: pg_indexing
+  desc: PostgreSQL index creating progress since 12
+
+  query: |
+    SELECT datname, pid, relid::RegClass AS relname,
+      (CASE WHEN blocks_total > 0 THEN 1.0 * blocks_done / blocks_total ELSE NULL END) AS blocks,
+      (CASE WHEN tuples_total > 0 THEN 1.0 * tuples_done / tuples_total ELSE NULL END) AS tuples,
+      (CASE WHEN partitions_total > 0 THEN 1.0 * partitions_done / partitions_total ELSE NULL END) AS partitions,
+      (CASE WHEN lockers_total > 0 THEN 1.0 * lockers_done / lockers_total ELSE NULL END) AS lockers
+    FROM pg_stat_progress_create_index pspci;
+
+  ttl: 10
+  min_version: 120000
+  tags:
+    - cluster
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name
+    - pid:
+        usage: LABEL
+        description: process id of indexing table
+    - relname:
+        usage: LABEL
+        description: relation name of indexed table
+    - blocks:
+        usage: GAUGE
+        description: percent of blocks been proceeded
+    - tuples:
+        usage: GAUGE
+        description: percent of tuples been proceeded
+    - partitions:
+        usage: GAUGE
+        description: percent of partitions been proceeded
+    - lockers:
+        usage: GAUGE
+        description: percent of lockers been proceeded
+
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_clustering
+#┃ PostgreSQL cluster/vacuum full progress since 12
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_clustering_tup_scan{datname,pid,relname}  GAUGE    how much tuple been scanned
+#┃ pg_clustering_progress{datname,pid,relname}  GAUGE    the actual progress
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_clustering:
+  name: pg_clustering
+  desc: PostgreSQL cluster/vacuum full progress since 12
+
+  query: |
+    SELECT datname, pid, relid::RegClass AS relname,
+      heap_tuples_scanned AS tup_scan, CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0 END AS progress
+    FROM pg_stat_progress_cluster pspc;
+
+  ttl: 2
+  min_version: 120000
+  tags:
+    - cluster
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name
+    - pid:
+        usage: LABEL
+        description: process id of indexing table
+    - relname:
+        usage: LABEL
+        description: relation name of indexed table
+    - tup_scan:
+        usage: GAUGE
+        description: how much tuple been scanned
+    - progress:
+        usage: GAUGE
+        description: the actual progress
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_backup
+#┃ PostgreSQL basebackup progress since 13
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_backup_phase{pid}        GAUGE    0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive
+#┃ pg_backup_total_bytes{pid}  GAUGE    Total amount of data that will be streamed
+#┃ pg_backup_sent_bytes{pid}   GAUGE    Amount of data streamed
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_backup:
+  name: pg_backup
+  desc: PostgreSQL basebackup progress since 13
+  query: |
+    SELECT s.pid,
+           s.param1 AS phase,
+           CASE s.param2
+               WHEN -1::integer THEN NULL::bigint
+               ELSE s.param2
+               END  AS total_bytes,
+           s.param3 AS sent_bytes
+    FROM pg_stat_get_progress_info('BASEBACKUP') s(pid, datid, relid, param1, param2, param3, param4, param5, param6,
+                                                   param7, param8, param9, param10, param11, param12, param13, param14,
+                                                   param15, param16, param17, param18, param19, param20);
+
+  ttl: 10
+  min_version: 130000
+  tags:
+    - cluster
+
+  metrics:
+    - pid:
+        usage: LABEL
+        description: process id of basebackup sender
+    - phase:
+        usage: GAUGE
+        description: 0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive
+    - total_bytes:
+        usage: GAUGE
+        description: Total amount of data that will be streamed
+    - sent_bytes:
+        usage: GAUGE
+        description: Amount of data streamed
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_database
-#┃   metrics from pg_database such as age size
+#┃ Static database information from pg_database
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name
-#┃ GAUGE    size                 database size in bytes
-#┃ GAUGE    age                  database age calculated by age(datfrozenxid)
-#┃ GAUGE    is_template          1 for template db , 0 for normal db
-#┃ GAUGE    allow_conn           1 allow connection, 0 does not allow
-#┃ GAUGE    conn_limit           connection limit, -1 for no limit
-#┃ GAUGE    frozen_xid           tuple with xmin below this will always be visable (until wrap around)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_database_size{datname}
-#┃ pg_database_age{datname}
-#┃ pg_database_is_template{datname}
-#┃ pg_database_allow_conn{datname}
-#┃ pg_database_conn_limit{datname}
-#┃ pg_database_frozen_xid{datname}
+#┃ pg_database_age{datname}          GAUGE    database age calculated by age(datfrozenxid)
+#┃ pg_database_is_template{datname}  GAUGE    1 for template db and 0 for normal db
+#┃ pg_database_allow_conn{datname}   GAUGE    1 allow connection and 0 does not allow
+#┃ pg_database_conn_limit{datname}   GAUGE    connection limit, -1 for no limit
+#┃ pg_database_frozen_xid{datname}   GAUGE    tuple with xmin below this will always be visable (until wrap around)
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_database:
   name: pg_database
-  desc: metrics from pg_database such as age size
+  desc: Static database information from pg_database
 
   query: |
     SELECT datname,
-           pg_database_size(oid)      AS size,
            age(datfrozenxid)          AS age,
            datistemplate              AS is_template,
            datallowconn               AS allow_conn,
@@ -1967,28 +1949,24 @@ pg_database:
            datfrozenxid::TEXT::BIGINT as frozen_xid
     FROM pg_database;
 
-  ttl: 100
-  timeout: 1
-  tags: [cluster]
+  ttl: 10
   min_version: 100000
-  max_version: 130000
+  tags:
+    - cluster
 
   metrics:
     - datname:
         usage: LABEL
         description: database name
-    - size:
-        usage: GAUGE
-        description: database size in bytes
     - age:
         usage: GAUGE
         description: database age calculated by age(datfrozenxid)
     - is_template:
         usage: GAUGE
-        description: 1 for template db , 0 for normal db
+        description: 1 for template db and 0 for normal db
     - allow_conn:
         usage: GAUGE
-        description: 1 allow connection, 0 does not allow
+        description: 1 allow connection and 0 does not allow
     - conn_limit:
         usage: GAUGE
         description: connection limit, -1 for no limit
@@ -1998,72 +1976,41 @@ pg_database:
 
 
 
-# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# ┃ pg_db.pg_db_12
-# ┃ PostgreSQL database statistics 12+ (introduce 2 new checksum fields)
-# ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-# ┃ DISCARD  datid                Name of the database
-# ┃ LABEL    datname              Name of the database
-# ┃ GAUGE    numbackends          backends currently connected to this database
-# ┃ COUNTER  xact_commit          transactions in this database that have been committed
-# ┃ COUNTER  xact_rollback        transactions in this database that have been rolled back
-# ┃ COUNTER  xact_total           transactions in this database that have been issued
-# ┃ COUNTER  blks_read            blocks read from disk in this database
-# ┃ COUNTER  blks_hit             blocks found in pg buffer
-# ┃ COUNTER  blks_access          blocks read plus blocks hit
-# ┃ COUNTER  tup_returned         rows returned by queries in this database
-# ┃ COUNTER  tup_fetched          rows fetched by queries in this database
-# ┃ COUNTER  tup_inserted         rows inserted by queries in this database
-# ┃ COUNTER  tup_updated          rows updated by queries in this database
-# ┃ COUNTER  tup_deleted          rows deleted by queries in this database
-# ┃ COUNTER  tup_modified         rows modified by queries in this database
-# ┃ COUNTER  conflicts            Number of queries canceled due to conflicts with recovery in this database. (slave only)
-# ┃ COUNTER  temp_files           Number of temporary files created by queries in this database
-# ┃ COUNTER  temp_bytes           Temporary file byte count
-# ┃ COUNTER  deadlocks            Number of deadlocks detected in this database
-# ┃ COUNTER  checksum_failures    Number of data page checksum failures detected in this database, 12+ only
-# ┃ GAUGE    checksum_last_failure Time at which the last data page checksum failure was detected, 12+ only
-# ┃ COUNTER  blk_read_time        Time spent reading data file blocks by backends in this database, in milliseconds
-# ┃ COUNTER  blk_write_time       Time spent writing data file blocks by backends in this database, in milliseconds
-# ┃ COUNTER  stats_reset          Time at which these statistics were last reset
-# ┃ COUNTER  confl_tablespace     Number of queries in this database that have been canceled due to dropped tablespaces
-# ┃ COUNTER  confl_lock           Number of queries in this database that have been canceled due to lock timeouts
-# ┃ COUNTER  confl_snapshot       Number of queries in this database that have been canceled due to old snapshots
-# ┃ COUNTER  confl_bufferpin      Number of queries in this database that have been canceled due to pinned buffers
-# ┃ COUNTER  confl_deadlock       Number of queries in this database that have been canceled due to deadlocks
-# ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-# ┃ pg_db_numbackends{datname}
-# ┃ pg_db_xact_commit{datname}
-# ┃ pg_db_xact_rollback{datname}
-# ┃ pg_db_xact_total{datname}
-# ┃ pg_db_blks_read{datname}
-# ┃ pg_db_blks_hit{datname}
-# ┃ pg_db_blks_access{datname}
-# ┃ pg_db_tup_returned{datname}
-# ┃ pg_db_tup_fetched{datname}
-# ┃ pg_db_tup_inserted{datname}
-# ┃ pg_db_tup_updated{datname}
-# ┃ pg_db_tup_deleted{datname}
-# ┃ pg_db_tup_modified{datname}
-# ┃ pg_db_conflicts{datname}
-# ┃ pg_db_temp_files{datname}
-# ┃ pg_db_temp_bytes{datname}
-# ┃ pg_db_deadlocks{datname}
-# ┃ pg_db_checksum_failures{datname}
-# ┃ pg_db_checksum_last_failure{datname}
-# ┃ pg_db_blk_read_time{datname}
-# ┃ pg_db_blk_write_time{datname}
-# ┃ pg_db_stats_reset{datname}
-# ┃ pg_db_confl_tablespace{datname}
-# ┃ pg_db_confl_lock{datname}
-# ┃ pg_db_confl_snapshot{datname}
-# ┃ pg_db_confl_bufferpin{datname}
-# ┃ pg_db_confl_deadlock{datname}
-# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_db.pg_db_12
+#┃ PostgreSQL database statistics 12+ (introduce 2 new checksum fields)
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_db_numbackends{datname}            GAUGE    backends currently connected to this database
+#┃ pg_db_xact_commit{datname}            COUNTER  transactions in this database that have been committed
+#┃ pg_db_xact_rollback{datname}          COUNTER  transactions in this database that have been rolled back
+#┃ pg_db_xact_total{datname}             COUNTER  transactions in this database that have been issued
+#┃ pg_db_blks_read{datname}              COUNTER  blocks read from disk in this database
+#┃ pg_db_blks_hit{datname}               COUNTER  blocks found in pg buffer
+#┃ pg_db_blks_access{datname}            COUNTER  blocks read plus blocks hit
+#┃ pg_db_tup_returned{datname}           COUNTER  rows returned by queries in this database
+#┃ pg_db_tup_fetched{datname}            COUNTER  rows fetched by queries in this database
+#┃ pg_db_tup_inserted{datname}           COUNTER  rows inserted by queries in this database
+#┃ pg_db_tup_updated{datname}            COUNTER  rows updated by queries in this database
+#┃ pg_db_tup_deleted{datname}            COUNTER  rows deleted by queries in this database
+#┃ pg_db_tup_modified{datname}           COUNTER  rows modified by queries in this database
+#┃ pg_db_conflicts{datname}              COUNTER  Number of queries canceled due to conflicts with recovery in this database. (slave only)
+#┃ pg_db_temp_files{datname}             COUNTER  Number of temporary files created by queries in this database
+#┃ pg_db_temp_bytes{datname}             COUNTER  Temporary file byte count
+#┃ pg_db_deadlocks{datname}              COUNTER  Number of deadlocks detected in this database
+#┃ pg_db_checksum_failures{datname}      COUNTER  Number of data page checksum failures detected in this database, 12+ only
+#┃ pg_db_checksum_last_failure{datname}  GAUGE    Time at which the last data page checksum failure was detected, 12+ only
+#┃ pg_db_blk_read_time{datname}          COUNTER  Time spent reading data file blocks by backends in this database, in milliseconds
+#┃ pg_db_blk_write_time{datname}         COUNTER  Time spent writing data file blocks by backends in this database, in milliseconds
+#┃ pg_db_stats_reset{datname}            COUNTER  Time at which these statistics were last reset
+#┃ pg_db_confl_tablespace{datname}       COUNTER  Number of queries in this database that have been canceled due to dropped tablespaces
+#┃ pg_db_confl_lock{datname}             COUNTER  Number of queries in this database that have been canceled due to lock timeouts
+#┃ pg_db_confl_snapshot{datname}         COUNTER  Number of queries in this database that have been canceled due to old snapshots
+#┃ pg_db_confl_bufferpin{datname}        COUNTER  Number of queries in this database that have been canceled due to pinned buffers
+#┃ pg_db_confl_deadlock{datname}         COUNTER  Number of queries in this database that have been canceled due to deadlocks
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_db_12:
   name: pg_db
   desc: PostgreSQL database statistics 12+ (introduce 2 new checksum fields)
-
   query: |
     SELECT datid,
            datname,
@@ -2101,9 +2048,9 @@ pg_db_12:
     WHERE d.datname NOT IN ('postgres', 'template0', 'template1');
 
   ttl: 10
-  timeout: 1
-  tags: [cluster]
   min_version: 120000
+  tags:
+    - cluster
 
   metrics:
     - datid:
@@ -2195,18 +2142,39 @@ pg_db_12:
         description: Number of queries in this database that have been canceled due to deadlocks
 
 
-
-
-
-
-# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# ┃ pg_db.pg_db_93_11
-# ┃ PostgreSQL database statistics 9.3 ~ 11
-# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_db.pg_db_93_11
+#┃ PostgreSQL database statistics 9.3 ~ 11
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_db_numbackends{datname}       GAUGE    backends currently connected to this database
+#┃ pg_db_xact_commit{datname}       COUNTER  transactions in this database that have been committed
+#┃ pg_db_xact_rollback{datname}     COUNTER  transactions in this database that have been rolled back
+#┃ pg_db_xact_total{datname}        COUNTER  transactions in this database that have been issued
+#┃ pg_db_blks_read{datname}         COUNTER  blocks read from disk in this database
+#┃ pg_db_blks_hit{datname}          COUNTER  blocks found in pg buffer
+#┃ pg_db_blks_access{datname}       COUNTER  blocks read plus blocks hit
+#┃ pg_db_tup_returned{datname}      COUNTER  rows returned by queries in this database
+#┃ pg_db_tup_fetched{datname}       COUNTER  rows fetched by queries in this database
+#┃ pg_db_tup_inserted{datname}      COUNTER  rows inserted by queries in this database
+#┃ pg_db_tup_updated{datname}       COUNTER  rows updated by queries in this database
+#┃ pg_db_tup_deleted{datname}       COUNTER  rows deleted by queries in this database
+#┃ pg_db_tup_modified{datname}      COUNTER  rows modified by queries in this database
+#┃ pg_db_conflicts{datname}         COUNTER  Number of queries canceled due to conflicts with recovery in this database. (slave only)
+#┃ pg_db_temp_files{datname}        COUNTER  Number of temporary files created by queries in this database
+#┃ pg_db_temp_bytes{datname}        COUNTER  Temporary file byte count
+#┃ pg_db_deadlocks{datname}         COUNTER  Number of deadlocks detected in this database
+#┃ pg_db_blk_read_time{datname}     COUNTER  Time spent reading data file blocks by backends in this database, in milliseconds
+#┃ pg_db_blk_write_time{datname}    COUNTER  Time spent writing data file blocks by backends in this database, in milliseconds
+#┃ pg_db_stats_reset{datname}       COUNTER  Time at which these statistics were last reset
+#┃ pg_db_confl_tablespace{datname}  COUNTER  Number of queries in this database that have been canceled due to dropped tablespaces
+#┃ pg_db_confl_lock{datname}        COUNTER  Number of queries in this database that have been canceled due to lock timeouts
+#┃ pg_db_confl_snapshot{datname}    COUNTER  Number of queries in this database that have been canceled due to old snapshots
+#┃ pg_db_confl_bufferpin{datname}   COUNTER  Number of queries in this database that have been canceled due to pinned buffers
+#┃ pg_db_confl_deadlock{datname}    COUNTER  Number of queries in this database that have been canceled due to deadlocks
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_db_93_11:
   name: pg_db
   desc: PostgreSQL database statistics 9.3 ~ 11
-
   query: |
     SELECT datid,
            datname,
@@ -2242,10 +2210,10 @@ pg_db_93_11:
     WHERE d.datname NOT IN ('postgres', 'template0', 'template1');
 
   ttl: 10
-  timeout: 1
-  tags: [cluster]
   min_version: 90300
   max_version: 120000
+  tags:
+    - cluster
 
   metrics:
     - datid:
@@ -2331,38 +2299,23 @@ pg_db_93_11:
         description: Number of queries in this database that have been canceled due to deadlocks
 
 
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ Database Level Metrics
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃   These metrics are unique for different database. So it will
-#┃   be executed for each database even they lies in same cluster
-#┃   note you'd better provide a datname label in your query in
-#┃   order to get rid of name collision
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+###############################################################
+#                  6. Database Metrics                        #
+###############################################################
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_class
-#┃ Postgres relation statistic, db level
+#┃ Postgres relation catalog info db level normal version
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name of this relation
-#┃ LABEL    nspname              schema name of this relation
-#┃ LABEL    relname              relation name of this relation
-#┃ LABEL    relkind              relation type r-table i-index s-sequence m-mview t-toast
-#┃ GAUGE    relpages             exact page count of this relation
-#┃ GAUGE    reltuples            estimate relation tuples
-#┃ GAUGE    relage               age of non-index relation
-#┃ GAUGE    relsize              size of this relation
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_class_relpages{datname,nspname,relname,relkind}
-#┃ pg_class_reltuples{datname,nspname,relname,relkind}
-#┃ pg_class_relage{datname,nspname,relname,relkind}
-#┃ pg_class_relsize{datname,nspname,relname,relkind}
+#┃ pg_class_relpages{datname,nspname,relname,relkind}   GAUGE    exact page count of this relation
+#┃ pg_class_reltuples{datname,nspname,relname,relkind}  GAUGE    estimate relation tuples
+#┃ pg_class_relage{datname,nspname,relname,relkind}     GAUGE    age of non-index relation
+#┃ pg_class_relsize{datname,nspname,relname,relkind}    GAUGE    size of this relation
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_class:
   name: pg_class
-  desc: Postgres relation statistic, db level , normal version
+  desc: Postgres relation catalog info db level normal version
 
   query: |
     SELECT CURRENT_CATALOG                                              AS datname,
@@ -2377,10 +2330,10 @@ pg_class:
     WHERE relnamespace NOT IN
           ('pg_catalog'::regnamespace::oid, 'information_schema'::regnamespace::oid, 'pg_toast'::regnamespace::oid)
       AND relkind IN ('r', 'i', 'm', 't')
+    ORDER BY relpages DESC LIMIT 256;
 
-  ttl: 100
+  ttl: 60
   timeout: 1
-  tags: [not:bulky]
   min_version: 090400
 
   metrics:
@@ -2409,75 +2362,40 @@ pg_class:
         usage: GAUGE
         description: size of this relation
 
-
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_table
-#┃ PostgreSQL table statistics, db level
+#┃ PostgreSQL table statistics, db level, normal version
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name of this relation
-#┃ LABEL    nspname              schema name of this relation
-#┃ LABEL    relname              relation name of this relation
-#┃ COUNTER  seq_scan             sequential scans initiated on this table
-#┃ COUNTER  seq_tup_read         live rows fetched by sequential scans
-#┃ COUNTER  idx_scan             index scans initiated on this table
-#┃ COUNTER  idx_tup_fetch        rows fetched by index scans
-#┃ COUNTER  tbl_scan             total table scan = index scan + seq scan
-#┃ COUNTER  tup_read             total tuples read = index fetch + seq read
-#┃ COUNTER  n_tup_ins            rows inserted
-#┃ COUNTER  n_tup_upd            rows updated
-#┃ COUNTER  n_tup_del            rows deleted
-#┃ COUNTER  n_tup_mod            rows modified (insert + update + delete)
-#┃ COUNTER  n_tup_hot_upd        rows updated in HOT mode
-#┃ GAUGE    n_live_tup           estimated live rows
-#┃ GAUGE    n_dead_tup           estimated dead rows
-#┃ GAUGE    n_mod_since_analyze  rows changed since last analyze
-#┃ GAUGE    last_vacuum          when table was manually vacuumed last time (FULL not count)
-#┃ GAUGE    last_autovacuum      when table was automatically vacuumed last time
-#┃ GAUGE    last_analyze         when table was manually analyzed last time
-#┃ GAUGE    last_autoanalyze     when table was automatically analyzed last time
-#┃ COUNTER  vacuum_count         manual vacuum count (FULL not count)
-#┃ COUNTER  autovacuum_count     automatic vacuum count
-#┃ COUNTER  analyze_count        manual analyze count
-#┃ COUNTER  autoanalyze_count    automatic analyze count
-#┃ COUNTER  heap_blks_read       relation heap read
-#┃ COUNTER  heap_blks_hit        relation heap hit
-#┃ COUNTER  idx_blks_read        index read
-#┃ COUNTER  idx_blks_hit         index hit
-#┃ COUNTER  toast_blks_read      toast heap read
-#┃ COUNTER  toast_blks_hit       toast heap hit
-#┃ COUNTER  tidx_blks_read       toast index read
-#┃ COUNTER  tidx_blks_hit        toast index hit
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_table_seq_scan{datname,nspname,relname}
-#┃ pg_table_seq_tup_read{datname,nspname,relname}
-#┃ pg_table_idx_scan{datname,nspname,relname}
-#┃ pg_table_idx_tup_fetch{datname,nspname,relname}
-#┃ pg_table_tbl_scan{datname,nspname,relname}
-#┃ pg_table_tup_read{datname,nspname,relname}
-#┃ pg_table_n_tup_ins{datname,nspname,relname}
-#┃ pg_table_n_tup_upd{datname,nspname,relname}
-#┃ pg_table_n_tup_del{datname,nspname,relname}
-#┃ pg_table_n_tup_mod{datname,nspname,relname}
-#┃ pg_table_n_tup_hot_upd{datname,nspname,relname}
-#┃ pg_table_n_live_tup{datname,nspname,relname}
-#┃ pg_table_n_dead_tup{datname,nspname,relname}
-#┃ pg_table_n_mod_since_analyze{datname,nspname,relname}
-#┃ pg_table_last_vacuum{datname,nspname,relname}
-#┃ pg_table_last_autovacuum{datname,nspname,relname}
-#┃ pg_table_last_analyze{datname,nspname,relname}
-#┃ pg_table_last_autoanalyze{datname,nspname,relname}
-#┃ pg_table_vacuum_count{datname,nspname,relname}
-#┃ pg_table_autovacuum_count{datname,nspname,relname}
-#┃ pg_table_analyze_count{datname,nspname,relname}
-#┃ pg_table_autoanalyze_count{datname,nspname,relname}
-#┃ pg_table_heap_blks_read{datname,nspname,relname}
-#┃ pg_table_heap_blks_hit{datname,nspname,relname}
-#┃ pg_table_idx_blks_read{datname,nspname,relname}
-#┃ pg_table_idx_blks_hit{datname,nspname,relname}
-#┃ pg_table_toast_blks_read{datname,nspname,relname}
-#┃ pg_table_toast_blks_hit{datname,nspname,relname}
-#┃ pg_table_tidx_blks_read{datname,nspname,relname}
-#┃ pg_table_tidx_blks_hit{datname,nspname,relname}
+#┃ pg_table_seq_scan{datname,nspname,relname}             COUNTER  sequential scans initiated on this table
+#┃ pg_table_seq_tup_read{datname,nspname,relname}         COUNTER  live rows fetched by sequential scans
+#┃ pg_table_idx_scan{datname,nspname,relname}             COUNTER  index scans initiated on this table
+#┃ pg_table_idx_tup_fetch{datname,nspname,relname}        COUNTER  rows fetched by index scans
+#┃ pg_table_tbl_scan{datname,nspname,relname}             COUNTER  total table scan = index scan + seq scan
+#┃ pg_table_tup_read{datname,nspname,relname}             COUNTER  total tuples read = index fetch + seq read
+#┃ pg_table_n_tup_ins{datname,nspname,relname}            COUNTER  rows inserted
+#┃ pg_table_n_tup_upd{datname,nspname,relname}            COUNTER  rows updated
+#┃ pg_table_n_tup_del{datname,nspname,relname}            COUNTER  rows deleted
+#┃ pg_table_n_tup_mod{datname,nspname,relname}            COUNTER  rows modified (insert + update + delete)
+#┃ pg_table_n_tup_hot_upd{datname,nspname,relname}        COUNTER  rows updated in HOT mode
+#┃ pg_table_n_live_tup{datname,nspname,relname}           GAUGE    estimated live rows
+#┃ pg_table_n_dead_tup{datname,nspname,relname}           GAUGE    estimated dead rows
+#┃ pg_table_n_mod_since_analyze{datname,nspname,relname}  GAUGE    rows changed since last analyze
+#┃ pg_table_last_vacuum{datname,nspname,relname}          GAUGE    when table was manually vacuumed last time (FULL not count)
+#┃ pg_table_last_autovacuum{datname,nspname,relname}      GAUGE    when table was automatically vacuumed last time
+#┃ pg_table_last_analyze{datname,nspname,relname}         GAUGE    when table was manually analyzed last time
+#┃ pg_table_last_autoanalyze{datname,nspname,relname}     GAUGE    when table was automatically analyzed last time
+#┃ pg_table_vacuum_count{datname,nspname,relname}         COUNTER  manual vacuum count (FULL not count)
+#┃ pg_table_autovacuum_count{datname,nspname,relname}     COUNTER  automatic vacuum count
+#┃ pg_table_analyze_count{datname,nspname,relname}        COUNTER  manual analyze count
+#┃ pg_table_autoanalyze_count{datname,nspname,relname}    COUNTER  automatic analyze count
+#┃ pg_table_heap_blks_read{datname,nspname,relname}       COUNTER  relation heap read
+#┃ pg_table_heap_blks_hit{datname,nspname,relname}        COUNTER  relation heap hit
+#┃ pg_table_idx_blks_read{datname,nspname,relname}        COUNTER  index read
+#┃ pg_table_idx_blks_hit{datname,nspname,relname}         COUNTER  index hit
+#┃ pg_table_toast_blks_read{datname,nspname,relname}      COUNTER  toast heap read
+#┃ pg_table_toast_blks_hit{datname,nspname,relname}       COUNTER  toast heap hit
+#┃ pg_table_tidx_blks_read{datname,nspname,relname}       COUNTER  toast index read
+#┃ pg_table_tidx_blks_hit{datname,nspname,relname}        COUNTER  toast index hit
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_table:
   name: pg_table
@@ -2518,11 +2436,11 @@ pg_table:
            tidx_blks_read,
            tidx_blks_hit
     FROM pg_stat_user_tables psut,
-         LATERAL (SELECT * FROM pg_statio_user_tables psio WHERE psio.relid = psut.relid) p;
+         LATERAL (SELECT * FROM pg_statio_user_tables psio WHERE psio.relid = psut.relid) p
+    ORDER BY 8 DESC LIMIT 128;
 
   ttl: 10
   timeout: 1
-  tags: [not:bulky]
   min_version: 090400
 
   metrics:
@@ -2630,26 +2548,155 @@ pg_table:
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_index
+#┃ PostgreSQL index statistics, db level, normal version
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_index_idx_scan{datname,nspname,relname}       COUNTER  index scans initiated on this index
+#┃ pg_index_idx_tup_read{datname,nspname,relname}   COUNTER  index entries returned by scans on this index
+#┃ pg_index_idx_tup_fetch{datname,nspname,relname}  COUNTER  live table rows fetched by simple index scans using this index
+#┃ pg_index_idx_blks_read{datname,nspname,relname}  COUNTER  blocks been read from disk of this index
+#┃ pg_index_idx_blks_hit{datname,nspname,relname}   COUNTER  blocks hit from cache of this index
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_index:
+  name: pg_index
+  desc: PostgreSQL index statistics, db level, normal version
+  query: |
+    SELECT CURRENT_CATALOG AS datname,
+           schemaname      AS nspname,
+           indexrelname    AS relname,
+           idx_scan,
+           idx_tup_read,
+           idx_tup_fetch,
+           idx_blks_read,
+           idx_blks_hit
+    FROM pg_stat_user_indexes psui,
+         LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio
+         WHERE psio.indexrelid = psui.indexrelid) p2
+    ORDER BY 4 DESC LIMIT 128;
+
+  ttl: 10
+  timeout: 1
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this relation
+    - nspname:
+        usage: LABEL
+        description: schema name of this relation
+    - relname:
+        usage: LABEL
+        description: relation name of this relation
+    - idx_scan:
+        usage: COUNTER
+        description: index scans initiated on this index
+    - idx_tup_read:
+        usage: COUNTER
+        description: index entries returned by scans on this index
+    - idx_tup_fetch:
+        usage: COUNTER
+        description: live table rows fetched by simple index scans using this index
+    - idx_blks_read:
+        usage: COUNTER
+        description: blocks been read from disk of this index
+    - idx_blks_hit:
+        usage: COUNTER
+        description: blocks hit from cache of this index
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_func
+#┃ PostgreSQL function statistics, db level, normal version
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_func_calls{datname,nspname,funcname}       COUNTER  how many times this function has been called
+#┃ pg_func_total_time{datname,nspname,funcname}  COUNTER  how much time spent in this function and it's child function, in ms
+#┃ pg_func_self_time{datname,nspname,funcname}   COUNTER  how much time spent in this function itself (other func not included), in ms
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_func:
+  desc: PostgreSQL function statistics, db level, normal version
+  query: |
+    SELECT CURRENT_CATALOG AS datname,
+           schemaname      AS nspname,
+           funcname,
+           calls,
+           total_time,
+           self_time
+    FROM pg_stat_user_functions
+    ORDER BY 4 DESC LIMIT 128;
+
+  ttl: 10
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this relation
+    - nspname:
+        usage: LABEL
+        description: schema name of this relation
+    - funcname:
+        usage: LABEL
+        description: relation name of this relation
+    - calls:
+        usage: COUNTER
+        description: how many times this function has been called
+    - total_time:
+        usage: COUNTER
+        description: how much time spent in this function and it's child function, in ms
+    - self_time:
+        usage: COUNTER
+        description: how much time spent in this function itself (other func not included), in ms
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_defpart
+#┃ PostgreSQL default partition tuples
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_defpart_tuples{datname,nspname,relname}  GAUGE    number of tuples in this partition
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_defpart:
+  name: pg_defpart
+  desc: PostgreSQL default partition tuples
+
+  query: |
+    SELECT CURRENT_CATALOG            AS datname,
+           relnamespace::RegNamespace AS nspname,
+           relname,
+           reltuples                  AS tuples
+    FROM pg_class
+    WHERE relpartbound IS NOT NULL
+      AND pg_catalog.pg_get_expr(relpartbound, oid) = 'DEFAULT'
+    ORDER BY 4 DESC LIMIT 64;
+
+  ttl: 60
+  timeout: 1
+  min_version: 110000
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: database name of this relation
+    - nspname:
+        usage: LABEL
+        description: schema name of this relation
+    - relname:
+        usage: LABEL
+        description: relation name of this relation
+    - tuples:
+        usage: GAUGE
+        description: number of tuples in this partition
+
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_table_size
-#┃ PostgreSQL table size detail, db level
+#┃ PostgreSQL table toast index size stats, slow query
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name of this relation
-#┃ LABEL    nspname              schema name of this relation
-#┃ LABEL    relname              relation name of this relation
-#┃ GAUGE    bytes                total size of this table (including toast, index, toast index)
-#┃ GAUGE    relsize              size of this table itself (main, vm, fsm)
-#┃ GAUGE    indexsize            size of all related indexes
-#┃ GAUGE    toastsize            size of corresponding toast tables
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_table_size_bytes{datname,nspname,relname}
-#┃ pg_table_size_relsize{datname,nspname,relname}
-#┃ pg_table_size_indexsize{datname,nspname,relname}
-#┃ pg_table_size_toastsize{datname,nspname,relname}
+#┃ pg_table_size_bytes{datname,nspname,relname}      GAUGE    total size of this table (including toast, index, toast index)
+#┃ pg_table_size_relsize{datname,nspname,relname}    GAUGE    size of this table itself (main, vm, fsm)
+#┃ pg_table_size_indexsize{datname,nspname,relname}  GAUGE    size of all related indexes
+#┃ pg_table_size_toastsize{datname,nspname,relname}  GAUGE    size of corresponding toast tables
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_table_size:
-  name: pg_table_size
-  desc: PostgreSQL table size detail, db level, normal version
-
+  desc: PostgreSQL table toast index size stats, slow query
   query: |
     SELECT CURRENT_CATALOG                       AS datname,
            nsp.nspname,
@@ -2663,11 +2710,11 @@ pg_table_size:
     WHERE nspname NOT IN ('pg_catalog', 'information_schema')
       AND rel.relkind = 'r';
 
-  ttl: 100
-  timeout: 1
-  skip: false
-  tags: [not:bulky]
+  ttl: 300
   min_version: 100000
+  skip_errors: true
+  tags:
+    - bloat
 
   metrics:
     - datname:
@@ -2693,67 +2740,12 @@ pg_table_size:
         description: size of corresponding toast tables
 
 
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_defpart
-#┃ PostgreSQL default partition tuples, db level
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name of this relation
-#┃ LABEL    nspname              schema name of this relation
-#┃ LABEL    relname              relation name of this relation
-#┃ GAUGE    tuples               number of tuples in this partition
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_defpart_tuples{datname,nspname,relname}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_defpart:
-  name: pg_defpart
-  desc: PostgreSQL default partition tuples, db level
-
-  query: |
-    SELECT CURRENT_CATALOG            AS datname,
-           relnamespace::RegNamespace AS nspname,
-           relname,
-           reltuples                  AS tuples
-    FROM pg_class
-    WHERE relpartbound IS NOT NULL
-      AND pg_catalog.pg_get_expr(relpartbound, oid) = 'DEFAULT';
-
-  ttl: 100
-  timeout: 1
-  tags: [not:bulky]
-  min_version: 110000
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: database name of this relation
-    - nspname:
-        usage: LABEL
-        description: schema name of this relation
-    - relname:
-        usage: LABEL
-        description: relation name of this relation
-    - tuples:
-        usage: GAUGE
-        description: number of tuples in this partition
-
-
-
-
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_table_bloat
-#┃ PostgreSQL table bloat statistics, db level, require pg_stats access
+#┃ PostgreSQL table bloat statistics, db level, normal version, require pg_stats access
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name of this table
-#┃ LABEL    nspname              schema name of this table
-#┃ LABEL    relname              relation name of this table
-#┃ GAUGE    size                 total size in bytes of this table
-#┃ GAUGE    ratio                estimated bloat ratio of this table, 0~1
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_table_bloat_size{datname,nspname,relname}
-#┃ pg_table_bloat_ratio{datname,nspname,relname}
+#┃ pg_table_bloat_size{datname,nspname,relname}   GAUGE    total size in bytes of this table
+#┃ pg_table_bloat_ratio{datname,nspname,relname}  GAUGE    estimated bloat ratio of this table, 0~1
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_table_bloat:
   name: pg_table_bloat
@@ -2798,11 +2790,12 @@ pg_table_bloat:
          ) AS s3
     WHERE NOT is_na;
 
-  ttl: 100
+  ttl: 300
   timeout: 1
-  skip: false
-  tags: [not:bulky]
   min_version: 090400
+  tags:
+    - bloat
+
 
   metrics:
     - datname:
@@ -2826,91 +2819,11 @@ pg_table_bloat:
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_index.pg_index
-#┃ PostgreSQL index statistics, db level, normal version
-#┃ note that database with tremendous of tables may suffer from
-#┃ this query. Use sampling filter or just disable it in that case
-#┃ https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STATIO-ALL-INDEXES-VIEW
-#┃ https://www.postgresql.org/docs/9.4/monitoring-stats.html#PG-STAT-ALL-INDEXES-VIEW
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name of this relation
-#┃ LABEL    nspname              schema name of this relation
-#┃ LABEL    relname              relation name of this relation
-#┃ COUNTER  idx_scan             index scans initiated on this index
-#┃ COUNTER  idx_tup_read         index entries returned by scans on this index
-#┃ COUNTER  idx_tup_fetch        live table rows fetched by simple index scans using this index
-#┃ COUNTER  idx_blks_read        blocks been read from disk of this index
-#┃ COUNTER  idx_blks_hit         blocks hit from cache of this index
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_index_idx_scan{datname,nspname,relname}
-#┃ pg_index_idx_tup_read{datname,nspname,relname}
-#┃ pg_index_idx_tup_fetch{datname,nspname,relname}
-#┃ pg_index_idx_blks_read{datname,nspname,relname}
-#┃ pg_index_idx_blks_hit{datname,nspname,relname}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_index:
-  name: pg_index
-  desc: PostgreSQL index statistics, db level, normal version
-
-  query: |
-    SELECT CURRENT_CATALOG AS datname,
-           schemaname      AS nspname,
-           indexrelname    AS relname,
-           idx_scan,
-           idx_tup_read,
-           idx_tup_fetch,
-           idx_blks_read,
-           idx_blks_hit
-    FROM pg_stat_user_indexes psui,
-         LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio
-         WHERE psio.indexrelid = psui.indexrelid) p2;
-
-  ttl: 10
-  timeout: 1
-  tags: [not:bulky]
-  min_version: 090400
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: database name of this relation
-    - nspname:
-        usage: LABEL
-        description: schema name of this relation
-    - relname:
-        usage: LABEL
-        description: relation name of this relation
-    - idx_scan:
-        usage: COUNTER
-        description: index scans initiated on this index
-    - idx_tup_read:
-        usage: COUNTER
-        description: index entries returned by scans on this index
-    - idx_tup_fetch:
-        usage: COUNTER
-        description: live table rows fetched by simple index scans using this index
-    - idx_blks_read:
-        usage: COUNTER
-        description: blocks been read from disk of this index
-    - idx_blks_hit:
-        usage: COUNTER
-        description: blocks hit from cache of this index
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_index_bloat
-#┃ PostgreSQL Index Bloat, btree only, db level
-#┃ some stats require su privilege
+#┃ PostgreSQL Index Bloat, btree only, db level, normal version
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name of this index
-#┃ LABEL    nspname              schema name of this index
-#┃ LABEL    relname              relation name of this index relation
-#┃ GAUGE    size                 total size in bytes of this index
-#┃ GAUGE    ratio                estimated bloat ratio of this index, 0~1
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_index_bloat_size{datname,nspname,relname}
-#┃ pg_index_bloat_ratio{datname,nspname,relname}
+#┃ pg_index_bloat_size{datname,nspname,relname}   GAUGE    total size in bytes of this index
+#┃ pg_index_bloat_ratio{datname,nspname,relname}  GAUGE    estimated bloat ratio of this index, 0~1
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_index_bloat:
   name: pg_index_bloat
@@ -2957,11 +2870,11 @@ pg_index_bloat:
          GROUP BY 1, 2, 3, 4, 5, 6
      ) est;
 
-  ttl: 100
+  ttl: 300
   timeout: 1
-  skip: false
-  tags: [not:bulky]
   min_version: 090400
+  tags:
+    - bloat
 
   metrics:
     - datname:
@@ -2984,89 +2897,10 @@ pg_index_bloat:
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_func
-#┃ PostgreSQL Function execution statistics, db level
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    datname              database name of this function
-#┃ LABEL    nspname              schema name of this function
-#┃ LABEL    funcname             function name of this function
-#┃ LABEL    funcid               function id, note that function could override
-#┃ COUNTER  calls                how many times this function has been called
-#┃ COUNTER  total_time           how much time spent in this function and it's child function, in ms
-#┃ COUNTER  self_time            how much time spent in this function itself (other func not included), in ms
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_func_calls{datname,nspname,funcname,funcid}
-#┃ pg_func_total_time{datname,nspname,funcname,funcid}
-#┃ pg_func_self_time{datname,nspname,funcname,funcid}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_func:
-  name: pg_func
-  desc: PostgreSQL Function execution statistics, db level, normal version
-
-  query: |
-    SELECT CURRENT_CATALOG AS datname,
-           schemaname      AS nspname,
-           funcname,
-           funcid,
-           calls,
-           total_time,
-           self_time
-    FROM pg_stat_user_functions;
-
-  ttl: 10
-  timeout: 1
-  tags: [not:bulky]
-  min_version: 090400
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: database name of this function
-    - nspname:
-        usage: LABEL
-        description: schema name of this function
-    - funcname:
-        usage: LABEL
-        description: function name of this function
-    - funcid:
-        usage: LABEL
-        description: function id, note that function could override
-    - calls:
-        usage: COUNTER
-        description: how many times this function has been called
-    - total_time:
-        usage: COUNTER
-        description: how much time spent in this function and it's child function, in ms
-    - self_time:
-        usage: COUNTER
-        description: how much time spent in this function itself (other func not included), in ms
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pgbouncer_list
 #┃ pgbouncer entry list: http://www.pgbouncer.org/usage.html#show-lists
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    list                 pgbouncer internal list name
-#┃ GAUGE    items                count of curresponding pgbouncer object
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pgbouncer_list_items{list}
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ metrics:
-#┃ pgbouncer_list_items{list="..."}
-#┃ label could be:
-#┃ databases:      Count of databases.
-#┃ users:          Count of users.
-#┃ pools:          Count of pools.
-#┃ free_clients:   Count of free clients.
-#┃ used_clients:   Count of used clients.
-#┃ login_clients:  Count of clients in login state.
-#┃ free_servers:   Count of free servers.
-#┃ used_servers:   Count of used servers.
-#┃ dns_names:      Count of DNS names in the cache.
-#┃ dns_zones:      Count of DNS zones in the cache.
-#┃ dns_queries:    Count of in-flight DNS queries.
-#┃ dns_pending:    not used
+#┃ pgbouncer_list_items{list}  GAUGE    count of curresponding pgbouncer object
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_list:
   name: pgbouncer_list
@@ -3075,10 +2909,11 @@ pgbouncer_list:
   query: |
     SHOW LISTS;
 
-  ttl: 5
-  tags: [pgbouncer]
+  ttl: 10
   min_version: 10800
   fatal: true
+  tags:
+    - pgbouncer
 
   metrics:
     - list:
@@ -3089,33 +2924,16 @@ pgbouncer_list:
         description: count of curresponding pgbouncer object
 
 
-
-
-
-
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pgbouncer_database
 #┃ pgbouncer database stats: http://www.pgbouncer.org/usage.html#show-databases
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    name                 name of configured database entry
-#┃ LABEL    host                 host pgbouncer connects to
-#┃ LABEL    port                 port pgbouncer connects to
-#┃ LABEL    database             actual database name pgbouncer connects to
-#┃ DISCARD  force_user
-#┃ COUNTER  pool_size            maximum number of server connections
-#┃ GAUGE    reserve_pool         maximum number of additional connections for this database
-#┃ DISCARD  pool_mode
-#┃ GAUGE    max_connections      maximum number of allowed connections for this database
-#┃ GAUGE    current_connections  current number of connections for this database
-#┃ GAUGE    paused               1 if this database is currently paused, else 0
-#┃ GAUGE    disabled             1 if this database is currently disabled, else 0
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pgbouncer_database_pool_size{datname,host,port,real_datname}
-#┃ pgbouncer_database_reserve_pool{datname,host,port,real_datname}
-#┃ pgbouncer_database_max_connections{datname,host,port,real_datname}
-#┃ pgbouncer_database_current_connections{datname,host,port,real_datname}
-#┃ pgbouncer_database_paused{datname,host,port,real_datname}
-#┃ pgbouncer_database_disabled{datname,host,port,real_datname}
+#┃ pgbouncer_database_pool_size{datname,host,port,real_datname}            COUNTER  maximum number of server connections
+#┃ pgbouncer_database_reserve_pool{datname,host,port,real_datname}         GAUGE    maximum number of additional connections for this database
+#┃ pgbouncer_database_max_connections{datname,host,port,real_datname}      GAUGE    maximum number of allowed connections for this database
+#┃ pgbouncer_database_current_connections{datname,host,port,real_datname}  GAUGE    current number of connections for this database
+#┃ pgbouncer_database_paused{datname,host,port,real_datname}               GAUGE    1 if this database is currently paused, else 0
+#┃ pgbouncer_database_disabled{datname,host,port,real_datname}             GAUGE    1 if this database is currently disabled, else 0
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_database:
   name: pgbouncer_database
@@ -3124,9 +2942,10 @@ pgbouncer_database:
   query: |
     SHOW DATABASES;
 
-  ttl: 5
-  tags: [pgbouncer]
+  ttl: 10
   min_version: 10800
+  tags:
+    - pgbouncer
 
   metrics:
     - name:
@@ -3169,124 +2988,23 @@ pgbouncer_database:
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pgbouncer_pool
-#┃ pgbouncer pool stats: http://www.pgbouncer.org/usage.html#show-pools
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    database             database name of this relation
-#┃ LABEL    user                 user
-#┃ GAUGE    cl_active            client connections that are linked to server connection and can process queries
-#┃ GAUGE    cl_waiting           client connections that have sent queries but have not yet got a server connection
-#┃ GAUGE    sv_active            server connections that are linked to a client
-#┃ GAUGE    sv_idle              server connections that are unused and immediately usable for client queries
-#┃ GAUGE    sv_used              server connections that have been idle for more than server_check_delay (means have to run check query)
-#┃ GAUGE    sv_tested            server connections that are currently running reset or check query
-#┃ GAUGE    sv_login             server connections currently in the process of logging in
-#┃ GAUGE    maxwait              how long the first(oldest) client in the queue has waited, in seconds, key metric
-#┃ GAUGE    maxwait_us           microsecond part of the maximum waiting time.
-#┃ DISCARD  pool_mode            the pooling mode in use
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pgbouncer_pool_active_clients{datname,user}
-#┃ pgbouncer_pool_waiting_clients{datname,user}
-#┃ pgbouncer_pool_active_servers{datname,user}
-#┃ pgbouncer_pool_idle_servers{datname,user}
-#┃ pgbouncer_pool_used_servers{datname,user}
-#┃ pgbouncer_pool_tested_servers{datname,user}
-#┃ pgbouncer_pool_login_servers{datname,user}
-#┃ pgbouncer_pool_maxwait{datname,user}
-#┃ pgbouncer_pool_maxwait_us{datname,user}
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pgbouncer_pool:
-  name: pgbouncer_pool
-  desc: "pgbouncer pool stats: http://www.pgbouncer.org/usage.html#show-pools"
-
-  query: |
-    SHOW POOLS;
-
-  ttl: 5
-  tags: [pgbouncer]
-  min_version: 10800
-
-  metrics:
-    - database:
-        usage: LABEL
-        rename: datname
-        description: database name of this pool
-    - user:
-        usage: LABEL
-        description: user name of this pool
-    - cl_active:
-        usage: GAUGE
-        rename: active_clients
-        description: client connections that are linked to server connection and can process queries
-    - cl_waiting:
-        usage: GAUGE
-        rename: waiting_clients
-        description: client connections that have sent queries but have not yet got a server connection
-    - sv_active:
-        usage: GAUGE
-        rename: active_servers
-        description: server connections that are linked to a client
-    - sv_idle:
-        usage: GAUGE
-        rename: idle_servers
-        description: server connections that are unused and immediately usable for client queries
-    - sv_used:
-        usage: GAUGE
-        rename: used_servers
-        description: server connections that have been idle for more than server_check_delay (means have to run check query)
-    - sv_tested:
-        usage: GAUGE
-        rename: tested_servers
-        description: server connections that are currently running reset or check query
-    - sv_login:
-        usage: GAUGE
-        rename: login_servers
-        description:  server connections currently in the process of logging in
-    - maxwait:
-        usage: GAUGE
-        description: how long the first(oldest) client in the queue has waited, in seconds, key metric
-    - maxwait_us:
-        usage: GAUGE
-        description: microsecond part of the maximum waiting time.
-    - pool_mode:
-        usage: DISCARD
-        description: the pooling mode in use
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pgbouncer_stat
 #┃ pgbouncer stats per database: http://www.pgbouncer.org/usage.html#show-stats
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ LABEL    database             database name of this relation
-#┃ GAUGE    total_xact_count     total tr
-#┃ GAUGE    total_query_count    relation name of this relation
-#┃ COUNTER  total_received       how many times this function has been called
-#┃ COUNTER  total_sent           how much time spent in this function and it's child function, in ms
-#┃ COUNTER  total_xact_time      how much time spent in this function itself (other func not included), in ms
-#┃ COUNTER  total_query_time     how many times this function has been called
-#┃ COUNTER  total_wait_time      how much time spent in this function and it's child function, in ms
-#┃ GAUGE    avg_xact_count       how much time spent in this function itself (other func not included), in ms
-#┃ GAUGE    avg_query_count      how many times this function has been called
-#┃ GAUGE    avg_recv             how much time spent in this function and it's child function, in ms
-#┃ GAUGE    avg_sent             how much time spent in this function itself (other func not included), in ms
-#┃ GAUGE    avg_xact_time        how many times this function has been called
-#┃ GAUGE    avg_query_time       how much time spent in this function and it's child function, in ms
-#┃ GAUGE    avg_wait_time        how much time spent in this function itself (other func not included), in ms
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pgbouncer_stat_total_xact_count{datname}
-#┃ pgbouncer_stat_total_query_count{datname}
-#┃ pgbouncer_stat_total_received{datname}
-#┃ pgbouncer_stat_total_sent{datname}
-#┃ pgbouncer_stat_total_xact_time{datname}
-#┃ pgbouncer_stat_total_query_time{datname}
-#┃ pgbouncer_stat_total_wait_time{datname}
-#┃ pgbouncer_stat_avg_xact_count{datname}
-#┃ pgbouncer_stat_avg_query_count{datname}
-#┃ pgbouncer_stat_avg_recv{datname}
-#┃ pgbouncer_stat_avg_sent{datname}
-#┃ pgbouncer_stat_avg_xact_time{datname}
-#┃ pgbouncer_stat_avg_query_time{datname}
-#┃ pgbouncer_stat_avg_wait_time{datname}
+#┃ pgbouncer_stat_total_xact_count{datname}   GAUGE    total transaction count
+#┃ pgbouncer_stat_total_query_count{datname}  GAUGE    relation name of this relation
+#┃ pgbouncer_stat_total_received{datname}     COUNTER  how many times this function has been called
+#┃ pgbouncer_stat_total_sent{datname}         COUNTER  how much time spent in this function and it's child function, in ms
+#┃ pgbouncer_stat_total_xact_time{datname}    COUNTER  how much time spent in this function itself (other func not included), in ms
+#┃ pgbouncer_stat_total_query_time{datname}   COUNTER  how many times this function has been called
+#┃ pgbouncer_stat_total_wait_time{datname}    COUNTER  how much time spent in this function and it's child function, in ms
+#┃ pgbouncer_stat_avg_xact_count{datname}     GAUGE    how much time spent in this function itself (other func not included), in ms
+#┃ pgbouncer_stat_avg_query_count{datname}    GAUGE    how many times this function has been called
+#┃ pgbouncer_stat_avg_recv{datname}           GAUGE    how much time spent in this function and it's child function, in ms
+#┃ pgbouncer_stat_avg_sent{datname}           GAUGE    how much time spent in this function itself (other func not included), in ms
+#┃ pgbouncer_stat_avg_xact_time{datname}      GAUGE    how many times this function has been called
+#┃ pgbouncer_stat_avg_query_time{datname}     GAUGE    how much time spent in this function and it's child function, in ms
+#┃ pgbouncer_stat_avg_wait_time{datname}      GAUGE    how much time spent in this function itself (other func not included), in ms
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_stat:
   name: pgbouncer_stat
@@ -3295,9 +3013,10 @@ pgbouncer_stat:
   query: |
     SHOW STATS;
 
-  ttl: 5
-  tags: [pgbouncer]
+  ttl: 10
   min_version: 10800
+  tags:
+    - pgbouncer
 
   metrics:
     - database:
@@ -3346,4 +3065,77 @@ pgbouncer_stat:
     - avg_wait_time:
         usage: GAUGE
         description: how much time spent in this function itself (other func not included), in ms
+
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pgbouncer_pool
+#┃ pgbouncer pool stats: http://www.pgbouncer.org/usage.html#show-pools
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pgbouncer_pool_active_clients{datname,user}   GAUGE    client connections that are linked to server connection and can process queries
+#┃ pgbouncer_pool_waiting_clients{datname,user}  GAUGE    client connections that have sent queries but have not yet got a server connection
+#┃ pgbouncer_pool_active_servers{datname,user}   GAUGE    server connections that are linked to a client
+#┃ pgbouncer_pool_idle_servers{datname,user}     GAUGE    server connections that are unused and immediately usable for client queries
+#┃ pgbouncer_pool_used_servers{datname,user}     GAUGE    server connections that have been idle for more than server_check_delay (means have to run check query)
+#┃ pgbouncer_pool_tested_servers{datname,user}   GAUGE    server connections that are currently running reset or check query
+#┃ pgbouncer_pool_login_servers{datname,user}    GAUGE    server connections currently in the process of logging in
+#┃ pgbouncer_pool_maxwait{datname,user}          GAUGE    how long the first(oldest) client in the queue has waited, in seconds, key metric
+#┃ pgbouncer_pool_maxwait_us{datname,user}       GAUGE    microsecond part of the maximum waiting time.
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pgbouncer_pool:
+  name: pgbouncer_pool
+  desc: "pgbouncer pool stats: http://www.pgbouncer.org/usage.html#show-pools"
+
+  query: |
+    SHOW POOLS;
+
+  ttl: 10
+  min_version: 10800
+  tags:
+    - pgbouncer
+
+  metrics:
+    - database:
+        usage: LABEL
+        rename: datname
+        description: database name of this pool
+    - user:
+        usage: LABEL
+        description: user name of this pool
+    - cl_active:
+        usage: GAUGE
+        rename: active_clients
+        description: client connections that are linked to server connection and can process queries
+    - cl_waiting:
+        usage: GAUGE
+        rename: waiting_clients
+        description: client connections that have sent queries but have not yet got a server connection
+    - sv_active:
+        usage: GAUGE
+        rename: active_servers
+        description: server connections that are linked to a client
+    - sv_idle:
+        usage: GAUGE
+        rename: idle_servers
+        description: server connections that are unused and immediately usable for client queries
+    - sv_used:
+        usage: GAUGE
+        rename: used_servers
+        description: server connections that have been idle for more than server_check_delay (means have to run check query)
+    - sv_tested:
+        usage: GAUGE
+        rename: tested_servers
+        description: server connections that are currently running reset or check query
+    - sv_login:
+        usage: GAUGE
+        rename: login_servers
+        description:  server connections currently in the process of logging in
+    - maxwait:
+        usage: GAUGE
+        description: how long the first(oldest) client in the queue has waited, in seconds, key metric
+    - maxwait_us:
+        usage: GAUGE
+        description: microsecond part of the maximum waiting time.
+    - pool_mode:
+        usage: DISCARD
+        description: the pooling mode in use
 

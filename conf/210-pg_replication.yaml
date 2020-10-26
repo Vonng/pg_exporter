@@ -1,0 +1,126 @@
+
+
+###############################################################
+#                  2. Replication Metrics                     #
+###############################################################
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_replication
+#┃ PostgreSQL replication metrics 10+, https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW"
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_replication_lsn{pid,client_addr,application_name,state,sync_state}             COUNTER  current log position on this server
+#┃ pg_replication_sent_diff{pid,client_addr,application_name,state,sync_state}       GAUGE    last log position sent to this standby server diff with current lsn
+#┃ pg_replication_write_diff{pid,client_addr,application_name,state,sync_state}      GAUGE    last log position written to disk by this standby server diff with current lsn
+#┃ pg_replication_flush_diff{pid,client_addr,application_name,state,sync_state}      GAUGE    last log position flushed to disk by this standby server diff with current lsn
+#┃ pg_replication_replay_diff{pid,client_addr,application_name,state,sync_state}     GAUGE    last log position replayed into the database on this standby server diff with current lsn
+#┃ pg_replication_sent_lsn{pid,client_addr,application_name,state,sync_state}        COUNTER  last log position sent to this standby server
+#┃ pg_replication_write_lsn{pid,client_addr,application_name,state,sync_state}       COUNTER  last log position written to disk by this standby server
+#┃ pg_replication_flush_lsn{pid,client_addr,application_name,state,sync_state}       COUNTER  last log position flushed to disk by this standby server
+#┃ pg_replication_replay_lsn{pid,client_addr,application_name,state,sync_state}      COUNTER  last log position replayed into the database on this standby server
+#┃ pg_replication_write_lag{pid,client_addr,application_name,state,sync_state}       GAUGE    latest ACK lsn diff with write (sync-remote-write lag)
+#┃ pg_replication_flush_lag{pid,client_addr,application_name,state,sync_state}       GAUGE    latest ACK lsn diff with flush (sync-remote-flush lag)
+#┃ pg_replication_replay_lag{pid,client_addr,application_name,state,sync_state}      GAUGE    latest ACK lsn diff with replay (sync-remote-apply lag)
+#┃ pg_replication_backend_uptime{pid,client_addr,application_name,state,sync_state}  GAUGE    how long since standby connect to this server
+#┃ pg_replication_backend_xmin{pid,client_addr,application_name,state,sync_state}    GAUGE    this standby's xmin horizon reported by hot_standby_feedback.
+#┃ pg_replication_sync_priority{pid,client_addr,application_name,state,sync_state}   GAUGE    priority of being chosen as synchronous standby
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_replication:
+  name: pg_replication
+  desc: PostgreSQL replication metrics 10+, https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW"
+
+  query: |
+    SELECT pid,client_addr,application_name,state,sync_state,lsn,
+           lsn - sent_lsn   as sent_diff,
+           lsn - write_lsn  as write_diff,
+           lsn - flush_lsn  as flush_diff,
+           lsn - replay_lsn as replay_diff,
+           sent_lsn,write_lsn,flush_lsn,replay_lsn,
+           write_lag,flush_lag,replay_lag,
+           backend_uptime,backend_xmin,sync_priority
+    FROM (
+        SELECT pid,
+             client_addr,
+             application_name,
+             state,
+             sync_state,
+             CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END - '0/0' AS lsn,
+             sent_lsn - '0/0'                          AS sent_lsn,
+             write_lsn - '0/0'                         AS write_lsn,
+             flush_lsn - '0/0'                         AS flush_lsn,
+             replay_lsn - '0/0'                        AS replay_lsn,
+             coalesce(extract(EPOCH FROM write_lag) ,0) AS write_lag,
+             coalesce(extract(EPOCH FROM flush_lag) ,0) AS flush_lag,
+             coalesce(extract(EPOCH FROM replay_lag),0) AS replay_lag,
+             extract(EPOCH FROM now() - backend_start) AS backend_uptime,
+             backend_xmin::TEXT::BIGINT                AS backend_xmin,
+             sync_priority
+        FROM pg_stat_replication) t;
+
+  ttl: 10
+  min_version: 100000
+  tags:
+    - cluster
+
+  metrics:
+    - pid:
+        usage: LABEL
+        description: unique walsender pid
+    - client_addr:
+        usage: LABEL
+        description: client address of wal receiver
+    - application_name:
+        usage: LABEL
+        description: application name of standby
+    - state:
+        usage: LABEL
+        description: replication state startup|catchup|streaming|backup|stopping
+    - sync_state:
+        usage: LABEL
+        description: replication sync state async|potential|sync|quorum
+    - lsn:
+        usage: COUNTER
+        description: current log position on this server
+    - sent_diff:
+        usage: GAUGE
+        description: last log position sent to this standby server diff with current lsn
+    - write_diff:
+        usage: GAUGE
+        description: last log position written to disk by this standby server diff with current lsn
+    - flush_diff:
+        usage: GAUGE
+        description: last log position flushed to disk by this standby server diff with current lsn
+    - replay_diff:
+        usage: GAUGE
+        description: last log position replayed into the database on this standby server diff with current lsn
+    - sent_lsn:
+        usage: COUNTER
+        description: last log position sent to this standby server
+    - write_lsn:
+        usage: COUNTER
+        description: last log position written to disk by this standby server
+    - flush_lsn:
+        usage: COUNTER
+        description: last log position flushed to disk by this standby server
+    - replay_lsn:
+        usage: COUNTER
+        description: last log position replayed into the database on this standby server
+    - write_lag:
+        usage: GAUGE
+        description: latest ACK lsn diff with write (sync-remote-write lag)
+    - flush_lag:
+        usage: GAUGE
+        description: latest ACK lsn diff with flush (sync-remote-flush lag)
+    - replay_lag:
+        usage: GAUGE
+        description: latest ACK lsn diff with replay (sync-remote-apply lag)
+    - backend_uptime:
+        usage: GAUGE
+        description: how long since standby connect to this server
+    - backend_xmin:
+        usage: GAUGE
+        description: this standby's xmin horizon reported by hot_standby_feedback.
+    - sync_priority:
+        usage: GAUGE
+        description: priority of being chosen as synchronous standby
+
+

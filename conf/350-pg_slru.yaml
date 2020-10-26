@@ -1,0 +1,63 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_slru
+#┃ System view to monitor internal SLRU caches
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_slru_blks_zeroed{name}   COUNTER  Number of blocks zeroed during initializations
+#┃ pg_slru_blks_hit{name}      COUNTER  Number of times disk blocks were found already in the SLRU, so that a read was not necessary
+#┃ pg_slru_blks_read{name}     COUNTER  Number of disk blocks read for this SLRU
+#┃ pg_slru_blks_written{name}  COUNTER  Number of disk blocks written for this SLRU
+#┃ pg_slru_blks_exists{name}   COUNTER  Number of blocks checked for existence for this SLRU
+#┃ pg_slru_flushes{name}       COUNTER  Number of flushes of dirty data for this SLRU
+#┃ pg_slru_truncates{name}     COUNTER  Number of truncates for this SLRU
+#┃ pg_slru_stats_reset{name}   COUNTER  Time at which these statistics were last reset
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_slru:
+  name: pg_slru
+  desc: System view to monitor internal SLRU caches
+  query: |
+    SELECT
+      name,
+      blks_zeroed,
+      blks_hit,
+      blks_read,
+      blks_written,
+      blks_exists,
+      flushes,
+      truncates,
+      extract(EPOCH FROM stats_reset) AS stats_reset
+    FROM pg_stat_slru;
+
+  ttl: 60
+  min_version: 130000
+  tags:
+    - cluster
+
+  metrics:
+    - name:
+        usage: LABEL
+        description: name of the SLRU
+    - blks_zeroed:
+        usage: COUNTER
+        description: Number of blocks zeroed during initializations
+    - blks_hit:
+        usage: COUNTER
+        description: Number of times disk blocks were found already in the SLRU, so that a read was not necessary
+    - blks_read:
+        usage: COUNTER
+        description: Number of disk blocks read for this SLRU
+    - blks_written:
+        usage: COUNTER
+        description: Number of disk blocks written for this SLRU
+    - blks_exists:
+        usage: COUNTER
+        description: Number of blocks checked for existence for this SLRU
+    - flushes:
+        usage: COUNTER
+        description: Number of flushes of dirty data for this SLRU
+    - truncates:
+        usage: COUNTER
+        description: Number of truncates for this SLRU
+    - stats_reset:
+        usage: COUNTER
+        description: Time at which these statistics were last reset

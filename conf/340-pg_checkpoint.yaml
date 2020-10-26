@@ -1,0 +1,113 @@
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_checkpoint
+#┃ checkpoint information from pg_control_checkpoint since 10
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_checkpoint_checkpoint_lsn{}        COUNTER  lsn of checkpoint
+#┃ pg_checkpoint_redo_lsn{}              COUNTER  redo start LSN
+#┃ pg_checkpoint_tli{}                   GAUGE    current WAL timeline
+#┃ pg_checkpoint_prev_tli{}              GAUGE    previous WAL timeline
+#┃ pg_checkpoint_full_page_writes{}      GAUGE    is full page write enabled ?
+#┃ pg_checkpoint_next_xid_epoch{}        GAUGE    next xid epoch since this checkpoint
+#┃ pg_checkpoint_next_xid{}              GAUGE    next xid since this checkpoint
+#┃ pg_checkpoint_next_oid{}              GAUGE    next object id since this checkpoint
+#┃ pg_checkpoint_next_multixact_id{}     GAUGE    next multixact id of this checkpoint
+#┃ pg_checkpoint_next_multi_offset{}     GAUGE    next multixact id offset of this checkpoint
+#┃ pg_checkpoint_oldest_xid{}            GAUGE    oldest existing xid of the checkpoint
+#┃ pg_checkpoint_oldest_xid_dbid{}       GAUGE    which db contains the oldest xid
+#┃ pg_checkpoint_oldest_active_xid{}     GAUGE    oldest active xid of the checkpoint
+#┃ pg_checkpoint_oldest_multi_xid{}      GAUGE    oldest active multi xid of the checkpoint
+#┃ pg_checkpoint_oldest_multi_dbid{}     GAUGE    which db contins the oldest multi xid
+#┃ pg_checkpoint_oldest_commit_ts_xid{}  GAUGE    xid with oldest commit ts by the checkpoint
+#┃ pg_checkpoint_newest_commit_ts_xid{}  GAUGE    xid with newest commit ts by the checkpoint
+#┃ pg_checkpoint_time{}                  GAUGE    timestamp of this checkpoint
+#┃ pg_checkpoint_elapse{}                GAUGE    time elapsed since this checkpoint in seconds
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pg_checkpoint:
+  name: pg_checkpoint
+  desc: checkpoint information from pg_control_checkpoint since 10
+  query: |
+    SELECT checkpoint_lsn - '0/0'                      AS checkpoint_lsn,
+           redo_lsn - '0/0'                            AS redo_lsn,
+           timeline_id                                 AS tli,
+           prev_timeline_id                            AS prev_tli,
+           full_page_writes,
+           split_part(next_xid, ':', 1)                AS next_xid_epoch,
+           split_part(next_xid, ':', 2)                AS next_xid,
+           next_oid::BIGINT,
+           next_multixact_id::text::BIGINT,
+           next_multi_offset::text::BIGINT,
+           oldest_xid::text::BIGINT,
+           oldest_xid_dbid::text::BIGINT,
+           oldest_active_xid::text::BIGINT,
+           oldest_multi_xid::text::BIGINT,
+           oldest_multi_dbid::BIGINT,
+           oldest_commit_ts_xid::text::BIGINT,
+           newest_commit_ts_xid::text::BIGINT,
+           checkpoint_time                             AS time,
+           extract(epoch from now() - checkpoint_time) AS elapse
+    FROM pg_control_checkpoint();
+
+  ttl: 60
+  min_version: 100000
+  tags:
+    - cluster
+
+  metrics:
+    - checkpoint_lsn:
+        usage: COUNTER
+        description: lsn of checkpoint
+    - redo_lsn:
+        usage: COUNTER
+        description: redo start LSN
+    - tli:
+        usage: GAUGE
+        description: current WAL timeline
+    - prev_tli:
+        usage: GAUGE
+        description: previous WAL timeline
+    - full_page_writes:
+        usage: GAUGE
+        description: is full page write enabled ?
+    - next_xid_epoch:
+        usage: GAUGE
+        description: next xid epoch since this checkpoint
+    - next_xid:
+        usage: GAUGE
+        description: next xid since this checkpoint
+    - next_oid:
+        usage: GAUGE
+        description: next object id since this checkpoint
+    - next_multixact_id:
+        usage: GAUGE
+        description: next multixact id of this checkpoint
+    - next_multi_offset:
+        usage: GAUGE
+        description: next multixact id offset of this checkpoint
+    - oldest_xid:
+        usage: GAUGE
+        description: oldest existing xid of the checkpoint
+    - oldest_xid_dbid:
+        usage: GAUGE
+        description: which db contains the oldest xid
+    - oldest_active_xid:
+        usage: GAUGE
+        description: oldest active xid of the checkpoint
+    - oldest_multi_xid:
+        usage: GAUGE
+        description: oldest active multi xid of the checkpoint
+    - oldest_multi_dbid:
+        usage: GAUGE
+        description: which db contins the oldest multi xid
+    - oldest_commit_ts_xid:
+        usage: GAUGE
+        description: xid with oldest commit ts by the checkpoint
+    - newest_commit_ts_xid:
+        usage: GAUGE
+        description: xid with newest commit ts by the checkpoint
+    - time:
+        usage: GAUGE
+        description: timestamp of this checkpoint
+    - elapse:
+        usage: GAUGE
+        description: time elapsed since this checkpoint in seconds
