@@ -35,6 +35,6 @@ pg_defpart:
         description: relation name of this relation
     - tuples:
         usage: GAUGE
-        description: number of tuples in this partition
+        description: number of tuples in this default partition
 
 

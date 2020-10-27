@@ -1,4 +1,17 @@
 
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_query
+#┃ PostgreSQL statement metrics, require pg_stat_statements installed in schema monitor, 9.4 ~ 12
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_query_calls{datname,query}        COUNTER  times been executed
+#┃ pg_query_total_time{datname,query}   COUNTER  Total time spent in the statement, in µs
+#┃ pg_query_min_time{datname,query}     GAUGE    Minimum time spent in the statement, in µs
+#┃ pg_query_max_time{datname,query}     GAUGE    Maximum time spent in the statement, in µs
+#┃ pg_query_mean_time{datname,query}    GAUGE    Mean time spent in the statement, in µs
+#┃ pg_query_stddev_time{datname,query}  GAUGE    Population standard deviation of time spent in the statement, in µs
+#┃ pg_query_rows{datname,query}         COUNTER  rows retrieved or affected by the statement
+#┃ pg_query_blk_io_time{datname,query}  COUNTER  time spent reading/writing blocks in µs (if track_io_timing is enabled)
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_query:
   name: pg_query
   desc: PostgreSQL statement metrics, require pg_stat_statements installed in schema monitor, 9.4 ~ 12

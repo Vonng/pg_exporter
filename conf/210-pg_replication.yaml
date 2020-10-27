@@ -1,9 +1,4 @@
 
-
-###############################################################
-#                  2. Replication Metrics                     #
-###############################################################
-
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_replication
 #┃ PostgreSQL replication metrics 10+, https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW"

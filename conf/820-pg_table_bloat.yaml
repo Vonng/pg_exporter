@@ -50,11 +50,9 @@ pg_table_bloat:
     WHERE NOT is_na;
 
   ttl: 300
-  timeout: 1
+  timeout: 2
   min_version: 090400
-  tags:
-    - bloat
-
+  skip: true
 
   metrics:
     - datname:

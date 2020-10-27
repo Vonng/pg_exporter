@@ -24,10 +24,9 @@ pg_table_size:
       AND rel.relkind = 'r';
 
   ttl: 300
+  timeout: 2
   min_version: 100000
-  skip_errors: true
-  tags:
-    - bloat
+  skip: true
 
   metrics:
     - datname:

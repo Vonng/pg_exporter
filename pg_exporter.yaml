@@ -1,24 +1,46 @@
 #################################################################
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓#
-#┃ PostgreSQL/Pgbouncer Metric Queries                         ┃#
+#┃ PostgreSQL/Pgbouncer Metric Collector Definition            ┃#
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┫#
 #┃ Author:   Vonng (fengruohang@outlook.com)                   ┃#
-#┃ Desc  :   pg_exporter metrics definition                    ┃#
-#┃ Ver   :   PostgreSQL 10, 11, 12, pgbouncer 1.9+             ┃#
+#┃ Desc  :   pg_exporter metrics collector definition          ┃#
+#┃ Ver   :   PostgreSQL 10~13 pgbouncer 1.9+                   ┃#
 #┃ Ctime :   2019-12-09                                        ┃#
-#┃ Mtime :   2020-02-20                                        ┃#
+#┃ Mtime :   2020-10-20                                        ┃#
 #┃ Copyright (C) 2019-2020 Ruohang Feng                        ┃#
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛#
 #################################################################
 
 
+
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ Query Example
+#┃ 1. Configuration File
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃  pg_primary_only:       <---- Branch name, distinguish different branch of a metric query
-#┃    name: pg             <---- Query's real name, used as metric prefix, set to Branch Name by default
-#┃    desc: PostgreSQL basic information (on primary)                 <---- query description
-#┃    query: |                                                        <---- query string
+#┃ The configuration file for pg_exporter is a YAML file.
+#┃ Default configuration are retrieved via following precedence:
+#┃     1. command line args:            --config=<config path>
+#┃     2. environment variables:        PG_EXPORTER_CONFIG=<config path>
+#┃     3. pg_exporter.[yaml.yml]        (Current directory)
+#┃     4. /etc/pg_exporter.[yaml|yml]   (etc config file)
+#┃     5. /etc/pg_exporter              (etc config dir)
+#┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ 2. Config Format
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_exporter config could be a single yaml file, or a directory contains a series of separated yaml files.
+#┃ each yaml config file is consist of one or more metrics Collector definition. Which are top level objects
+#┃ If a directory is provided, all yaml in that directory will be merge in alphabetic order.
+#┃ Collector definition example are shown below.
+#┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ 3. Collector Example
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃  # Here is an example of metrics collector definition
+#┃  pg_primary_only:       <---- Collector branch name. Must be UNIQUE among entire configuration
+#┃    name: pg             <---- Collector namespace, used as METRIC PREFIX, set to branch name by default, can be override
+#┃                               Same namespace may contain multiple collector branch. It's user's responsibility
+#┃                               to make sure that AT MOST ONE collector is picked for each namespace.
+#┃
+#┃    desc: PostgreSQL basic information (on primary)                 <---- Collector description
+#┃    query: |                                                        <---- SQL string
 #┃
 #┃      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
 #┃             pg_current_wal_lsn() - '0/0'                           AS lsn,
@@ -30,38 +52,39 @@
 #┃             pg_is_in_backup()                                      AS is_in_backup,
 #┃             extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
 #┃
-#┃                                <---- following field are [OPTIONAL], control execution policy
-#┃    ttl: 10                     <---- cache ttl: how long will exporter cache it's result. set to 0 to disable cache
-#┃    timeout: 0.1                <---- timeout: in seconds, query execeed this will be canceled. default is 0.1 (100ms), set to -1 to disable timeout
-#┃    min_version: 100000         <---- minimal supported version in server version number format, e.g  120001 = 12.1, 090601 = 9.6.1
-#┃    max_version: 130000         <---- maximal supported version in server version number format, boundary not include
-#┃    fatal: false                <---- if query marked fatal fail, this scrape will abort immediately
-#┃    skip: false                 <---- query marked skip will be omitted (during planning)
+#┃                                <---- [OPTIONAL] metadata fields, control collector behavior
+#┃    ttl: 10                     <---- Cache TTL: in seconds, how long will pg_exporter cache this collector's query result.
+#┃    timeout: 0.1                <---- Query Timeout: in seconds, query exceed this limit will be canceled.
+#┃    min_version: 100000         <---- minimal supported version, boundary IS included. In server version number format,
+#┃    max_version: 130000         <---- maximal supported version, boundary NOT included, In server version number format
+#┃    fatal: false                <---- Collector marked `fatal` fails, the entire scrape will abort immediately and marked as fail
+#┃    skip: false                 <---- Collector marked `skip` will not be installed during planning procedure
 #┃
-#┃    tags: [cluster, primary]    <---- tags consist of one or more string, which could be:
+#┃    tags: [cluster, primary]    <---- tags is a list of string, which could be:
 #┃                                        * 'cluster' marks this query as cluster level, so it will only execute once for same PostgreSQL Server
-#┃                                        * 'primary' marks this query can only run on a master instance (will not execute if pg_is_in_recovery())
-#┃                                        * 'standby' marks this query can only run on a recovering instance (will execute if pg_is_in_recovery())
-#┃                                        * some special tag prefix will have special effect:
-#┃                                        * 'dbname:<dbname>' means this query will only execute on database with name '<dbname>'
-#┃                                        * 'username:<user>' means this query will only execute when connect with user '<user>'
-#┃                                        * 'extension:<extname>' means this query will only execute when extension '<extname>' is installed
-#┃                                        * 'schema:<nspname>' means this query will only execute when schema '<nspname>' exist
-#┃                                        * 'not:<negtag>' means this query will only execute when exporter is launch without tag '<negtag>'
-#┃                                        * '<tag>' means this query will only execute when exporter is launch with tag '<tag>'
-#┃                                           (tag could not be cluster,primary,standby or have special prefix)
+#┃                                        * 'primary' or 'master'  mark this query can only run on a primary instance (WILL NOT execute if pg_is_in_recovery())
+#┃                                        * 'standby' or 'replica' mark this query can only run on a replica instance (WILL execute if pg_is_in_recovery())
+#┃                                      some special tag prefix have special interpretation:
+#┃                                        * 'dbname:<dbname>' means this query will ONLY be executed on database with name '<dbname>'
+#┃                                        * 'username:<user>' means this query will only be executed when connect with user '<user>'
+#┃                                        * 'extension:<extname>' means this query will only be executed when extension '<extname>' is installed
+#┃                                        * 'schema:<nspname>' means this query will only by executed when schema '<nspname>' exist
+#┃                                        * 'not:<negtag>' means this query WILL NOT be executed when exporter is tagged with '<negtag>'
+#┃                                        * '<tag>' means this query WILL be executed when exporter is tagged with '<tag>'
+#┃                                           ( <tag> could not be cluster,primary,standby,master,replica,etc...)
 #┃
 #┃
-#┃    metrics:                    <---- this is a list of returned columns, each column must have a name, usage, could have an alias and description
-#┃      - timestamp:              <---- this is column name, should be exactly same as returned column name
-#┃          rename: ts            <---- rename is optional, will use this alias instead of column name
-#┃          usage: GAUGE          <---- usage could be
-#┃                                        * DISCARD: completely ignore this field
-#┃                                        * LABEL: use columnName:columnValue as a label in result
-#┃                                        * GAUGE: use this column as a metric, which is '<query.name>_<column.name>{<labels>} column.value'
-#┃                                        * COUNTER: same as GAUGE, except it is a counter.
+#┃    metrics:                    <---- List of returned columns, each column must have a `name` and `usage`, `rename` and `description` are optional
+#┃      - timestamp:              <---- Column name, should be exactly same as returned column name
+#┃          rename: ts            <---- Alias, optional, alias will be used instead of column name
+#┃          usage: GAUGE          <---- Metric type, `usage` could be
+#┃                                        * DISCARD: completely ignoring this field
+#┃                                        * LABEL:   use columnName=columnValue as a label in metric
+#┃                                        * GAUGE:   Mark column as a gauge metric, fullname will be '<query.name>_<column.name>'
+#┃                                        * COUNTER: Same as above, except for it is a counter rather than gauge.
 #┃
-#┃          description: database current timestamp
+#┃          description: database current timestamp <----- Description of the column, will be used as metric description, optional
+#┃
 #┃      - lsn:
 #┃          usage: COUNTER
 #┃          description: log sequence number, current write location (on primary)
@@ -86,16 +109,12 @@
 #┃      - backup_time:
 #┃          usage: GAUGE
 #┃          description: seconds since current backup start. null if don't have one
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ Query Definition
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_exporter is shipped with a series of preset configurations
 #┃
-#┃ 100-599 Metrics for entire database cluster  (without datname label)
-#┃ 600-899 Metrics for single database instance (with datname label)
+#┃
+#┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ Collector Presets
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_exporter is shipped with a series of preset collector (already numbered and ordered with file prefix)
 #┃
 #┃ 1xx  Common, basic information
 #┃ 2xx  Replication metrics:  sender, receiver, downstream, sync standby, slots
@@ -107,78 +126,84 @@
 #┃ 8xx  Optional metrics:     optional metrics collector (usually slow)
 #┃ 9xx  Pgbouncer metrics:    metrics from admin database `pgbouncer`
 #┃
-#┃ Note that 101 - 120 are cluster level queries (for a whole PostgreSQL server), and 121 ~ 129 are
-#┃ database level queries (means they are database-specific, may run multiple time on same cluster)
-#┃ database level queries usually are slow, if you want to disable them, just add a `--tag=bulky`
-#┃ when launching pg_exporter, so these database-level slow queries will not be installed
+#┃ 100-599 Metrics for entire database cluster  (scrape once)
+#┃ 600-899 Metrics for single database instance (scrape for each database)
 #┃
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Query Fatality
+#┃ Cache TTL
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ if query marked with Fatal failed, this scrape operation is marked as fail, and pg_up/pgbouncer_up is
-#┃ set to 0. It always good to setup at least one fatal queries. which is `pg.pg_primary_only` and
-#┃ `pgbouncer_list` by default.
+#┃ Cache can be used for reducing query overhead, it can be enabled by setting a non-zero value for `ttl`
+#┃ It is highly recommended using cache to avoid duplicate scrapes. Especially when you got multiple prometheus
+#┃ scraping same instance with slow monitoring queries. Setting `ttl` to zero or leaving blank will disable
+#┃ result caching, which is default behavior
 #┃
-#┃ if query without `fatal` flag fails, it will increase fail counter & stats. But the scrape operation
-#┃ will carry on, the entire query result will not be marked as fail, thus won't affect pg_up metrics.
+#┃ TTL has to be smaller than your scrape interval. 15s scrape interval and 10s TTL is a good start for
+#┃ production environment. Some expensive monitoring query (such as table bloat check) will have longer `ttl`
+#┃ which can also be used as a mechanism to achieve 'different scrape frequency'
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Query Timeout
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ Collectors can be configured with a optional Timeout. If collector's query executing more that that
+#┃ timeout, it will be canceled immediately. Setting `timeout` to 0 or leaving blank will reset it to
+#┃ default timeout 0.1 (100ms). Setting it to any negative number will disable query timeout feature.
 #┃ All query have a default timeout 100ms, if exceed, the query will be canceled immediately to avoid
 #┃ avalanche. You can explict overwrite that option. but be ware: in some extreme case, if all your
 #┃ timeout sum up greater your scrape/cache interval (usually 15s) , the query may still be jammed.
 #┃ or , you can just disable potential slow queries with --tag=bulky
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Query TTL
+#┃ Version Compatibility
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Cache is disabled for each query by default, it is enabled if you set a non-zero value for TTL
-#┃ It is recommend using cache to avoid query overhead, especially been scrapped by multiple prometheus
-#┃ Most (fast) query have 10s TTL, while some slow query have 100s TTL to reduce overhead.
-#┃ Sharding instance and bulky instance will have longer TTL because slow metrics query is expensive on them
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ Cluster Level Metrics
+#┃ Each collector have two optional version compatibility parameters: `min_version` and `max_version`.
+#┃ These two parameters specify version compatibility of the collector. If target postgres/pgbouncer
+#┃ version is less than `min_version`, or higher than `max_version`, the collector will not be installed.
+#┃ These two parameters are using PostgreSQL server version number format, will is a 6-digit integer
+#┃ format as <major:2 digit><minor:2 digit>:<release: 2 digit>.
+#┃ For example, 090600 stands for 9.6 and 120100 stands for 12.1
+#┃ And beware that version compatibility range is left-inclusive right exclusive: [min,max), set to zero or
+#┃ leaving blank will effect as -inf or +inf
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃   001 ~ 021 are cluster level metrics, which means they are
-#┃   identical and visible to all db in that cluster. Cluster
-#┃   query have tag 'cluster', and will only execute once on
-#┃   each database cluster (i.e. a PostgreSQL Server)
+#┃ Fatality
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ If collector marked with `fatal` fails, entire scrape operation will be marked as fail, and key metrics
+#┃ `pg_up` / `pgbouncer_up` will be reset to 0. It always a good practice to setup AT LEAST ONE fatal
+#┃ collector for pg_exporter. `pg.pg_primary_only` and `pgbouncer_list` are the default fatal collector.
+#┃
+#┃ If collector without `fatal` flag fails, it will increase global fail counters. But the scrape operation
+#┃ will carry on. The entire scrape result will not be marked as fail, thus will not affect `<xx>_up` metric.
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ Skip
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ Collector with `skip` flag set to true will NOT be installed.
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ Tags and Planning
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ Tags are designed for collector planning. It can be handy to customize which queries runs on which
+#┃ instances. And enables you using same configuration file everywhere
+#┃
+#┃  Tags are list of string, each string could be:
+#┃  Pre-defined special tags
+#┃    * 'cluster' marks this collector as cluster level, so it will ONLY BE EXECUTED ONCE for same PostgreSQL Server
+#┃    * 'primary' or 'master' mark this collector as primary-only, so it WILL NOT work iff pg_is_in_recovery()
+#┃    * 'standby' or 'replica' mark this collector as replica-only, so it WILL work iff pg_is_in_recovery()
+#┃  Special tag prefix which have different interpretation:
+#┃    * 'dbname:<dbname>' means this collector will ONLY work on database with name '<dbname>'
+#┃    * 'username:<user>' means this collector will ONLY work when connect with user '<user>'
+#┃    * 'extension:<extname>' means this collector will ONLY work when extension '<extname>' is installed
+#┃    * 'schema:<nspname>' means this collector will only work when schema '<nspname>' exists
+#┃  Customized positive tags (filter) and negative tags (taint)
+#┃    * 'not:<negtag>' means this collector WILL NOT work when exporter is tagged with '<negtag>'
+#┃    * '<tag>' means this query WILL work if exporter is tagged with '<tag>' (special tags not included)
+#┃
+#┃  pg_exporter will trigger Planning procedure after connecting to target. It will gather database facts
+#┃  and match them with tags and other metadata (such as supported version range). Collector will only
+#┃  be installed if and only if it is compatible with target server.
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg.pg_primary_only
 #┃ PostgreSQL basic information (on primary)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Tags     ┆ [cluster primary]
-#┃ TTL      ┆ 10
-#┃ Priority ┆ 0
-#┃ Timeout  ┆ 100ms
-#┃ Fatal    ┆ true
-#┃ Version  ┆ 100000 ~ higher
-#┃ Source   ┆ 110-pg.yaml
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ GAUGE    timestamp            current database timestamp in unix epoch
-#┃ GAUGE    uptime               seconds since postmaster start
-#┃ GAUGE    boot_time            postmaster boot timestamp in unix epoch
-#┃ COUNTER  lsn                  log sequence number, current write location
-#┃ COUNTER  insert_lsn           primary only, location of current wal inserting
-#┃ COUNTER  write_lsn            primary only, location of current wal writing
-#┃ COUNTER  flush_lsn            primary only, location of current wal syncing
-#┃ COUNTER  receive_lsn          replica only, location of wal synced to disk
-#┃ COUNTER  replay_lsn           replica only, location of wal applied
-#┃ GAUGE    conf_reload_time     seconds since last configuration reload
-#┃ GAUGE    last_replay_time     time when last transaction been replayed
-#┃ GAUGE    lag                  replica only, replication lag in seconds
-#┃ GAUGE    is_in_recovery       1 if in recovery mode
-#┃ GAUGE    is_wal_replay_paused 1 if wal play is paused
-#┃ GAUGE    is_in_backup         1 if backup is in progress
-#┃ GAUGE    backup_time          seconds since current backup start
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ pg_timestamp{}             GAUGE    current database timestamp in unix epoch
 #┃ pg_uptime{}                GAUGE    seconds since postmaster start
@@ -196,24 +221,6 @@
 #┃ pg_is_wal_replay_paused{}  GAUGE    1 if wal play is paused
 #┃ pg_is_in_backup{}          GAUGE    1 if backup is in progress
 #┃ pg_backup_time{}           GAUGE    seconds since current backup start
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#┃        extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
-#┃        extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
-#┃        pg_current_wal_lsn() - '0/0'                           AS lsn,
-#┃        pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
-#┃        pg_current_wal_lsn() - '0/0'                           AS write_lsn,
-#┃        pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-#┃        NULL::BIGINT                                           AS receive_lsn,
-#┃        NULL::BIGINT                                           AS replay_lsn,
-#┃        extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
-#┃        NULL::FLOAT                                            AS last_replay_time,
-#┃        0::FLOAT                                               AS lag,
-#┃        pg_is_in_recovery()                                    AS is_in_recovery,
-#┃        FALSE                                                  AS is_wal_replay_paused,
-#┃        pg_is_in_backup()                                      AS is_in_backup,
-#┃        extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-#┃
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_primary_only:
   name: pg
@@ -564,11 +571,6 @@ pg_setting:
 
 
 
-
-###############################################################
-#                  2. Replication Metrics                     #
-###############################################################
-
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_replication
 #┃ PostgreSQL replication metrics 10+, https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW"
@@ -750,7 +752,6 @@ pg_downstream:
     - count:
         usage: GAUGE
         description: count of corresponding replication state
-
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_slot
@@ -1505,9 +1506,9 @@ pg_wait:
     GROUP BY datname, wait_event_type;
 
   ttl: 10
+  min_version: 090600
   tags:
     - cluster
-  min_version: 090600
 
   metrics:
     - datname:
@@ -1547,6 +1548,14 @@ pg_backend:
     - count:
         usage: GAUGE
         description: backend process count
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_xact
+#┃ PostgreSQL transaction identifier information
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_xact_xmin{}  GAUGE    earliest txid that is still active
+#┃ pg_xact_xmax{}  GAUGE    first as-yet-unassigned txid. txid >= this are invisible.
+#┃ pg_xact_xnum{}  GAUGE    current active transaction count
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_xact:
   name: pg_xact
   desc: PostgreSQL transaction identifier information
@@ -1613,6 +1622,19 @@ pg_lock:
         description: Number of locks of corresponding mode
 
 
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ pg_query
+#┃ PostgreSQL statement metrics, require pg_stat_statements installed in schema monitor, 9.4 ~ 12
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+#┃ pg_query_calls{datname,query}        COUNTER  times been executed
+#┃ pg_query_total_time{datname,query}   COUNTER  Total time spent in the statement, in µs
+#┃ pg_query_min_time{datname,query}     GAUGE    Minimum time spent in the statement, in µs
+#┃ pg_query_max_time{datname,query}     GAUGE    Maximum time spent in the statement, in µs
+#┃ pg_query_mean_time{datname,query}    GAUGE    Mean time spent in the statement, in µs
+#┃ pg_query_stddev_time{datname,query}  GAUGE    Population standard deviation of time spent in the statement, in µs
+#┃ pg_query_rows{datname,query}         COUNTER  rows retrieved or affected by the statement
+#┃ pg_query_blk_io_time{datname,query}  COUNTER  time spent reading/writing blocks in µs (if track_io_timing is enabled)
+#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_query:
   name: pg_query
   desc: PostgreSQL statement metrics, require pg_stat_statements installed in schema monitor, 9.4 ~ 12
@@ -1697,7 +1719,7 @@ pg_query_13:
   name: pg_query
   desc: PostgreSQL Query metrics, require pg_stat_statements installed in schema monitor, pg13
   query: |
-    SELECT datname, query, calls, total_time, min_time, max_time, mean_time, stddev_time, rows, blk_io_time FROM
+    SELECT datname, query, calls, total_time, min_time, max_time, mean_time, stddev_time, rows, blk_io_time, wal_bytes FROM
     (SELECT dbid,
             queryid               AS query,
             sum(calls)            AS calls,
@@ -1861,7 +1883,7 @@ pg_clustering:
       heap_tuples_scanned AS tup_scan, CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0 END AS progress
     FROM pg_stat_progress_cluster pspc;
 
-  ttl: 2
+  ttl: 10
   min_version: 120000
   tags:
     - cluster
@@ -2055,7 +2077,6 @@ pg_db_12:
   metrics:
     - datid:
         usage: DISCARD
-        description: Name of the database
     - datname:
         usage: LABEL
         description: Name of the database
@@ -2218,7 +2239,6 @@ pg_db_93_11:
   metrics:
     - datid:
         usage: DISCARD
-        description: Name of the database
     - datname:
         usage: LABEL
         description: Name of the database
@@ -2682,7 +2702,7 @@ pg_defpart:
         description: relation name of this relation
     - tuples:
         usage: GAUGE
-        description: number of tuples in this partition
+        description: number of tuples in this default partition
 
 
 
@@ -2711,10 +2731,9 @@ pg_table_size:
       AND rel.relkind = 'r';
 
   ttl: 300
+  timeout: 2
   min_version: 100000
-  skip_errors: true
-  tags:
-    - bloat
+  skip: true
 
   metrics:
     - datname:
@@ -2791,11 +2810,9 @@ pg_table_bloat:
     WHERE NOT is_na;
 
   ttl: 300
-  timeout: 1
+  timeout: 2
   min_version: 090400
-  tags:
-    - bloat
-
+  skip: true
 
   metrics:
     - datname:
@@ -2871,10 +2888,9 @@ pg_index_bloat:
      ) est;
 
   ttl: 300
-  timeout: 1
+  timeout: 2
   min_version: 090400
-  tags:
-    - bloat
+  skip: true
 
   metrics:
     - datname:
@@ -2991,20 +3007,20 @@ pgbouncer_database:
 #┃ pgbouncer_stat
 #┃ pgbouncer stats per database: http://www.pgbouncer.org/usage.html#show-stats
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pgbouncer_stat_total_xact_count{datname}   GAUGE    total transaction count
-#┃ pgbouncer_stat_total_query_count{datname}  GAUGE    relation name of this relation
-#┃ pgbouncer_stat_total_received{datname}     COUNTER  how many times this function has been called
-#┃ pgbouncer_stat_total_sent{datname}         COUNTER  how much time spent in this function and it's child function, in ms
-#┃ pgbouncer_stat_total_xact_time{datname}    COUNTER  how much time spent in this function itself (other func not included), in ms
-#┃ pgbouncer_stat_total_query_time{datname}   COUNTER  how many times this function has been called
-#┃ pgbouncer_stat_total_wait_time{datname}    COUNTER  how much time spent in this function and it's child function, in ms
-#┃ pgbouncer_stat_avg_xact_count{datname}     GAUGE    how much time spent in this function itself (other func not included), in ms
-#┃ pgbouncer_stat_avg_query_count{datname}    GAUGE    how many times this function has been called
-#┃ pgbouncer_stat_avg_recv{datname}           GAUGE    how much time spent in this function and it's child function, in ms
-#┃ pgbouncer_stat_avg_sent{datname}           GAUGE    how much time spent in this function itself (other func not included), in ms
-#┃ pgbouncer_stat_avg_xact_time{datname}      GAUGE    how many times this function has been called
-#┃ pgbouncer_stat_avg_query_time{datname}     GAUGE    how much time spent in this function and it's child function, in ms
-#┃ pgbouncer_stat_avg_wait_time{datname}      GAUGE    how much time spent in this function itself (other func not included), in ms
+#┃ pgbouncer_stat_total_xact_count{datname}   GAUGE    Total number of SQL transactions pooled by pgbouncer
+#┃ pgbouncer_stat_total_query_count{datname}  GAUGE    Total number of SQL queries pooled by pgbouncer
+#┃ pgbouncer_stat_total_received{datname}     COUNTER  Total volume in bytes of network traffic received by pgbouncer
+#┃ pgbouncer_stat_total_sent{datname}         COUNTER  Total volume in bytes of network traffic sent by pgbouncer
+#┃ pgbouncer_stat_total_xact_time{datname}    COUNTER  Total number of microseconds spent when in a transaction
+#┃ pgbouncer_stat_total_query_time{datname}   COUNTER  Total number of microseconds spent when executing queries
+#┃ pgbouncer_stat_total_wait_time{datname}    COUNTER  Time spent by clients waiting for a server, in microseconds
+#┃ pgbouncer_stat_avg_xact_count{datname}     GAUGE    Average transactions per second in last stat period
+#┃ pgbouncer_stat_avg_query_count{datname}    GAUGE    Average queries per second in last stat period
+#┃ pgbouncer_stat_avg_recv{datname}           GAUGE    Average received (from clients) bytes per second
+#┃ pgbouncer_stat_avg_sent{datname}           GAUGE    Average sent (to clients) bytes per second
+#┃ pgbouncer_stat_avg_xact_time{datname}      GAUGE    Average transaction duration, in microseconds
+#┃ pgbouncer_stat_avg_query_time{datname}     GAUGE    Average query duration, in microseconds
+#┃ pgbouncer_stat_avg_wait_time{datname}      GAUGE    Time spent by clients waiting for a server, in microseconds (average per second).
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_stat:
   name: pgbouncer_stat
@@ -3022,49 +3038,49 @@ pgbouncer_stat:
     - database:
         usage: LABEL
         rename: datname
-        description: database name of this relation
+        description: database name
     - total_xact_count:
         usage: GAUGE
-        description: total transaction count
+        description: Total number of SQL transactions pooled by pgbouncer
     - total_query_count:
         usage: GAUGE
-        description: relation name of this relation
+        description: Total number of SQL queries pooled by pgbouncer
     - total_received:
         usage: COUNTER
-        description: how many times this function has been called
+        description: Total volume in bytes of network traffic received by pgbouncer
     - total_sent:
         usage: COUNTER
-        description: how much time spent in this function and it's child function, in ms
+        description: Total volume in bytes of network traffic sent by pgbouncer
     - total_xact_time:
         usage: COUNTER
-        description: how much time spent in this function itself (other func not included), in ms
+        description: Total number of microseconds spent when in a transaction
     - total_query_time:
         usage: COUNTER
-        description: how many times this function has been called
+        description: Total number of microseconds spent when executing queries
     - total_wait_time:
         usage: COUNTER
-        description: how much time spent in this function and it's child function, in ms
+        description: Time spent by clients waiting for a server, in microseconds
     - avg_xact_count:
         usage: GAUGE
-        description: how much time spent in this function itself (other func not included), in ms
+        description: Average transactions per second in last stat period
     - avg_query_count:
         usage: GAUGE
-        description: how many times this function has been called
+        description: Average queries per second in last stat period
     - avg_recv:
         usage: GAUGE
-        description: how much time spent in this function and it's child function, in ms
+        description: Average received (from clients) bytes per second
     - avg_sent:
         usage: GAUGE
-        description: how much time spent in this function itself (other func not included), in ms
+        description: Average sent (to clients) bytes per second
     - avg_xact_time:
         usage: GAUGE
-        description: how many times this function has been called
+        description: Average transaction duration, in microseconds
     - avg_query_time:
         usage: GAUGE
-        description: how much time spent in this function and it's child function, in ms
+        description: Average query duration, in microseconds
     - avg_wait_time:
         usage: GAUGE
-        description: how much time spent in this function itself (other func not included), in ms
+        description: Time spent by clients waiting for a server, in microseconds (average per second).
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

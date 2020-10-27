@@ -1,44 +1,7 @@
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ Cluster Level Metrics
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃   001 ~ 021 are cluster level metrics, which means they are
-#┃   identical and visible to all db in that cluster. Cluster
-#┃   query have tag 'cluster', and will only execute once on
-#┃   each database cluster (i.e. a PostgreSQL Server)
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg.pg_primary_only
 #┃ PostgreSQL basic information (on primary)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Tags     ┆ [cluster primary]
-#┃ TTL      ┆ 10
-#┃ Priority ┆ 0
-#┃ Timeout  ┆ 100ms
-#┃ Fatal    ┆ true
-#┃ Version  ┆ 100000 ~ higher
-#┃ Source   ┆ 110-pg.yaml
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ GAUGE    timestamp            current database timestamp in unix epoch
-#┃ GAUGE    uptime               seconds since postmaster start
-#┃ GAUGE    boot_time            postmaster boot timestamp in unix epoch
-#┃ COUNTER  lsn                  log sequence number, current write location
-#┃ COUNTER  insert_lsn           primary only, location of current wal inserting
-#┃ COUNTER  write_lsn            primary only, location of current wal writing
-#┃ COUNTER  flush_lsn            primary only, location of current wal syncing
-#┃ COUNTER  receive_lsn          replica only, location of wal synced to disk
-#┃ COUNTER  replay_lsn           replica only, location of wal applied
-#┃ GAUGE    conf_reload_time     seconds since last configuration reload
-#┃ GAUGE    last_replay_time     time when last transaction been replayed
-#┃ GAUGE    lag                  replica only, replication lag in seconds
-#┃ GAUGE    is_in_recovery       1 if in recovery mode
-#┃ GAUGE    is_wal_replay_paused 1 if wal play is paused
-#┃ GAUGE    is_in_backup         1 if backup is in progress
-#┃ GAUGE    backup_time          seconds since current backup start
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ pg_timestamp{}             GAUGE    current database timestamp in unix epoch
 #┃ pg_uptime{}                GAUGE    seconds since postmaster start
@@ -56,24 +19,6 @@
 #┃ pg_is_wal_replay_paused{}  GAUGE    1 if wal play is paused
 #┃ pg_is_in_backup{}          GAUGE    1 if backup is in progress
 #┃ pg_backup_time{}           GAUGE    seconds since current backup start
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#┃        extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
-#┃        extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
-#┃        pg_current_wal_lsn() - '0/0'                           AS lsn,
-#┃        pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
-#┃        pg_current_wal_lsn() - '0/0'                           AS write_lsn,
-#┃        pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-#┃        NULL::BIGINT                                           AS receive_lsn,
-#┃        NULL::BIGINT                                           AS replay_lsn,
-#┃        extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
-#┃        NULL::FLOAT                                            AS last_replay_time,
-#┃        0::FLOAT                                               AS lag,
-#┃        pg_is_in_recovery()                                    AS is_in_recovery,
-#┃        FALSE                                                  AS is_wal_replay_paused,
-#┃        pg_is_in_backup()                                      AS is_in_backup,
-#┃        extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-#┃
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_primary_only:
   name: pg

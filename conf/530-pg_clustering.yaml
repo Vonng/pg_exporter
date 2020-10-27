@@ -16,7 +16,7 @@ pg_clustering:
       heap_tuples_scanned AS tup_scan, CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0 END AS progress
     FROM pg_stat_progress_cluster pspc;
 
-  ttl: 2
+  ttl: 10
   min_version: 120000
   tags:
     - cluster

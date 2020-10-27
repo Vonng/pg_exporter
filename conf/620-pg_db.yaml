@@ -78,7 +78,6 @@ pg_db_12:
   metrics:
     - datid:
         usage: DISCARD
-        description: Name of the database
     - datname:
         usage: LABEL
         description: Name of the database
@@ -241,7 +240,6 @@ pg_db_93_11:
   metrics:
     - datid:
         usage: DISCARD
-        description: Name of the database
     - datname:
         usage: LABEL
         description: Name of the database

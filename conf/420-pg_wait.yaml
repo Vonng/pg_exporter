@@ -18,9 +18,9 @@ pg_wait:
     GROUP BY datname, wait_event_type;
 
   ttl: 10
+  min_version: 090600
   tags:
     - cluster
-  min_version: 090600
 
   metrics:
     - datname:
