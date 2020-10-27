@@ -2,25 +2,39 @@
 
 [Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics. **Gives you complete insight on your favourate elephant!**
 
-Latest binaries & rpm can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+ 
+Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10,11,12,13. 
 
-The latest version of `pg_exporter` is v0.2.0
+Latest version of `pg_exporter` is v0.3.0.  
 
-## Feature
+
+
+## Features
 
 * Support both Postgres & Pgbouncer
-* Flexible: Almost all metrics are defined in customizable config files with SQL query. 
+* Flexible: Almost all metrics are defined in customizable configuration files in SQL style. 
 * Fine-grained execution control (Tags Filter, Facts Filter, Version Filter, Timeout, Cache, etc...)
 * Dynamic Planning: User could provide multiple branches of a metric queries. Queries matches server version & fact & tag will be actually installed.
 * Configurable caching policy & query timeout
 * Rich metrics about `pg_exporter` itself.
-* Auto discovery multi database in the same cluster (TBD) 
-* Tested in real world production environment (200+ Nodes)
+* Auto discovery multi database in the same cluster (multiple database scrape **TBD**) 
+* Tested and verified in real world production environment for years (200+ Nodes)
 * Metrics overhelming!  Gives you complete insight on your favourate elephant!
 
+* (Pgbouncer mode is enabled when target dbname is `pgbouncer`)
 
 
- (pgbouncer mode is enabled when target dbname is `pgbouncer`)
+
+## Demonstration
+
+Wanna see what `pg_exporter` can do? 
+
+Check this out, It's an entire monitoring system based on pg_exporter!
+
+> [Pigsty](https://github.com/Vonng/pigsty) -- Postgres in Graphic STYle
+
+![](/Vonng/pigsty/blob/master/doc/img/pg-overview.jpg)
+
+
 
 ## Quick Start
 
@@ -116,7 +130,7 @@ Or [download](https://github.com/Vonng/pg_exporter/releases) latest prebuilt bin
 
 ## Deploy
 
-A redhat7 rpm is provided on release page. Which include
+A redhat7 rpm is provided on release page. Which includes:
 
 * [`/etc/default/pg_exporter`](service/pg_exporter.default)
 * [`/etc/pg_exporter/pg_exporter.yaml`](service/pg_exporter.default)
@@ -167,10 +181,10 @@ Current `pg_exporter` is ship with 32 built-in metrics queries.
 * [pg_index](conf/126-pg_index.yaml)
 * [pg_index_bloat](conf/127-pg_index_bloat.yaml)
 * [pg_func](conf/128-pg_func.yaml)
-* [pgbouncer_list](conf/129-pgbouncer_list.yaml)
-* [pgbouncer_database](conf/130-pgbouncer_database.yaml)
-* [pgbouncer_pool](conf/131-pgbouncer_pool.yaml)
-* [pgbouncer_stat](conf/132-pgbouncer_stat.yaml)
+* [pgbouncer_list](conf/910-pgbouncer_list.yaml)
+* [pgbouncer_database](conf/920-pgbouncer_database.yaml)
+* [pgbouncer_pool](conf/940-pgbouncer_pool.yaml)
+* [pgbouncer_stat](conf/930-pgbouncer_stat.yaml)
 
 `pg_exporter` will generate approximately 200~300 metrics for completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate serveral 1k ~ 10k metrics. You may need modifying or disable some  database-level metrics on database with serveral thousands or more tables in order to complete scrape in time.
 
