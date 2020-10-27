@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/lib/pq"
 	"io/ioutil"
@@ -18,16 +19,15 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 	"text/template"
-	"database/sql"
+	"time"
 
 	_ "github.com/lib/pq"
-	"gopkg.in/yaml.v2"
-	"gopkg.in/alecthomas/kingpin.v2"
-	"github.com/prometheus/common/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/log"
+	"gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/yaml.v2"
 )
 
 /**********************************************************************************************\
@@ -61,6 +61,15 @@ var (
 )
 
 /**********************************************************************************************\
+*                                        Globals                                               *
+\**********************************************************************************************/
+// PgExporter is the global singleton of Exporter
+var (
+	PgExporter *Exporter
+	ReloadLock sync.Mutex
+)
+
+/**********************************************************************************************\
 *                                       Column                                                 *
 \**********************************************************************************************/
 const (
@@ -81,9 +90,9 @@ var ColumnUsage = map[string]bool{
 // Column holds the metadata of query result
 type Column struct {
 	Name   string `yaml:"name"`
-	Desc   string `yaml:"description"`
-	Usage  string `yaml:"usage"`
-	Rename string `yaml:"rename"`
+	Desc   string `yaml:"description,omitempty"`
+	Usage  string `yaml:"usage,omitempty"`
+	Rename string `yaml:"rename,omitempty"`
 }
 
 // PrometheusValueType returns column's corresponding prometheus value type
@@ -113,26 +122,26 @@ type Query struct {
 	Name   string `yaml:"name"`  // actual query name, used as metric prefix
 	Desc   string `yaml:"desc"`  // description of this metric query
 	SQL    string `yaml:"query"` // SQL command to fetch metrics
-	Branch string // branch name, top layer key of config file
+	Branch string `yaml:"-"`     // branch name, top layer key of config file
 
 	// control query behaviour
-	Tags       []string `yaml:"tags"`        // tags are used for execution control
-	TTL        float64  `yaml:"ttl"`         // caching ttl in seconds
-	Timeout    float64  `yaml:"timeout"`     // query execution timeout in seconds
-	Priority   int      `yaml:"priority"`    // execution priority, from 1 to 999
-	MinVersion int      `yaml:"min_version"` // minimal supported version, include
-	MaxVersion int      `yaml:"max_version"` // maximal supported version, not include
-	Fatal      bool     `yaml:"fatal"`       // if query marked fatal fail, entire scrape will fail
-	Skip       bool     `yaml:"skip"`        // if query marked skip, it will be omit while loading
+	Tags       []string `yaml:"tags"`               // tags are used for execution control
+	TTL        float64  `yaml:"ttl"`                // caching ttl in seconds
+	Timeout    float64  `yaml:"timeout"`            // query execution timeout in seconds
+	Priority   int      `yaml:"priority,omitempty"` // execution priority, from 1 to 999
+	MinVersion int      `yaml:"min_version"`        // minimal supported version, include
+	MaxVersion int      `yaml:"max_version"`        // maximal supported version, not include
+	Fatal      bool     `yaml:"fatal"`              // if query marked fatal fail, entire scrape will fail
+	Skip       bool     `yaml:"skip"`               // if query marked skip, it will be omit while loading
 
 	Metrics []map[string]*Column `yaml:"metrics"` // metric definition list
 
 	// metrics parsing auxiliaries
-	Path        string             // where am I from ?
-	Columns     map[string]*Column // column map
-	ColumnNames []string           // column names in origin orders
-	LabelNames  []string           // column (name) that used as label, sequences matters
-	MetricNames []string           // column (name) that used as metric
+	Path        string             `yaml:"-"` // where am I from ?
+	Columns     map[string]*Column `yaml:"-"` // column map
+	ColumnNames []string           `yaml:"-"` // column names in origin orders
+	LabelNames  []string           `yaml:"-"` // column (name) that used as label, sequences matters
+	MetricNames []string           `yaml:"-"` // column (name) that used as metric
 }
 
 var queryTemplate, _ = template.New("Query").Parse(`
@@ -151,14 +160,51 @@ var queryTemplate, _ = template.New("Query").Parse(`
 {{range .ColumnList}}┃ {{.}}
 {{end}}┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 {{range .MetricList}}┃ {{.}}
-{{end}}┗┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+{{end}}┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 ┃ {{.TemplateSQL}}
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{.MarshalYAML}}
 
-// Explain will turn query into text representation
+`)
+
+var digestTemplate, _ = template.New("Query").Parse(`
+
+#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#┃ {{ .Name }}{{ if ne .Name .Branch}}.{{ .Branch }}{{end}}
+#┃ {{ .Desc }}
+#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+{{range .MetricList}}#┃ {{.}}
+{{end}}#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{.MarshalYAML}}
+
+`)
+
+// MarshalYAML will turn query into YAML format
+func (q *Query) MarshalYAML() string {
+	// buf := new(bytes.Buffer)
+	v := make(map[string]Query, 1)
+	v[q.Branch] = *q
+	buf, err := yaml.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return string(buf)
+}
+
+// Explain will turn query into text format
 func (q *Query) Explain() string {
 	buf := new(bytes.Buffer)
 	err := queryTemplate.Execute(buf, q)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
+// Digest will turn Query into a summary text format
+func (q *Query) Digest() string {
+	buf := new(bytes.Buffer)
+	err := digestTemplate.Execute(buf, q)
 	if err != nil {
 		panic(err)
 	}
@@ -185,8 +231,8 @@ func (q *Query) ColumnList() (res []*Column) {
 	return
 }
 
-// MetricList returns a list of metric generated by this query
-func (q *Query) MetricList() (res []string) {
+// LabelList returns a list of label column names
+func (q *Query) LabelList() []string {
 	labelNames := make([]string, len(q.LabelNames))
 	for i, labelName := range q.LabelNames {
 		labelColumn := q.Columns[labelName]
@@ -196,24 +242,45 @@ func (q *Query) MetricList() (res []string) {
 			labelNames[i] = labelColumn.Name
 		}
 	}
-	labels := strings.Join(labelNames, ",")
+	return labelNames
+}
 
+// MetricList returns a list of metric generated by this query
+func (q *Query) MetricList() (res []string) {
+	labelSignature := strings.Join(q.LabelList(), ",")
+	maxSignatureLength := 0
 	res = make([]string, len(q.MetricNames))
+
+	for _, metricName := range q.MetricNames {
+		metricColumnName := q.Columns[metricName].Name
+		if q.Columns[metricName].Rename != "" {
+			metricColumnName = q.Columns[metricName].Rename
+		}
+		if sigLength := len(q.Name) + len(metricColumnName) + len(labelSignature) + 3
+			sigLength > maxSignatureLength {
+			maxSignatureLength = sigLength
+		}
+	}
+	templateString := fmt.Sprintf("%%-%ds %%-8s %%s", maxSignatureLength+1)
 	for i, metricName := range q.MetricNames {
 		column := q.Columns[metricName]
-		name := column.Name
-		if column.Rename != "" {
-			name = column.Rename
+		metricColumnName := q.Columns[metricName].Name
+		if q.Columns[metricName].Rename != "" {
+			metricColumnName = q.Columns[metricName].Rename
 		}
-		res[i] = fmt.Sprintf("%s_%s{%s}", q.Name, name, labels)
+		metricSignature := fmt.Sprintf("%s_%s{%s}", q.Name, metricColumnName, labelSignature)
+		res[i] = fmt.Sprintf(templateString, metricSignature, column.Usage, column.Desc)
 	}
+
 	return
 }
 
+// TemplateSQL will format SQL string with padding
 func (q *Query) TemplateSQL() string {
 	return strings.Replace(q.SQL, "\n", "\n┃ ", -1)
 }
 
+// TimeoutDuration will turn timeout settings into time.Duration
 func (q *Query) TimeoutDuration() time.Duration {
 	return time.Duration(float64(time.Second) * q.Timeout)
 }
@@ -369,7 +436,7 @@ type QueryInstance struct {
 	scrapeDuration time.Duration // last real execution duration
 }
 
-// NewQueryInstance will generate query instance from query, and optional const labels
+// NewQueryInstance will generate query instance from query, Injecting a server object
 func NewQueryInstance(q *Query, s *Server) *QueryInstance {
 	instance := &QueryInstance{
 		Query:  q,
@@ -452,7 +519,7 @@ func (q *QueryInstance) execute() {
 		}
 		return
 	}
-	defer rows.Close() // nolint: errcheck
+	defer rows.Close()
 
 	// parsing meta:  fetch column metadata for dynamic name lookup
 	columnNames, err := rows.Columns()
@@ -592,6 +659,7 @@ type Server struct {
 
 	// postgres fact gather from server
 	UP         bool            // indicate whether target server is connectable
+	Recovery   bool            // is server in recovering
 	Version    int             // pg server version num
 	Database   string          // database name of current server connection
 	Username   string          // current username
@@ -599,7 +667,6 @@ type Server struct {
 	dblistLock sync.Mutex      // lock when access Databases map
 	Namespaces map[string]bool // all available schema in target cluster
 	Extensions map[string]bool // all available extension in target cluster
-	Recovery   bool            // is server in recovering?
 
 	Tags           []string // server tags set by cli arg --tag
 	PgbouncerMode  bool     // indicate it is a pgbouncer server
@@ -756,7 +823,7 @@ func PostgresPrecheck(s *Server) (err error) {
 	}
 	// invoke hook if there are changes on database list
 	if len(changes) > 0 && s.onDatabaseChange != nil {
-		log.Debugf("server [%s] auto discovery database list change : %v", changes)
+		log.Debugf("server [%s] auto discovery database list change : %v", s.Name(), changes)
 		s.onDatabaseChange(changes) // if doing something long, launch another goroutine
 	}
 	s.Databases = newDBList
@@ -873,7 +940,7 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 		// check if username prefix tag match server.Username
 		if strings.HasPrefix(tag, "username:") {
 			if s.Username != strings.TrimPrefix(tag, "username:") {
-				return false, fmt.Sprintf("server [%s] username does not match %s", s.Name(), s.Username, tag)
+				return false, fmt.Sprintf("server [%s] username [%s] does not match %s", s.Name(), s.Username, tag)
 			}
 			continue
 		}
@@ -886,19 +953,19 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 			continue
 		}
 
-		// check 3 default tags: cluster, primary, standby
+		// check 3 default tags: cluster, primary, standby|replica
 		switch tag {
 		case "cluster":
 			if s.Forked {
 				return false, fmt.Sprintf("cluster level query %s will not run on forked server %v", query.Name, s.Name())
 			}
 			continue
-		case "primary":
+		case "primary", "master":
 			if s.Recovery {
 				return false, fmt.Sprintf("primary-only query %s will not run on standby server %v", query.Name, s.Name())
 			}
 			continue
-		case "standby":
+		case "standby", "replica", "slave":
 			if !s.Recovery {
 				return false, fmt.Sprintf("standby-only query %s will not run on primary server %v", query.Name, s.Name())
 			}
@@ -1088,6 +1155,7 @@ type Exporter struct {
 	tags              []string
 	namespace         string
 
+	// internal status
 	lock    sync.RWMutex       // export lock
 	server  *Server            // primary server
 	servers map[string]*Server // auto discovered peripheral servers
@@ -1120,6 +1188,32 @@ type Exporter struct {
 	queryScrapeMetricCount *prometheus.GaugeVec // {datname,query} query level: how many metrics the query returns?
 	queryScrapeHitCount    *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
 
+}
+
+// Up will delegate aliveness check to primary server
+func (e *Exporter) Up() bool {
+	return e.server.UP
+}
+
+// Recovery will delegate primary/replica check to primary server
+func (e *Exporter) Recovery() bool {
+	return e.server.Recovery
+}
+
+// Status will report 3 available status: primary|replica|down
+func (e *Exporter) Status() string {
+	if e.server == nil || e.scrapeDone.IsZero() {
+		return `unknown`
+	}
+	if !e.server.UP {
+		return `down`
+	} else {
+		if e.server.Recovery {
+			return `replica`
+		} else {
+			return `primary`
+		}
+	}
 }
 
 // Describe implement prometheus.Collector
@@ -1619,7 +1713,7 @@ func parseDatname(dsn string) string {
 	return strings.TrimLeft(u.Path, "/")
 }
 
-// RetrieveTargetURL retrieve pg target url from different sources
+// RetrieveTargetURL retrieve pg target url from multiple sources according to precedence
 func RetrieveTargetURL() (res string) {
 	// priority: cli-args > env  > env file path
 	if *pgURL != "" {
@@ -1673,18 +1767,6 @@ func RetrieveConfig() (res string) {
 /**********************************************************************************************\
 *                                        Main                                                  *
 \**********************************************************************************************/
-
-// parse parameters & retrieve dsn
-func init() {
-	kingpin.Version(fmt.Sprintf("postgres_exporter %s (built with %s)\n", Version, runtime.Version()))
-	log.AddFlags(kingpin.CommandLine)
-	kingpin.Parse()
-	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, autoDiscovery=%v, excludeDatabase=%v listenAdress=%v metricPath=%v",
-		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *listenAddress, *metricPath)
-	*pgURL = RetrieveTargetURL()
-	*configPath = RetrieveConfig()
-}
-
 // DryRun will explain all query fetched from configs
 func DryRun() {
 	configs, err := LoadConfig(*configPath)
@@ -1707,10 +1789,6 @@ func DryRun() {
 	os.Exit(0)
 
 }
-
-// PgExporter is the singleton of Exporter
-var PgExporter *Exporter
-var ReloadLock sync.Mutex
 
 // Reload will launch a new pg exporter instance
 func Reload() error {
@@ -1739,8 +1817,8 @@ func Reload() error {
 	log.Debugf("shutdown old exporter instance")
 	// if older one exists, close and unregister it
 	if PgExporter != nil {
-		// do not close old exporter because the stupid implementation of sql.DB
-		// there connection will be automatically release after 1 min
+		// DO NOT MANUALLY CLOSE OLD EXPORTER INSTANCE because the stupid implementation of sql.DB
+		// there connection will be automatically released after 1 min
 		prometheus.Unregister(PgExporter)
 	}
 	PgExporter = newExporter
@@ -1748,8 +1826,21 @@ func Reload() error {
 	return nil
 }
 
+// parse parameters & retrieve dsn
+func ParseArgs() {
+	kingpin.Version(fmt.Sprintf("postgres_exporter %s (built with %s)\n", Version, runtime.Version()))
+	log.AddFlags(kingpin.CommandLine)
+	kingpin.Parse()
+	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, autoDiscovery=%v, excludeDatabase=%v listenAdress=%v metricPath=%v",
+		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *listenAddress, *metricPath)
+	*pgURL = RetrieveTargetURL()
+	*configPath = RetrieveConfig()
+}
+
 // Run pg exporter
 func Run() {
+	ParseArgs()
+
 	// explain config only
 	if *dryRun {
 		DryRun()
@@ -1759,6 +1850,11 @@ func Run() {
 		log.Errorf("no valid config path, exit")
 		os.Exit(1)
 	}
+
+	// TODO
+	// launch a dummy server to check listen address availability
+	// and fake a pg_up 0 metrics before PgExporter connecting to target instance
+   	// otherwise, exporter API is not available until target instance online
 
 	// create exporter: if target is down, exporter creation will wait until it backup online
 	var err error
@@ -1774,12 +1870,13 @@ func Run() {
 		WithTags(*serverTags),
 	)
 	if err != nil {
-		log.Fatalf("fail creating pg_exporter: %w", err)
+		log.Fatalf("fail creating pg_exporter: %s", err.Error())
 		os.Exit(2)
 	}
 
+	// trigger a manual planning before explain
 	if *explainOnly {
-		PgExporter.server.Plan() // trigger a manual planning before explain
+		PgExporter.server.Plan()
 		fmt.Println(PgExporter.Explain())
 		os.Exit(0)
 	}
@@ -1800,23 +1897,97 @@ func Run() {
 		}
 	}()
 
-	// run http
+	// REST API
+
+	// metrics endpoint
 	http.Handle(*metricPath, promhttp.Handler())
+	// basic information
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		_, _ = w.Write([]byte(`<html><head><title>PG Exporter</title></head><body><h1>PG Exporter</h1><p><a href='` + *metricPath + `'>Metrics</a></p></body></html>`))
 	})
+	// version report
+	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		payload := fmt.Sprintf("version %s", Version)
+		_, _ = w.Write([]byte(payload))
+	})
+	// explain installed collectors
 	http.HandleFunc("/explain", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		_, _ = w.Write([]byte(PgExporter.Explain()))
 	})
-	http.HandleFunc("/reload", func(w http.ResponseWriter, r *http.Request) {
-		response := `server reloaded`
-		if err := Reload(); err != nil {
-			response = fmt.Sprintf("fail to reload: %s", err.Error())
-		}
+
+	// up, primary, replica check function
+	upCheckFunc := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		_, _ = w.Write([]byte(response))
+		if PgExporter.Up() {
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte(PgExporter.Status()))
+		} else {
+			w.WriteHeader(503)
+			_, _ = w.Write([]byte(PgExporter.Status()))
+		}
+	}
+	primaryCheckFunc := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		if PgExporter.Up() {
+			if PgExporter.Recovery() {
+				w.WriteHeader(404)
+				_, _ = w.Write([]byte(PgExporter.Status()))
+			} else {
+				w.WriteHeader(200)
+				_, _ = w.Write([]byte(PgExporter.Status()))
+			}
+		} else {
+			w.WriteHeader(503)
+			_, _ = w.Write([]byte(PgExporter.Status()))
+		}
+	}
+	replicaCheckFunc := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		if PgExporter.Up() {
+			if PgExporter.Recovery() {
+				w.WriteHeader(200)
+				_, _ = w.Write([]byte(PgExporter.Status()))
+			} else {
+				w.WriteHeader(404)
+				_, _ = w.Write([]byte(PgExporter.Status()))
+			}
+		} else {
+			w.WriteHeader(503)
+			_, _ = w.Write([]byte(PgExporter.Status()))
+		}
+	}
+
+	// alive
+	http.HandleFunc("/up", upCheckFunc)
+	http.HandleFunc("/read", upCheckFunc)
+	http.HandleFunc("/health", upCheckFunc)
+	http.HandleFunc("/liveness", upCheckFunc)
+	http.HandleFunc("/readiness", upCheckFunc)
+	// primary
+	http.HandleFunc("/primary", primaryCheckFunc)
+	http.HandleFunc("/leader", primaryCheckFunc)
+	http.HandleFunc("/master", primaryCheckFunc)
+	http.HandleFunc("/read-write", primaryCheckFunc)
+	http.HandleFunc("/rw", primaryCheckFunc)
+	// replica
+	http.HandleFunc("/replica", replicaCheckFunc)
+	http.HandleFunc("/standby", replicaCheckFunc)
+	http.HandleFunc("/slave", replicaCheckFunc)
+	http.HandleFunc("/read-only", replicaCheckFunc)
+	http.HandleFunc("/ro", replicaCheckFunc)
+
+	// reload interface
+	http.HandleFunc("/reload", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		if err := Reload(); err != nil {
+			w.WriteHeader(500)
+			_, _ = w.Write([]byte(fmt.Sprintf("fail to reload: %s", err.Error())))
+		} else {
+			_, _ = w.Write([]byte(`server reloaded`))
+		}
 	})
 
 	log.Infof("pg_exporter for %s start, listen on http://%s%s", shadowDSN(*pgURL), *listenAddress, *metricPath)
