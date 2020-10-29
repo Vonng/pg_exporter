@@ -1,3 +1,16 @@
+// ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ //
+// ┃ PostgreSQL/Pgbouncer Metrics Exporter                       ┃ //
+// ┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┫ //
+// ┃ Name		:   pg_exporter.go                               ┃ //
+// ┃ Desc  		:   pg_exporter metrics exporter	             ┃ //
+// ┃ Ctime      :   2019-12-09                                   ┃ //
+// ┃ Mtime      :   2020-10-20                                   ┃ //
+// ┃ Version   	:   0.2.0              							 ┃ //
+// ┃ Support   	:   PostgreSQL 10~13 pgbouncer 1.9+              ┃ //
+// ┃ Author		:   Vonng (fengruohang@outlook.com)              ┃ //
+// ┃ Copyright (C) 2019-2020 Ruohang Feng                        ┃ //
+// ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ //
+
 package main
 
 import (
@@ -960,7 +973,7 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 				return false, fmt.Sprintf("cluster level query %s will not run on forked server %v", query.Name, s.Name())
 			}
 			continue
-		case "primary", "master":
+		case "primary", "master", "leader":
 			if s.Recovery {
 				return false, fmt.Sprintf("primary-only query %s will not run on standby server %v", query.Name, s.Name())
 			}
@@ -1467,6 +1480,7 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 		e.server.onDatabaseChange = e.OnDatabaseChange
 	}
 
+	log.Debugf("check primary server connectivity")
 	// check server immediately, will hang/exit according to failFast
 	if err = e.server.Check(); err != nil {
 		if !e.failFast {
@@ -1482,6 +1496,7 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 		}
 	}
 	if err != nil {
+
 		e.server.Plan()
 	}
 	e.pgbouncerMode = e.server.PgbouncerMode
@@ -1571,6 +1586,85 @@ func WithExcludeDatabases(excludeStr string) ExporterOpt {
 			exclMap[item] = true
 		}
 		e.excludedDatabases = exclMap
+	}
+}
+
+/**************************************************************\
+* Exporter REST API
+\**************************************************************/
+// ExplainFunc expose explain document
+func (e *Exporter) ExplainFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	_, _ = w.Write([]byte(e.Explain()))
+}
+
+// UpCheckFunc tells whether target instance is alive, 200 up 503 down
+func (e *Exporter) UpCheckFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	if e.Up() {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(PgExporter.Status()))
+	} else {
+		w.WriteHeader(503)
+		_, _ = w.Write([]byte(PgExporter.Status()))
+	}
+}
+
+// PrimaryCheckFunc tells whether target instance is a primary, 200 yes 404 no 503 unknown
+func (e *Exporter) PrimaryCheckFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	if PgExporter.Up() {
+		if PgExporter.Recovery() {
+			w.WriteHeader(404)
+			_, _ = w.Write([]byte(PgExporter.Status()))
+		} else {
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte(PgExporter.Status()))
+		}
+	} else {
+		w.WriteHeader(503)
+		_, _ = w.Write([]byte(PgExporter.Status()))
+	}
+}
+
+// ReplicaCheckFunc tells whether target instance is a replica, 200 yes 404 no 503 unknown
+func (e *Exporter) ReplicaCheckFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	if PgExporter.Up() {
+		if PgExporter.Recovery() {
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte(PgExporter.Status()))
+		} else {
+			w.WriteHeader(404)
+			_, _ = w.Write([]byte(PgExporter.Status()))
+		}
+	} else {
+		w.WriteHeader(503)
+		_, _ = w.Write([]byte(PgExporter.Status()))
+	}
+}
+
+// VersionFunc responding current pg_exporter version
+func VersionFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	payload := fmt.Sprintf("version %s", Version)
+	_, _ = w.Write([]byte(payload))
+}
+
+// TitleFunc responding a description message
+func TitleFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	_, _ = w.Write([]byte(`<html><head><title>PG Exporter</title></head><body><h1>PG Exporter</h1><p><a href='` + *metricPath + `'>Metrics</a></p></body></html>`))
+}
+
+// ReloadFunc handles reload request
+func ReloadFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	if err := Reload(); err != nil {
+		w.WriteHeader(500)
+		_, _ = w.Write([]byte(fmt.Sprintf("fail to reload: %s", err.Error())))
+	} else {
+		_, _ = w.Write([]byte(`server reloaded`))
 	}
 }
 
@@ -1837,6 +1931,25 @@ func ParseArgs() {
 	*configPath = RetrieveConfig()
 }
 
+func DummyServer() (s *http.Server, exit <-chan bool) {
+	mux := http.NewServeMux()
+	mux.HandleFunc(*metricPath, func(w http.ResponseWriter, req *http.Request) {
+		fmt.Fprintf(w, "# HELP pg_up last scrape was able to connect to the server: 1 for yes, 0 for no\n# TYPE pg_up gauge\npg_up 0")
+	})
+	httpServer := &http.Server{
+		Addr:    *listenAddress,
+		Handler: mux,
+	}
+	exitChan := make(chan bool, 1)
+	go func() {
+		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
+			log.Debugf("shutdown dummy server")
+		}
+		exitChan <- true
+	}()
+	return httpServer, exitChan
+}
+
 // Run pg exporter
 func Run() {
 	ParseArgs()
@@ -1851,10 +1964,11 @@ func Run() {
 		os.Exit(1)
 	}
 
-	// TODO
+	// DummyServer will server a constant pg_up
 	// launch a dummy server to check listen address availability
 	// and fake a pg_up 0 metrics before PgExporter connecting to target instance
-   	// otherwise, exporter API is not available until target instance online
+	// otherwise, exporter API is not available until target instance online
+	dummySrv, closeChan := DummyServer()
 
 	// create exporter: if target is down, exporter creation will wait until it backup online
 	var err error
@@ -1897,98 +2011,38 @@ func Run() {
 		}
 	}()
 
-	// REST API
 
-	// metrics endpoint
-	http.Handle(*metricPath, promhttp.Handler())
-	// basic information
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		_, _ = w.Write([]byte(`<html><head><title>PG Exporter</title></head><body><h1>PG Exporter</h1><p><a href='` + *metricPath + `'>Metrics</a></p></body></html>`))
-	})
-	// version report
-	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		payload := fmt.Sprintf("version %s", Version)
-		_, _ = w.Write([]byte(payload))
-	})
-	// explain installed collectors
-	http.HandleFunc("/explain", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		_, _ = w.Write([]byte(PgExporter.Explain()))
-	})
-
-	// up, primary, replica check function
-	upCheckFunc := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		if PgExporter.Up() {
-			w.WriteHeader(200)
-			_, _ = w.Write([]byte(PgExporter.Status()))
-		} else {
-			w.WriteHeader(503)
-			_, _ = w.Write([]byte(PgExporter.Status()))
-		}
-	}
-	primaryCheckFunc := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		if PgExporter.Up() {
-			if PgExporter.Recovery() {
-				w.WriteHeader(404)
-				_, _ = w.Write([]byte(PgExporter.Status()))
-			} else {
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(PgExporter.Status()))
-			}
-		} else {
-			w.WriteHeader(503)
-			_, _ = w.Write([]byte(PgExporter.Status()))
-		}
-	}
-	replicaCheckFunc := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		if PgExporter.Up() {
-			if PgExporter.Recovery() {
-				w.WriteHeader(200)
-				_, _ = w.Write([]byte(PgExporter.Status()))
-			} else {
-				w.WriteHeader(404)
-				_, _ = w.Write([]byte(PgExporter.Status()))
-			}
-		} else {
-			w.WriteHeader(503)
-			_, _ = w.Write([]byte(PgExporter.Status()))
-		}
-	}
-
+	/*************** REST API ***************/
+	// basic
+	http.HandleFunc("/", TitleFunc)
+	http.HandleFunc("/version", VersionFunc)
+	// reload
+	http.HandleFunc("/reload", ReloadFunc)
+	// explain
+	http.HandleFunc("/explain", PgExporter.ExplainFunc)
 	// alive
-	http.HandleFunc("/up", upCheckFunc)
-	http.HandleFunc("/read", upCheckFunc)
-	http.HandleFunc("/health", upCheckFunc)
-	http.HandleFunc("/liveness", upCheckFunc)
-	http.HandleFunc("/readiness", upCheckFunc)
+	http.HandleFunc("/up", PgExporter.UpCheckFunc)
+	http.HandleFunc("/read", PgExporter.UpCheckFunc)
+	http.HandleFunc("/health", PgExporter.UpCheckFunc)
+	http.HandleFunc("/liveness", PgExporter.UpCheckFunc)
+	http.HandleFunc("/readiness", PgExporter.UpCheckFunc)
 	// primary
-	http.HandleFunc("/primary", primaryCheckFunc)
-	http.HandleFunc("/leader", primaryCheckFunc)
-	http.HandleFunc("/master", primaryCheckFunc)
-	http.HandleFunc("/read-write", primaryCheckFunc)
-	http.HandleFunc("/rw", primaryCheckFunc)
+	http.HandleFunc("/primary", PgExporter.PrimaryCheckFunc)
+	http.HandleFunc("/leader", PgExporter.PrimaryCheckFunc)
+	http.HandleFunc("/master", PgExporter.PrimaryCheckFunc)
+	http.HandleFunc("/read-write", PgExporter.PrimaryCheckFunc)
+	http.HandleFunc("/rw", PgExporter.PrimaryCheckFunc)
 	// replica
-	http.HandleFunc("/replica", replicaCheckFunc)
-	http.HandleFunc("/standby", replicaCheckFunc)
-	http.HandleFunc("/slave", replicaCheckFunc)
-	http.HandleFunc("/read-only", replicaCheckFunc)
-	http.HandleFunc("/ro", replicaCheckFunc)
+	http.HandleFunc("/replica", PgExporter.ReplicaCheckFunc)
+	http.HandleFunc("/standby", PgExporter.ReplicaCheckFunc)
+	http.HandleFunc("/slave", PgExporter.ReplicaCheckFunc)
+	http.HandleFunc("/read-only", PgExporter.ReplicaCheckFunc)
+	http.HandleFunc("/ro", PgExporter.ReplicaCheckFunc)
 
-	// reload interface
-	http.HandleFunc("/reload", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		if err := Reload(); err != nil {
-			w.WriteHeader(500)
-			_, _ = w.Write([]byte(fmt.Sprintf("fail to reload: %s", err.Error())))
-		} else {
-			_, _ = w.Write([]byte(`server reloaded`))
-		}
-	})
+	// metric
+	dummySrv.Close()
+	<- closeChan
+	http.Handle(*metricPath, promhttp.Handler())
 
 	log.Infof("pg_exporter for %s start, listen on http://%s%s", shadowDSN(*pgURL), *listenAddress, *metricPath)
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
