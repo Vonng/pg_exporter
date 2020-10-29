@@ -4,7 +4,7 @@
 
 Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10,11,12,13. 
 
-Latest `pg_exporter` version: `0.2.0`
+Latest `pg_exporter` version: `0.3.0`
 
 
 
@@ -422,9 +422,11 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 
 
 
-## Visualization
 
-You could visualize these metrics via fancy grafana dashboards. Check [pigsty](https://github.com/Vonng/pigsty) for detail.
+
+## Dashboards
+
+You could visualize these metrics via fancy grafana dashboards.  There are lot's of dashboards available based `pg_exporter`, Check [pigsty](https://github.com/Vonng/pigsty) for detail.
 
 ### PG Overview
 

@@ -5,7 +5,7 @@
 // ┃ Desc  		:   pg_exporter metrics exporter	             ┃ //
 // ┃ Ctime      :   2019-12-09                                   ┃ //
 // ┃ Mtime      :   2020-10-20                                   ┃ //
-// ┃ Version   	:   0.2.0              							 ┃ //
+// ┃ Version   	:   0.3.0              							 ┃ //
 // ┃ Support   	:   PostgreSQL 10~13 pgbouncer 1.9+              ┃ //
 // ┃ Author		:   Vonng (fengruohang@outlook.com)              ┃ //
 // ┃ Copyright (C) 2019-2020 Ruohang Feng                        ┃ //
@@ -16,10 +16,9 @@ package main
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"fmt"
-	"github.com/lib/pq"
 	"io/ioutil"
+	"database/sql"
 	"math"
 	"net/http"
 	"net/url"
@@ -36,6 +35,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
@@ -48,7 +48,7 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.2.0"
+var Version = "0.3.0"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
@@ -751,6 +751,7 @@ func PgbouncerPrecheck(s *Server) (err error) {
 func PostgresPrecheck(s *Server) (err error) {
 	if s.DB == nil { // if db is not initialized, create a new DB
 		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
+			s.UP = false
 			return
 		}
 		s.DB.SetMaxIdleConns(1)
@@ -763,8 +764,10 @@ func PostgresPrecheck(s *Server) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	if err = s.DB.QueryRowContext(ctx, `SHOW server_version_num;`).Scan(&version); err != nil {
+		s.UP = false
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
+	s.UP = true
 	// fact change triggers a new planning
 	if s.Version != version {
 		log.Infof("server [%s] version changed: from [%d] to [%d]", s.Name(), s.Version, version)
@@ -774,6 +777,7 @@ func PostgresPrecheck(s *Server) (err error) {
 
 	// do not check here
 	if _, err = s.DB.Exec(`SET application_name = pg_exporter;`); err != nil {
+		s.UP = false
 		return fmt.Errorf("fail settting application name: %w", err)
 	}
 
@@ -789,6 +793,7 @@ func PostgresPrecheck(s *Server) (err error) {
 	defer cancel2()
 	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions));
 		err != nil {
+		s.UP = false
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
 	if s.Recovery != recovery {
@@ -828,7 +833,7 @@ func PostgresPrecheck(s *Server) (err error) {
 		}
 	}
 	// if old db is not found in new db list, add a change entry [OldDBName:false]
-	for dbname, _ := range s.Databases {
+	for dbname := range s.Databases {
 		if _, found := newDBList[dbname]; !found {
 			log.Debugf("server [%s] found vanished database %s", s.Name(), dbname)
 			changes[dbname] = false
@@ -1213,9 +1218,9 @@ func (e *Exporter) Recovery() bool {
 	return e.server.Recovery
 }
 
-// Status will report 3 available status: primary|replica|down
+// Status will report 4 available status: primary|replica|down|unknown
 func (e *Exporter) Status() string {
-	if e.server == nil || e.scrapeDone.IsZero() {
+	if e.server == nil {
 		return `unknown`
 	}
 	if !e.server.UP {
@@ -1307,6 +1312,15 @@ func (e *Exporter) collectServerMetrics(s *Server) {
 // Explain is just yet another wrapper of server.Explain
 func (e *Exporter) Explain() string {
 	return strings.Join(e.server.Explain(), "\n\n")
+}
+
+// Check will perform an immediate server health check
+func (e *Exporter) Check() {
+	if err := e.server.Check(); err != nil {
+		log.Errorf("exporter check failure: %s", err.Error())
+	} else {
+		log.Debugf("exporter check ok")
+	}
 }
 
 // Close will close all underlying servers
@@ -1601,6 +1615,7 @@ func (e *Exporter) ExplainFunc(w http.ResponseWriter, r *http.Request) {
 // UpCheckFunc tells whether target instance is alive, 200 up 503 down
 func (e *Exporter) UpCheckFunc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	e.Check()
 	if e.Up() {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(PgExporter.Status()))
@@ -1613,6 +1628,7 @@ func (e *Exporter) UpCheckFunc(w http.ResponseWriter, r *http.Request) {
 // PrimaryCheckFunc tells whether target instance is a primary, 200 yes 404 no 503 unknown
 func (e *Exporter) PrimaryCheckFunc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	e.Check()
 	if PgExporter.Up() {
 		if PgExporter.Recovery() {
 			w.WriteHeader(404)
@@ -1630,6 +1646,7 @@ func (e *Exporter) PrimaryCheckFunc(w http.ResponseWriter, r *http.Request) {
 // ReplicaCheckFunc tells whether target instance is a replica, 200 yes 404 no 503 unknown
 func (e *Exporter) ReplicaCheckFunc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	e.Check()
 	if PgExporter.Up() {
 		if PgExporter.Recovery() {
 			w.WriteHeader(200)
@@ -1791,11 +1808,7 @@ func shadowDSN(dsn string) string {
 	if err != nil {
 		return ""
 	}
-	// Blank user info if not nil
-	if pDSN.User != nil {
-		pDSN.User = url.UserPassword(pDSN.User.Username(), "PASSWORD")
-	}
-	return pDSN.String()
+	return pDSN.Redacted()
 }
 
 // parseDatname extract datname part of a dsn
@@ -1833,7 +1846,39 @@ func RetrieveTargetURL() (res string) {
 		}
 	}
 	log.Warnf("fail retrieving target url, fallback on default url: %s", defaultPGURL)
+
+	// process URL (add missing sslmode)
 	return defaultPGURL
+}
+
+// ProcessURL will fix URL with default options
+func ProcessURL(pgUrlStr string) string {
+	u, err := url.Parse(pgUrlStr)
+	if err != nil {
+		log.Errorf("invalid url format %s", pgUrlStr)
+		return ""
+	}
+
+	// add sslmode = disable if not exists
+	qs := u.Query()
+	if sslmode := qs.Get(`sslmode`); sslmode == "" {
+		qs.Set(`sslmode`, `disable`)
+	}
+	var buf strings.Builder
+	for k, v := range qs {
+		if len(v) == 0 {
+			continue
+		}
+		if buf.Len() > 0 {
+			buf.WriteByte('&')
+		}
+		buf.WriteString(k)
+		buf.WriteByte('=')
+		buf.WriteString(v[0])
+	}
+	u.RawQuery = buf.String()
+	fmt.Println(u.String())
+	return u.String()
 }
 
 // RetrieveConfig config path
@@ -1913,6 +1958,7 @@ func Reload() error {
 	if PgExporter != nil {
 		// DO NOT MANUALLY CLOSE OLD EXPORTER INSTANCE because the stupid implementation of sql.DB
 		// there connection will be automatically released after 1 min
+		// PgExporter.Close()
 		prometheus.Unregister(PgExporter)
 	}
 	PgExporter = newExporter
@@ -1927,15 +1973,21 @@ func ParseArgs() {
 	kingpin.Parse()
 	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, autoDiscovery=%v, excludeDatabase=%v listenAdress=%v metricPath=%v",
 		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *listenAddress, *metricPath)
-	*pgURL = RetrieveTargetURL()
+	*pgURL = ProcessURL(RetrieveTargetURL())
 	*configPath = RetrieveConfig()
 }
 
+// DummyServer reponse with a dummy metrics pg_up 0 or pgbouncer_up 0
 func DummyServer() (s *http.Server, exit <-chan bool) {
 	mux := http.NewServeMux()
+	dummyMetricName := `pg_up`
+	if parseDatname(*pgURL) == `pgbouncer` {
+		dummyMetricName = `pgbouncer_up`
+	}
 	mux.HandleFunc(*metricPath, func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, "# HELP pg_up last scrape was able to connect to the server: 1 for yes, 0 for no\n# TYPE pg_up gauge\npg_up 0")
+		fmt.Fprintf(w, "# HELP %s last scrape was able to connect to the server: 1 for yes, 0 for no\n# TYPE %s gauge\n%s 0", dummyMetricName, dummyMetricName, dummyMetricName)
 	})
+
 	httpServer := &http.Server{
 		Addr:    *listenAddress,
 		Handler: mux,
@@ -2011,7 +2063,6 @@ func Run() {
 		}
 	}()
 
-
 	/*************** REST API ***************/
 	// basic
 	http.HandleFunc("/", TitleFunc)
@@ -2040,8 +2091,8 @@ func Run() {
 	http.HandleFunc("/ro", PgExporter.ReplicaCheckFunc)
 
 	// metric
-	dummySrv.Close()
-	<- closeChan
+	_ = dummySrv.Close()
+	<-closeChan
 	http.Handle(*metricPath, promhttp.Handler())
 
 	log.Infof("pg_exporter for %s start, listen on http://%s%s", shadowDSN(*pgURL), *listenAddress, *metricPath)

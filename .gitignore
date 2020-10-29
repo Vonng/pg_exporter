@@ -24,3 +24,5 @@ pg_exporter_test.go
 test/
 deploy/
 upload.sh
+
+temp/

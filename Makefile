@@ -61,7 +61,7 @@ curl:
 upload:
 	./upload.sh
 
-release: clean conf release-linux release-darwin release-windows
+release: clean conf release-linux release-darwin # release-windows
 
 
 .PHONY: build clean release-linux release-darwin release-windows rpm release linux docker run curl conf upload
