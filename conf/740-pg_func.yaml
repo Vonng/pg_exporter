@@ -13,6 +13,7 @@ pg_func:
     SELECT CURRENT_CATALOG AS datname,
            schemaname      AS nspname,
            funcname,
+           funcid,
            calls,
            total_time,
            self_time
@@ -25,13 +26,16 @@ pg_func:
   metrics:
     - datname:
         usage: LABEL
-        description: database name of this relation
+        description: database name of this function
     - nspname:
         usage: LABEL
-        description: schema name of this relation
+        description: schema name of this function
     - funcname:
         usage: LABEL
-        description: relation name of this relation
+        description: function name
+    - funcid:
+        usage: LABEL
+        description: function id, dedupe for funcname override
     - calls:
         usage: COUNTER
         description: how many times this function has been called
@@ -41,3 +45,4 @@ pg_func:
     - self_time:
         usage: COUNTER
         description: how much time spent in this function itself (other func not included), in ms
+
