@@ -12,7 +12,7 @@ release-darwin:
 	mkdir -p bin/pg_exporter_v$(VERSION)_darwin-amd64
 	mv -f pg_exporter bin/pg_exporter_v$(VERSION)_darwin-amd64/
 	cp -f pg_exporter.yaml bin/pg_exporter_v$(VERSION)_darwin-amd64/
-	tar -cf bin/pg_exporter_v$(VERSION)_darwin-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_darwin-amd64
+	tar -czf bin/pg_exporter_v$(VERSION)_darwin-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_darwin-amd64
 	rm -rf bin/pg_exporter_v$(VERSION)_darwin-amd64
 
 release-linux: clean
@@ -23,7 +23,7 @@ release-linux: clean
 	cp -f pg_exporter.yaml bin/pg_exporter_v$(VERSION)_linux-amd64/
 	cp -f service/pg_exporter.default bin/pg_exporter_v$(VERSION)_linux-amd64/
 	cp -f service/pg_exporter.service bin/pg_exporter_v$(VERSION)_linux-amd64/
-	tar -cf bin/pg_exporter_v$(VERSION)_linux-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_linux-amd64
+	tar -czf bin/pg_exporter_v$(VERSION)_linux-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_linux-amd64
 	rm -rf bin/pg_exporter_v$(VERSION)_linux-amd64
 
 release-windows: clean
@@ -32,7 +32,7 @@ release-windows: clean
 	mkdir -p bin/pg_exporter_v$(VERSION)_windows-amd64
 	mv -f pg_exporter bin/pg_exporter_v$(VERSION)_windows-amd64/
 	cp -f pg_exporter.yaml bin/pg_exporter_v$(VERSION)_windows-amd64/
-	tar -cf bin/pg_exporter_v$(VERSION)_windows-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_windows-amd64
+	tar -czf bin/pg_exporter_v$(VERSION)_windows-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_windows-amd64
 	rm -rf bin/pg_exporter_v$(VERSION)_windows-amd64
 
 rpm:
