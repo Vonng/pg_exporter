@@ -1,7 +1,7 @@
 %define debug_package %{nil}
 
 Name:           pg_exporter
-Version:        0.3.0
+Version:        0.3.1
 Release:        1%{?dist}
 Summary:        Prometheus exporter for PostgreSQL/Pgbouncer server metrics
 License:        BSD

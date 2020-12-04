@@ -5,7 +5,7 @@
 // ┃ Desc  		:   pg_exporter metrics exporter	             ┃ //
 // ┃ Ctime      :   2019-12-09                                   ┃ //
 // ┃ Mtime      :   2020-10-20                                   ┃ //
-// ┃ Version   	:   0.3.0              							 ┃ //
+// ┃ Version   	:   0.3.1              							 ┃ //
 // ┃ Support   	:   PostgreSQL 10~13 pgbouncer 1.9+              ┃ //
 // ┃ Author		:   Vonng (fengruohang@outlook.com)              ┃ //
 // ┃ Copyright (C) 2019-2020 Ruohang Feng                        ┃ //
@@ -48,7 +48,7 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.3.0"
+var Version = "0.3.1"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
@@ -1968,7 +1968,7 @@ func Reload() error {
 
 // parse parameters & retrieve dsn
 func ParseArgs() {
-	kingpin.Version(fmt.Sprintf("postgres_exporter %s (built with %s)\n", Version, runtime.Version()))
+	kingpin.Version(fmt.Sprintf("pg_exporter %s (built with %s)\n", Version, runtime.Version()))
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Parse()
 	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, autoDiscovery=%v, excludeDatabase=%v listenAdress=%v metricPath=%v",
