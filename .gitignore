@@ -11,11 +11,6 @@ pg_exporter.iml
 rpmbuild/
 make-rpm.sh
 
-# go files
-go.mod
-go.sum
-vendor/
-
 # mac os files
 .DS_Store
 
