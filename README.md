@@ -2,14 +2,17 @@
 
 [Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics. **Gives you complete insight on your favourate elephant!**
 
+PG Exporter is the foundation component for Project [Pigsty](https://pigsty.cc), Which maybe the best **OpenSource** Monitoring Solution for PostgreSQL.
+
 Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10,11,12,13. 
 
-Latest `pg_exporter` version: `0.3.1`
+Latest `pg_exporter` version: `0.3.2`
 
 
 
 ## Features
 
+* Support [Pigsty](https://pigsty.cc/en/)
 * Support both Postgres & Pgbouncer
 * Flexible: Almost all metrics are defined in customizable configuration files in SQL style. 
 * Fine-grained execution control (Tags Filter, Facts Filter, Version Filter, Timeout, Cache, etc...)
@@ -19,7 +22,6 @@ Latest `pg_exporter` version: `0.3.1`
 * Auto discovery multi database in the same cluster (multiple database scrape **TBD**) 
 * Tested and verified in real world production environment for years (200+ Nodes)
 * Metrics overhelming!  Gives you complete insight on your favourate elephant!
-
 * (Pgbouncer mode is enabled when target dbname is `pgbouncer`)
 
 

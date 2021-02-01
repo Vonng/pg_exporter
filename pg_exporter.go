@@ -4,11 +4,11 @@
 // ┃ Name		:   pg_exporter.go                               ┃ //
 // ┃ Desc  		:   pg_exporter metrics exporter	             ┃ //
 // ┃ Ctime      :   2019-12-09                                   ┃ //
-// ┃ Mtime      :   2020-10-20                                   ┃ //
-// ┃ Version   	:   0.3.1              							 ┃ //
+// ┃ Mtime      :   2021-02-01                                   ┃ //
+// ┃ Version   	:   0.3.2              							 ┃ //
 // ┃ Support   	:   PostgreSQL 10~13 pgbouncer 1.9+              ┃ //
 // ┃ Author		:   Vonng (fengruohang@outlook.com)              ┃ //
-// ┃ Copyright (C) 2019-2020 Ruohang Feng                        ┃ //
+// ┃ Copyright (C) 2019-2021 Ruohang Feng                        ┃ //
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ //
 
 package main
@@ -48,7 +48,7 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.3.1"
+var Version = "0.3.2"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
@@ -1430,7 +1430,7 @@ func (e *Exporter) setupInternalMetrics() {
 	}, []string{"datname", "query"})
 	e.queryScrapeHitCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
-		Subsystem: "exporter_query", Name: "scrape_hit_count", Help: "numbers  been scrapped from this query",
+		Subsystem: "exporter_query", Name: "scrape_hit_count", Help: "numbers been scrapped from this query",
 	}, []string{"datname", "query"})
 
 	e.exporterUp.Set(1) // always be true
