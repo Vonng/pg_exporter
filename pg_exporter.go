@@ -16,9 +16,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"database/sql"
 	"math"
 	"net/http"
 	"net/url"
@@ -34,8 +34,8 @@ import (
 	"text/template"
 	"time"
 
-	_ "github.com/lib/pq"
 	"github.com/lib/pq"
+	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
@@ -269,8 +269,7 @@ func (q *Query) MetricList() (res []string) {
 		if q.Columns[metricName].Rename != "" {
 			metricColumnName = q.Columns[metricName].Rename
 		}
-		if sigLength := len(q.Name) + len(metricColumnName) + len(labelSignature) + 3
-			sigLength > maxSignatureLength {
+		if sigLength := len(q.Name) + len(metricColumnName) + len(labelSignature) + 3; sigLength > maxSignatureLength {
 			maxSignatureLength = sigLength
 		}
 	}
@@ -791,8 +790,7 @@ func PostgresPrecheck(s *Server) (err error) {
 	(SELECT array_agg(extname) AS extensions FROM pg_extension);`
 	ctx, cancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel2()
-	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions));
-		err != nil {
+	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions)); err != nil {
 		s.UP = false
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
@@ -1805,9 +1803,33 @@ func parseCSV(s string) (tags []string) {
 // shadowDSN will hide password part of dsn
 func shadowDSN(dsn string) string {
 	pDSN, err := url.Parse(dsn)
+	// That means we got a bad connection string. Fail early
 	if err != nil {
-		return ""
+		log.Fatalf("Could not parse the connection string", err)
+		os.Exit(-1)
 	}
+	// We need to handle two cases:
+	// 1. The password is in the format postgresql://localhost:5432/postgres?sslmode=disable&user=<user>&password=<pass>
+	// 2. The password is in the format postgresql://<user>:<pass>@localhost:5432/postgres?sslmode=disable
+
+	qs := pDSN.Query()
+	var buf strings.Builder
+	for k, v := range qs {
+		if len(v) == 0 {
+			continue
+		}
+		if buf.Len() > 0 {
+			buf.WriteByte('&')
+		}
+		buf.WriteString(k)
+		buf.WriteByte('=')
+		if strings.ToLower(k) == "password" {
+			buf.WriteString("xxxxx")
+		} else {
+			buf.WriteString(v[0])
+		}
+	}
+	pDSN.RawQuery = buf.String()
 	return pDSN.Redacted()
 }
 
@@ -1877,7 +1899,6 @@ func ProcessURL(pgUrlStr string) string {
 		buf.WriteString(v[0])
 	}
 	u.RawQuery = buf.String()
-	fmt.Println(u.String())
 	return u.String()
 }
 
