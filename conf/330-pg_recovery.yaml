@@ -25,7 +25,7 @@ pg_recovery:
   min_version: 090600
   tags:
     - cluster
-    - standby
+    - replica
 
   metrics:
     - min_timeline:

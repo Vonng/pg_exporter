@@ -16,6 +16,7 @@
 #┃ pg_bgwriter_stats_reset{}            COUNTER  time when statistics were last reset
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_bgwriter:
+  name: pg_bgwriter
   desc: "PostgreSQL background writer metrics: https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-BGWRITER-VIEW"
   query: |
     SELECT checkpoints_timed,

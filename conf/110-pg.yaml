@@ -44,9 +44,9 @@ pg_primary_only:
     - cluster
     - primary
   ttl: 10
-  timeout: 0.1
+  # timeout: 0.1
   min_version: 100000
-  max_version: 0
+  # max_version: 0
   fatal: true
   skip: false
   metrics:
@@ -162,11 +162,11 @@ pg_replica_only:
            extract(EPOCH FROM now() - pg_backup_start_time())                       AS backup_time;
   tags:
     - cluster
-    - standby
+    - replica
   ttl: 10
-  timeout: 0.1
+  # timeout: 0.1
   min_version: 100000
-  max_version: 0
+  # max_version: 0
   fatal: true
   skip: false
   metrics:
