@@ -1,4 +1,5 @@
 
+# OBSOLETE: will be replace by pg_recv
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_walreceiver.pg_walreceiver_13
 #┃ PostgreSQL walreceiver metrics since 13 (add sender host and port)
@@ -36,7 +37,7 @@ pg_walreceiver_13:
   ttl: 10
   tags:
     - cluster
-    - standby
+    - replica
   min_version: 130000
 
   metrics:
@@ -122,7 +123,7 @@ pg_walreceiver_11:
   max_version: 130000
   tags:
     - cluster
-    - standby
+    - replica
 
   metrics:
     - pid:
@@ -209,7 +210,7 @@ pg_walreceiver_96:
   max_version: 110000
   tags:
     - cluster
-    - standby
+    - replica
 
   metrics:
     - pid:

@@ -1,42 +1,10 @@
 
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_db.pg_db_12
-#┃ PostgreSQL database statistics 12+ (introduce 2 new checksum fields)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_db_numbackends{datname}            GAUGE    backends currently connected to this database
-#┃ pg_db_xact_commit{datname}            COUNTER  transactions in this database that have been committed
-#┃ pg_db_xact_rollback{datname}          COUNTER  transactions in this database that have been rolled back
-#┃ pg_db_xact_total{datname}             COUNTER  transactions in this database that have been issued
-#┃ pg_db_blks_read{datname}              COUNTER  blocks read from disk in this database
-#┃ pg_db_blks_hit{datname}               COUNTER  blocks found in pg buffer
-#┃ pg_db_blks_access{datname}            COUNTER  blocks read plus blocks hit
-#┃ pg_db_tup_returned{datname}           COUNTER  rows returned by queries in this database
-#┃ pg_db_tup_fetched{datname}            COUNTER  rows fetched by queries in this database
-#┃ pg_db_tup_inserted{datname}           COUNTER  rows inserted by queries in this database
-#┃ pg_db_tup_updated{datname}            COUNTER  rows updated by queries in this database
-#┃ pg_db_tup_deleted{datname}            COUNTER  rows deleted by queries in this database
-#┃ pg_db_tup_modified{datname}           COUNTER  rows modified by queries in this database
-#┃ pg_db_conflicts{datname}              COUNTER  Number of queries canceled due to conflicts with recovery in this database. (slave only)
-#┃ pg_db_temp_files{datname}             COUNTER  Number of temporary files created by queries in this database
-#┃ pg_db_temp_bytes{datname}             COUNTER  Temporary file byte count
-#┃ pg_db_deadlocks{datname}              COUNTER  Number of deadlocks detected in this database
-#┃ pg_db_checksum_failures{datname}      COUNTER  Number of data page checksum failures detected in this database, 12+ only
-#┃ pg_db_checksum_last_failure{datname}  GAUGE    Time at which the last data page checksum failure was detected, 12+ only
-#┃ pg_db_blk_read_time{datname}          COUNTER  Time spent reading data file blocks by backends in this database, in milliseconds
-#┃ pg_db_blk_write_time{datname}         COUNTER  Time spent writing data file blocks by backends in this database, in milliseconds
-#┃ pg_db_stats_reset{datname}            COUNTER  Time at which these statistics were last reset
-#┃ pg_db_confl_tablespace{datname}       COUNTER  Number of queries in this database that have been canceled due to dropped tablespaces
-#┃ pg_db_confl_lock{datname}             COUNTER  Number of queries in this database that have been canceled due to lock timeouts
-#┃ pg_db_confl_snapshot{datname}         COUNTER  Number of queries in this database that have been canceled due to old snapshots
-#┃ pg_db_confl_bufferpin{datname}        COUNTER  Number of queries in this database that have been canceled due to pinned buffers
-#┃ pg_db_confl_deadlock{datname}         COUNTER  Number of queries in this database that have been canceled due to deadlocks
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_db_12:
+
+pg_db_14:
   name: pg_db
-  desc: PostgreSQL database statistics 12+ (introduce 2 new checksum fields)
+  desc: PostgreSQL database stats from pg_stat_database v14 (with 7 more new metrics such as time & session)
   query: |
-    SELECT datid,
-           datname,
+    SELECT datname,
            numbackends,
            xact_commit,
            xact_rollback,
@@ -54,152 +22,263 @@ pg_db_12:
            temp_files,
            temp_bytes,
            deadlocks,
-           checksum_failures,
+           coalesce(checksum_failures, -1) AS checksum_failures,
            checksum_last_failure,
            blk_read_time,
            blk_write_time,
-           stats_reset,
-           confl_tablespace,
-           confl_lock,
-           confl_snapshot,
-           confl_bufferpin,
-           confl_deadlock
-    FROM pg_stat_database d,
-         LATERAL (SELECT confl_tablespace, confl_lock, confl_snapshot, confl_bufferpin, confl_deadlock
-                  FROM pg_stat_database_conflicts pdc
-                  WHERE pdc.datname = d.datname) c
-    WHERE d.datname NOT IN ('postgres', 'template0', 'template1');
+           session_time,
+           active_time,
+           idle_in_transaction_time AS ixact_time,
+           sessions,
+           sessions_abandoned,
+           sessions_fatal,
+           sessions_killed,
+           extract(EPOCH FROM now() - stats_reset)  AS stat_seconds
+    FROM pg_stat_database d WHERE datname <> ALL(ARRAY['template0']);
 
   ttl: 10
-  min_version: 120000
+  min_version: 140000
   tags:
     - cluster
 
   metrics:
-    - datid:
-        usage: DISCARD
     - datname:
         usage: LABEL
         description: Name of the database
     - numbackends:
         usage: GAUGE
-        description: backends currently connected to this database
+        description: Number of backends currently connected to this database
+        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
     - xact_commit:
         usage: COUNTER
-        description: transactions in this database that have been committed
+        description: Number of transactions in this database that have been committed
+        # Number of transactions in this database that have been committed
     - xact_rollback:
         usage: COUNTER
-        description: transactions in this database that have been rolled back
+        description: Number of transactions in this database that have been rolled back
     - xact_total:
         usage: COUNTER
-        description: transactions in this database that have been issued
+        description: Number of transactions in this database
     - blks_read:
         usage: COUNTER
-        description: blocks read from disk in this database
+        description: Number of disk blocks read in this database
     - blks_hit:
         usage: COUNTER
-        description: blocks found in pg buffer
+        description: Number of times disk blocks were found already in the buffer cache
+        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
     - blks_access:
         usage: COUNTER
-        description: blocks read plus blocks hit
+        description: Number of times disk blocks that accessed read+hit
     - tup_returned:
         usage: COUNTER
-        description: rows returned by queries in this database
+        description: Number of rows returned by queries in this database
     - tup_fetched:
         usage: COUNTER
-        description: rows fetched by queries in this database
+        description: Number of rows fetched by queries in this database
     - tup_inserted:
         usage: COUNTER
-        description: rows inserted by queries in this database
+        description: Number of rows inserted by queries in this database
     - tup_updated:
         usage: COUNTER
-        description: rows updated by queries in this database
+        description: Number of rows updated by queries in this database
     - tup_deleted:
         usage: COUNTER
-        description: rows deleted by queries in this database
+        description: Number of rows deleted by queries in this database
     - tup_modified:
         usage: COUNTER
-        description: rows modified by queries in this database
+        description: Number of rows modified by queries in this database
     - conflicts:
         usage: COUNTER
-        description: Number of queries canceled due to conflicts with recovery in this database. (slave only)
+        description: Number of queries canceled due to conflicts with recovery in this database
+        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
     - temp_files:
         usage: COUNTER
         description: Number of temporary files created by queries in this database
+        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
     - temp_bytes:
         usage: COUNTER
-        description: Temporary file byte count
+        description: Total amount of data written to temporary files by queries in this database.
+        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
     - deadlocks:
         usage: COUNTER
         description: Number of deadlocks detected in this database
     - checksum_failures:
         usage: COUNTER
-        description: Number of data page checksum failures detected in this database, 12+ only
+        description: Number of data page checksum failures detected in this database, -1 for not enabled
+        # Number of data page checksum failures detected in this database (or on a shared object), or NULL if data checksums are not enabled.
     - checksum_last_failure:
         usage: GAUGE
-        description: Time at which the last data page checksum failure was detected, 12+ only
+        description: Time at which the last data page checksum failure was detected in this database
+        # Time at which the last data page checksum failure was detected in this database (or on a shared object), or NULL if data checksums are not enabled.
     - blk_read_time:
         usage: COUNTER
-        description: Time spent reading data file blocks by backends in this database, in milliseconds
+        description: Time spent reading data file blocks by backends in this database, in ms
+        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
     - blk_write_time:
         usage: COUNTER
+        description: Time spent writing data file blocks by backends in this database, in ms
+        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
+    - session_time:
+        usage: COUNTER
+        description: Time spent by database sessions in this database, in ms
+        # Time spent by database sessions in this database, in milliseconds (note that statistics are only updated when the state of a session changes, so if sessions have been idle for a long time, this idle time won't be included)
+    - active_time:
+        usage: COUNTER
+        description: Time spent executing SQL statements in this database, in ms
+        # Time spent executing SQL statements in this database, in milliseconds (this corresponds to the states active and fastpath function call in pg_stat_activity)
+    - ixact_time:
+        usage: COUNTER
         description: Time spent writing data file blocks by backends in this database, in milliseconds
-    - stats_reset:
+    - sessions:
         usage: COUNTER
-        description: Time at which these statistics were last reset
-    - confl_tablespace:
+        description: Total number of sessions established to this database
+    - sessions_abandoned:
         usage: COUNTER
-        description: Number of queries in this database that have been canceled due to dropped tablespaces
-    - confl_lock:
+        description: Number of database sessions to this database that were terminated because connection to the client was lost
+    - sessions_fatal:
         usage: COUNTER
-        description: Number of queries in this database that have been canceled due to lock timeouts
-    - confl_snapshot:
+        description: Number of database sessions to this database that were terminated by fatal errors
+    - sessions_killed:
         usage: COUNTER
-        description: Number of queries in this database that have been canceled due to old snapshots
-    - confl_bufferpin:
+        description: Number of database sessions to this database that were terminated by operator intervention
+    - stat_seconds:
         usage: COUNTER
-        description: Number of queries in this database that have been canceled due to pinned buffers
-    - confl_deadlock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to deadlocks
+        description: Seconds since last statistic reset
 
 
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_db.pg_db_93_11
-#┃ PostgreSQL database statistics 9.3 ~ 11
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_db_numbackends{datname}       GAUGE    backends currently connected to this database
-#┃ pg_db_xact_commit{datname}       COUNTER  transactions in this database that have been committed
-#┃ pg_db_xact_rollback{datname}     COUNTER  transactions in this database that have been rolled back
-#┃ pg_db_xact_total{datname}        COUNTER  transactions in this database that have been issued
-#┃ pg_db_blks_read{datname}         COUNTER  blocks read from disk in this database
-#┃ pg_db_blks_hit{datname}          COUNTER  blocks found in pg buffer
-#┃ pg_db_blks_access{datname}       COUNTER  blocks read plus blocks hit
-#┃ pg_db_tup_returned{datname}      COUNTER  rows returned by queries in this database
-#┃ pg_db_tup_fetched{datname}       COUNTER  rows fetched by queries in this database
-#┃ pg_db_tup_inserted{datname}      COUNTER  rows inserted by queries in this database
-#┃ pg_db_tup_updated{datname}       COUNTER  rows updated by queries in this database
-#┃ pg_db_tup_deleted{datname}       COUNTER  rows deleted by queries in this database
-#┃ pg_db_tup_modified{datname}      COUNTER  rows modified by queries in this database
-#┃ pg_db_conflicts{datname}         COUNTER  Number of queries canceled due to conflicts with recovery in this database. (slave only)
-#┃ pg_db_temp_files{datname}        COUNTER  Number of temporary files created by queries in this database
-#┃ pg_db_temp_bytes{datname}        COUNTER  Temporary file byte count
-#┃ pg_db_deadlocks{datname}         COUNTER  Number of deadlocks detected in this database
-#┃ pg_db_blk_read_time{datname}     COUNTER  Time spent reading data file blocks by backends in this database, in milliseconds
-#┃ pg_db_blk_write_time{datname}    COUNTER  Time spent writing data file blocks by backends in this database, in milliseconds
-#┃ pg_db_stats_reset{datname}       COUNTER  Time at which these statistics were last reset
-#┃ pg_db_confl_tablespace{datname}  COUNTER  Number of queries in this database that have been canceled due to dropped tablespaces
-#┃ pg_db_confl_lock{datname}        COUNTER  Number of queries in this database that have been canceled due to lock timeouts
-#┃ pg_db_confl_snapshot{datname}    COUNTER  Number of queries in this database that have been canceled due to old snapshots
-#┃ pg_db_confl_bufferpin{datname}   COUNTER  Number of queries in this database that have been canceled due to pinned buffers
-#┃ pg_db_confl_deadlock{datname}    COUNTER  Number of queries in this database that have been canceled due to deadlocks
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_db_93_11:
+
+
+
+
+
+
+
+
+
+
+pg_db_12_13:
   name: pg_db
-  desc: PostgreSQL database statistics 9.3 ~ 11
+  desc: PostgreSQL database stats from pg_stat_database v12 and v13 (with checksum metrics)
   query: |
-    SELECT datid,
-           datname,
+    SELECT datname,
+           numbackends,
+           xact_commit,
+           xact_rollback,
+           xact_rollback + xact_commit              AS xact_total,
+           blks_read,
+           blks_hit,
+           blks_read + blks_hit                     AS blks_access,
+           tup_returned,
+           tup_fetched,
+           tup_inserted,
+           tup_updated,
+           tup_deleted,
+           tup_inserted + tup_updated + tup_deleted AS tup_modified,
+           conflicts,
+           temp_files,
+           temp_bytes,
+           deadlocks,
+           coalesce(checksum_failures, -1) AS checksum_failures,
+           checksum_last_failure,
+           blk_read_time,
+           blk_write_time,
+           extract(EPOCH FROM now() - stats_reset)  AS stat_seconds
+    FROM pg_stat_database d WHERE datname <> ALL(ARRAY['template0']);
+
+  ttl: 10
+  min_version: 120000
+  max_version: 140000
+  tags:
+    - cluster
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Name of the database
+    - numbackends:
+        usage: GAUGE
+        description: Number of backends currently connected to this database
+        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
+    - xact_commit:
+        usage: COUNTER
+        description: Number of transactions in this database that have been committed
+        # Number of transactions in this database that have been committed
+    - xact_rollback:
+        usage: COUNTER
+        description: Number of transactions in this database that have been rolled back
+    - xact_total:
+        usage: COUNTER
+        description: Number of transactions in this database
+    - blks_read:
+        usage: COUNTER
+        description: Number of disk blocks read in this database
+    - blks_hit:
+        usage: COUNTER
+        description: Number of times disk blocks were found already in the buffer cache
+        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
+    - blks_access:
+        usage: COUNTER
+        description: Number of times disk blocks that accessed read+hit
+    - tup_returned:
+        usage: COUNTER
+        description: Number of rows returned by queries in this database
+    - tup_fetched:
+        usage: COUNTER
+        description: Number of rows fetched by queries in this database
+    - tup_inserted:
+        usage: COUNTER
+        description: Number of rows inserted by queries in this database
+    - tup_updated:
+        usage: COUNTER
+        description: Number of rows updated by queries in this database
+    - tup_deleted:
+        usage: COUNTER
+        description: Number of rows deleted by queries in this database
+    - tup_modified:
+        usage: COUNTER
+        description: Number of rows modified by queries in this database
+    - conflicts:
+        usage: COUNTER
+        description: Number of queries canceled due to conflicts with recovery in this database
+        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
+    - temp_files:
+        usage: COUNTER
+        description: Number of temporary files created by queries in this database
+        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
+    - temp_bytes:
+        usage: COUNTER
+        description: Total amount of data written to temporary files by queries in this database.
+        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
+    - deadlocks:
+        usage: COUNTER
+        description: Number of deadlocks detected in this database
+    - checksum_failures:
+        usage: COUNTER
+        description: Number of data page checksum failures detected in this database, -1 for not enabled
+        # Number of data page checksum failures detected in this database (or on a shared object), or NULL if data checksums are not enabled.
+    - checksum_last_failure:
+        usage: GAUGE
+        description: Time at which the last data page checksum failure was detected in this database
+        # Time at which the last data page checksum failure was detected in this database (or on a shared object), or NULL if data checksums are not enabled.
+    - blk_read_time:
+        usage: COUNTER
+        description: Time spent reading data file blocks by backends in this database, in ms
+        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
+    - blk_write_time:
+        usage: COUNTER
+        description: Time spent writing data file blocks by backends in this database, in ms
+        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
+    - stat_seconds:
+        usage: COUNTER
+        description: Seconds since last statistic reset
+
+
+
+pg_db_92_11:
+  name: pg_db
+  desc: PostgreSQL database stats from pg_stat_database v12 and v13 (with checksum metrics)
+  query: |
+    SELECT datname,
            numbackends,
            xact_commit,
            xact_rollback,
@@ -219,103 +298,85 @@ pg_db_93_11:
            deadlocks,
            blk_read_time,
            blk_write_time,
-           stats_reset,
-           confl_tablespace,
-           confl_lock,
-           confl_snapshot,
-           confl_bufferpin,
-           confl_deadlock
-    FROM pg_stat_database d,
-         LATERAL (SELECT confl_tablespace, confl_lock, confl_snapshot, confl_bufferpin, confl_deadlock
-                  FROM pg_stat_database_conflicts pdc
-                  WHERE pdc.datname = d.datname) c
-    WHERE d.datname NOT IN ('postgres', 'template0', 'template1');
+           extract(EPOCH FROM now() - stats_reset)  AS stat_seconds
+    FROM pg_stat_database d WHERE datname <> ALL(ARRAY['template0']);
 
   ttl: 10
-  min_version: 90300
+  min_version: 90200
   max_version: 120000
   tags:
     - cluster
 
   metrics:
-    - datid:
-        usage: DISCARD
     - datname:
         usage: LABEL
         description: Name of the database
     - numbackends:
         usage: GAUGE
-        description: backends currently connected to this database
+        description: Number of backends currently connected to this database
+        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
     - xact_commit:
         usage: COUNTER
-        description: transactions in this database that have been committed
+        description: Number of transactions in this database that have been committed
+        # Number of transactions in this database that have been committed
     - xact_rollback:
         usage: COUNTER
-        description: transactions in this database that have been rolled back
+        description: Number of transactions in this database that have been rolled back
     - xact_total:
         usage: COUNTER
-        description: transactions in this database that have been issued
+        description: Number of transactions in this database
     - blks_read:
         usage: COUNTER
-        description: blocks read from disk in this database
+        description: Number of disk blocks read in this database
     - blks_hit:
         usage: COUNTER
-        description: blocks found in pg buffer
+        description: Number of times disk blocks were found already in the buffer cache
+        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
     - blks_access:
         usage: COUNTER
-        description: blocks read plus blocks hit
+        description: Number of times disk blocks that accessed read+hit
     - tup_returned:
         usage: COUNTER
-        description: rows returned by queries in this database
+        description: Number of rows returned by queries in this database
     - tup_fetched:
         usage: COUNTER
-        description: rows fetched by queries in this database
+        description: Number of rows fetched by queries in this database
     - tup_inserted:
         usage: COUNTER
-        description: rows inserted by queries in this database
+        description: Number of rows inserted by queries in this database
     - tup_updated:
         usage: COUNTER
-        description: rows updated by queries in this database
+        description: Number of rows updated by queries in this database
     - tup_deleted:
         usage: COUNTER
-        description: rows deleted by queries in this database
+        description: Number of rows deleted by queries in this database
     - tup_modified:
         usage: COUNTER
-        description: rows modified by queries in this database
+        description: Number of rows modified by queries in this database
     - conflicts:
         usage: COUNTER
-        description: Number of queries canceled due to conflicts with recovery in this database. (slave only)
+        description: Number of queries canceled due to conflicts with recovery in this database
+        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
     - temp_files:
         usage: COUNTER
         description: Number of temporary files created by queries in this database
+        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
     - temp_bytes:
         usage: COUNTER
-        description: Temporary file byte count
+        description: Total amount of data written to temporary files by queries in this database.
+        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
     - deadlocks:
         usage: COUNTER
         description: Number of deadlocks detected in this database
     - blk_read_time:
         usage: COUNTER
-        description: Time spent reading data file blocks by backends in this database, in milliseconds
+        description: Time spent reading data file blocks by backends in this database, in ms
+        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
     - blk_write_time:
         usage: COUNTER
-        description: Time spent writing data file blocks by backends in this database, in milliseconds
-    - stats_reset:
+        description: Time spent writing data file blocks by backends in this database, in ms
+        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
+    - stat_seconds:
         usage: COUNTER
-        description: Time at which these statistics were last reset
-    - confl_tablespace:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to dropped tablespaces
-    - confl_lock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to lock timeouts
-    - confl_snapshot:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to old snapshots
-    - confl_bufferpin:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to pinned buffers
-    - confl_deadlock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to deadlocks
+        description: Seconds since last statistic reset
 
