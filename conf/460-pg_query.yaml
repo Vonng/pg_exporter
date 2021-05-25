@@ -1,4 +1,5 @@
 
+# OBSOLETE: will be replaced by pg_stmt later
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ pg_query
 #┃ PostgreSQL statement metrics, require pg_stat_statements installed in schema monitor, 9.4 ~ 12
