@@ -1,23 +1,8 @@
 
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_xact
-#┃ PostgreSQL transaction identifier information
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_xact_xmin{}  GAUGE    earliest txid that is still active
-#┃ pg_xact_xmax{}  GAUGE    first as-yet-unassigned txid. txid >= this are invisible.
-#┃ pg_xact_xnum{}  GAUGE    current active transaction count
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_xact:
   name: pg_xact
-  desc: PostgreSQL transaction identifier information
-
-  query: |
-    WITH snap(v) AS (SELECT txid_current_snapshot()),
-         xset(v) AS  (SELECT txid_snapshot_xip(v) FROM snap),
-         xnum(v) AS (SELECT count(*) from xset),
-         xmin(v) AS (SELECT txid_snapshot_xmin(v) FROM snap),
-         xmax(v) AS (SELECT txid_snapshot_xmin(v) FROM snap)
-    SELECT xmin.v AS xmin, xmax.v AS xmax, xnum.v AS xnum FROM xmin, xmax, xnum;
+  desc: PostgreSQL transaction identifier metrics
+  query: WITH snap(v) AS (SELECT txid_current_snapshot()), xset(v) AS  (SELECT txid_snapshot_xip(v) FROM snap), xnum(v) AS (SELECT count(*) from xset), xmin(v) AS (SELECT txid_snapshot_xmin(v) FROM snap), xmax(v) AS (SELECT txid_snapshot_xmin(v) FROM snap) SELECT xmin.v AS xmin, xmax.v AS xmax, xnum.v AS xnum FROM xmin, xmax, xnum;
 
   ttl: 10
   min_version: 090400
@@ -26,13 +11,13 @@ pg_xact:
 
   metrics:
     - xmin:
-        usage: GAUGE
-        description: earliest txid that is still active
+        usage: COUNTER
+        description: Earliest txid that is still active
     - xmax:
-        usage: GAUGE
-        description: first as-yet-unassigned txid. txid >= this are invisible.
+        usage: COUNTER
+        description: First as-yet-unassigned txid. txid >= this are invisible.
     - xnum:
         usage: GAUGE
-        description: current active transaction count
+        description: Current active transaction count
 
 
