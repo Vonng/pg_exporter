@@ -1,0 +1,39 @@
+
+
+pg_index:
+  name: pg_index
+  desc: PostgreSQL index metrics
+  query: |
+    SELECT CURRENT_CATALOG AS datname, schemaname || '.' || indexrelname AS idxname, schemaname || '.' || relname AS relname ,idx_scan, idx_tup_read, idx_tup_fetch, idx_blks_read, idx_blks_hit
+      FROM pg_stat_user_indexes psui, LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid) p2
+      ORDER BY idx_tup_read DESC LIMIT 128;
+
+  ttl: 10
+  timeout: 1
+  min_version: 090400
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Database name of this index
+    - idxname:
+        usage: LABEL
+        description: Name of this index (full-qualifed schema name)
+    - relname:
+        usage: LABEL
+        description: Name of the table for this index (full-qualifed schema name)
+    - idx_scan:
+        usage: COUNTER
+        description: Number of index scans initiated on this index
+    - idx_tup_read:
+        usage: COUNTER
+        description: Number of index entries returned by scans on this index
+    - idx_tup_fetch:
+        usage: COUNTER
+        description: Number of live table rows fetched by simple index scans using this index
+    - idx_blks_read:
+        usage: COUNTER
+        description: Number of disk blocks read from this index
+    - idx_blks_hit:
+        usage: COUNTER
+        description: Number of buffer hits in this index
