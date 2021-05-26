@@ -1,36 +1,13 @@
 
 ###############################################################
-#                  6. Database Metrics                        #
+#                  Per Database Collectors                    #
 ###############################################################
 
 
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_class
-#┃ Postgres relation catalog info db level normal version
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_class_relpages{datname,nspname,relname,relkind}   GAUGE    exact page count of this relation
-#┃ pg_class_reltuples{datname,nspname,relname,relkind}  GAUGE    estimate relation tuples
-#┃ pg_class_relage{datname,nspname,relname,relkind}     GAUGE    age of non-index relation
-#┃ pg_class_relsize{datname,nspname,relname,relkind}    GAUGE    size of this relation
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_class:
   name: pg_class
   desc: Postgres relation catalog info db level normal version
-
-  query: |
-    SELECT CURRENT_CATALOG                                              AS datname,
-           relnamespace::RegNamespace                                   AS nspname,
-           relname,
-           relkind,
-           relpages,
-           reltuples,
-           CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,
-           pg_relation_size(oid)                                        AS relsize
-    FROM pg_class
-    WHERE relnamespace NOT IN
-          ('pg_catalog'::regnamespace::oid, 'information_schema'::regnamespace::oid, 'pg_toast'::regnamespace::oid)
-      AND relkind IN ('r', 'i', 'm', 't')
-    ORDER BY relpages DESC LIMIT 256;
+  query: SELECT CURRENT_CATALOG AS datname,relnamespace::RegNamespace || '.' || relname AS relname, relkind,relpages,reltuples,CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,pg_relation_size(oid) AS relsize,relnatts FROM pg_class c WHERE relnamespace = ANY(SELECT oid FROM pg_namespace WHERE nspname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast'])) AND relkind = ANY(ARRAY['r', 'i', 'm', 't']) ORDER BY relpages DESC LIMIT 256;
 
   ttl: 60
   timeout: 1
@@ -39,25 +16,26 @@ pg_class:
   metrics:
     - datname:
         usage: LABEL
-        description: database name of this relation
-    - nspname:
-        usage: LABEL
-        description: schema name of this relation
+        description: Database name of this relation
     - relname:
         usage: LABEL
-        description: relation name of this relation
+        description: Full qualified name of this relation
     - relkind:
         usage: LABEL
-        description: relation type r-table i-index s-sequence m-mview t-toast
+        description: Relation kind r-table i-index s-sequence m-mview t-toast
     - relpages:
         usage: GAUGE
-        description: exact page count of this relation
+        description: Size of the on-disk representation of this table in pages
+        # Size of the on-disk representation of this table in pages (of size BLCKSZ). This is only an estimate used by the planner. It is updated by VACUUM, ANALYZE, and a few DDL commands such as CREATE INDEX.
     - reltuples:
         usage: GAUGE
-        description: estimate relation tuples
+        description: Estimate relation tuples
     - relage:
         usage: GAUGE
-        description: age of non-index relation
+        description: Age of non-index relation from relfrozenxid
     - relsize:
         usage: GAUGE
-        description: size of this relation
+        description: Relation size
+    - relnatts:
+        usage: GAUGE
+        description: Number of user columns in the relation
