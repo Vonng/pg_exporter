@@ -1,12 +1,7 @@
 
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_shmem
-#┃ Allocations made from the server's main shared memory segment
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_shmem_offset{name}          GAUGE    The offset at which the allocation starts
-#┃ pg_shmem_size{name}            GAUGE    Size of the allocation
-#┃ pg_shmem_allocated_size{name}  GAUGE    Size of the allocation including padding
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# pg_shmem require su privilege to work. Disable it or create auxiliary function with su before use:
+# CREATE OR REPLACE FUNCTION monitor.pg_shmem() RETURNS SETOF pg_shmem_allocations AS $$ SELECT * FROM pg_shmem_allocations;$$ LANGUAGE SQL SECURITY DEFINER;
 pg_shmem:
   name: pg_shmem
   desc: Allocations made from the server's main shared memory segment
@@ -14,13 +9,15 @@ pg_shmem:
 
   ttl: 60
   min_version: 130000
+  skip: true            # disable it by default
   tags:
     - cluster
+    - schema:monitor
 
   metrics:
     - name:
         usage: LABEL
-        description: The name of the shared memory allocation
+        description: Name of the shared memory allocation
     - offset:
         usage: GAUGE
         description: The offset at which the allocation starts
