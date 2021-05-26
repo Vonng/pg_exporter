@@ -1,39 +1,48 @@
 
 
-pg_sub:
+pg_sub_10:
   name: pg_sub
   desc: PostgreSQL subscription statistics
   query: |
-    SELECT subid,
-           subname,
-           received_lsn - '0/0'                      AS recv_lsn,
-           latest_end_lsn - '0/0'                    AS lend_lsn,
-           extract(epoch from last_msg_send_time)    AS sent_time,
-           extract(epoch from last_msg_receipt_time) AS recv_time,
-           extract(epoch from latest_end_time)       AS lend_time
-    FROM pg_stat_subscription WHERE relid ISNULL LIMIT 1;
+    SELECT ss.subname, s.subslotname AS slotname, subid AS id, pid, subenabled,
+           received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
+           extract(epoch from last_msg_send_time) AS msg_sent_time,
+           extract(epoch from last_msg_receipt_time) AS msg_recv_time,
+           extract(epoch from latest_end_time) AS reported_time
+    FROM pg_stat_subscription ss LEFT JOIN pg_subscription s  ON s.oid = ss.subid WHERE relid ISNULL;
 
   ttl: 10
   tags:
     - cluster
-  min_version: 130000
+  min_version: 100000
 
   metrics:
-    - subid:
-        usage: LABEL
-        description: OID of this subscription
     - subname:
         usage: LABEL
         description: Name of this subscription
-    - recv_lsn:
+    - slotname:
         usage: LABEL
-        description: location this WAL receiver is connected to
-    - sender_port:
-        lend_lsn: LABEL
-        description: location port number this WAL receiver is connected to
-    - sent_time:
-        usage: LABEL
-        description: Replication slot name used by this WAL receiver
-    - lend_time:
+        description: Name of the replication slot in the upstream database
+        # Name of the replication slot in the upstream database (also used for the local replication origin name); null represents NONE
+    - id:
+        usage: GAUGE
+        description: OID of the subscription
+    - pid:
+        usage: GAUGE
+        description: Process ID of the subscription main apply worker process
+    - received_lsn:
         usage: COUNTER
-        description: first time received lsn when WAL receiver is started
+        description: Last write-ahead log location received
+        # the initial value of this field being 0
+    - reported_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location reported to origin WAL sender
+    - msg_send_time:
+        usage: GAUGE
+        description: Send time of last message received from origin WAL sender
+    - msg_recv_time:
+        usage: GAUGE
+        description: Receipt time of last message received from origin WAL sender
+    - reported_time:
+        usage: GAUGE
+        description: Time of last write-ahead log location reported to origin WAL sender
