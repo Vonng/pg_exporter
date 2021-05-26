@@ -7,12 +7,11 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_size:
   name: pg_size
-  desc: PostgreSQL Database, WAL, Log size since 10
-
+  desc: PostgreSQL Database, WAL, Log size since v10
   query: |
     SELECT datname, pg_database_size(oid) AS bytes FROM pg_database UNION ALL
-    SELECT 'log' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_logdir()) AS bytes UNION ALL
-    SELECT 'wal' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_waldir()) AS bytes;
+      SELECT 'log' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_logdir()) AS bytes UNION ALL
+      SELECT 'wal' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_waldir()) AS bytes;
 
   ttl: 60
   timeout: 1
@@ -23,8 +22,8 @@ pg_size:
   metrics:
     - datname:
         usage: LABEL
-        description: database name or 'wal' or 'log'
+        description: Database name, or special category 'wal' , 'log'
     - bytes:
         usage: GAUGE
-        description: file size in bytes
+        description: File size in bytes
 
