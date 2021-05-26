@@ -9,9 +9,7 @@ pg_downstream:
   name: pg_downstream
   desc: PostgreSQL replication client count group by state
   query: |
-    SELECT l.state, coalesce(count, 0 ) AS count
-      FROM unnest(ARRAY ['streaming','startup','catchup', 'backup', 'stopping']) l(state)
-    LEFT JOIN (SELECT state, count(*) AS count FROM pg_stat_replication GROUP BY state)r ON l.state =  r.state
+    SELECT l.state, coalesce(count, 0 ) AS count FROM unnest(ARRAY ['streaming','startup','catchup', 'backup', 'stopping']) l(state) LEFT JOIN (SELECT state, count(*) AS count FROM pg_stat_replication GROUP BY state)r ON l.state =  r.state;
 
   ttl: 10
   min_version: 090400
@@ -21,7 +19,7 @@ pg_downstream:
   metrics:
     - state:
         usage: LABEL
-        description: replication state startup|catchup|streaming|backup|stopping
+        description: Replication client state, could be one of startup|catchup|streaming|backup|stopping
     - count:
         usage: GAUGE
-        description: count of corresponding replication state
+        description: Count of corresponding state
