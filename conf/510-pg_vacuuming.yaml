@@ -12,8 +12,7 @@ pg_vacuuming:
     SELECT datname, pid, relid::RegClass AS relname,
         CASE phase WHEN 'scanning heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0.0 END)
         WHEN 'vacuuming heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_vacuumed / heap_blks_total ELSE 0 END)
-        ELSE NULL END AS progress
-      FROM pg_stat_progress_vacuum pspv;
+        ELSE NULL END AS progress FROM pg_stat_progress_vacuum pspv;
 
   ttl: 10
   min_version: 120000

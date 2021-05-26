@@ -10,7 +10,7 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_indexing:
   name: pg_indexing
-  desc: PostgreSQL index creating progress since 12
+  desc: PostgreSQL index creating progress (v12+)
 
   query: |
     SELECT datname, pid, relid::RegClass AS relname,
@@ -28,23 +28,23 @@ pg_indexing:
   metrics:
     - datname:
         usage: LABEL
-        description: database name
+        description: Name of the database
     - pid:
         usage: LABEL
-        description: process id of indexing table
+        description: Process id of indexing table
     - relname:
         usage: LABEL
-        description: relation name of indexed table
+        description: Relation name of indexed table
     - blocks:
         usage: GAUGE
-        description: percent of blocks been proceeded
+        description: Percent of blocks been proceeded
     - tuples:
         usage: GAUGE
-        description: percent of tuples been proceeded
+        description: Percent of tuples been proceeded
     - partitions:
         usage: GAUGE
-        description: percent of partitions been proceeded
+        description: Percent of partitions been proceeded
     - lockers:
         usage: GAUGE
-        description: percent of lockers been proceeded
+        description: Percent of lockers been proceeded
 
