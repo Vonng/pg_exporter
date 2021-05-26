@@ -1,0 +1,19 @@
+
+
+pg_relkind:
+  name: pg_relkind
+  desc: Postgres relation count by kind (category, r,i,m,t,...)
+
+  query: SELECT relkind, count(*) AS count FROM pg_class GROUP BY relkind;
+  ttl: 60
+  timeout: 1
+  min_version: 090400
+
+  metrics:
+    - relkind:
+        usage: LABEL
+        description: Kind of this relation, could be r,i,S,t,v,m,c,f,p,I
+    - count:
+        usage: GAUGE
+        description: Number of relations of corresponding relkind
+
