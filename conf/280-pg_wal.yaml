@@ -1,22 +1,14 @@
-pg_wal:
+
+pg_wal_14:
   name: pg_wal
-  desc: PostgreSQL WAL statistics
+  desc: PostgreSQL WAL statistics since v14
   query: |
-    SELECT wal_records,
-           wal_fpi,
-           wal_bytes,
-           wal_buffers_full,
-           wal_write,
-           wal_sync,
-           wal_write_time,
-           wal_sync_time,
-           extract(EPOCH FROM now() - stats_reset) AS stat_seconds
-    FROM pg_stat_wal;
+    SELECT wal_records, wal_fpi, wal_bytes, wal_buffers_full, wal_write, wal_sync, wal_write_time, wal_sync_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_wal;
 
   ttl: 10
   tags:
     - cluster
-  min_version: 130000
+  min_version: 140000
 
   metrics:
     - records:
@@ -43,6 +35,6 @@ pg_wal:
     - sync_time:
         usage: COUNTER
         description: Total amount of time spent syncing WAL files to disk via issue_xlog_fsync request, in milliseconds
-    - stat_seconds:
+    - reset_time:
         usage: COUNTER
-        description: Seconds since statistics were last reset
+        description: When statistics were last reset
