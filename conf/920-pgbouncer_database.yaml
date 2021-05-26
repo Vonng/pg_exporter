@@ -12,11 +12,8 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_database:
   name: pgbouncer_database
-  desc: "pgbouncer database stats: http://www.pgbouncer.org/usage.html#show-databases"
-
-  query: |
-    SHOW DATABASES;
-
+  desc: Pgbouncer database stats # http://www.pgbouncer.org/usage.html#show-databases
+  query: SHOW DATABASES;
   ttl: 10
   min_version: 10800
   tags:
@@ -26,38 +23,38 @@ pgbouncer_database:
     - name:
         usage: LABEL
         rename: datname
-        description: name of configured database entry
+        description: Name of configured database entry
     - host:
         usage: LABEL
-        description: host pgbouncer connects to
+        description: Host that pgbouncer will connects to
     - port:
         usage: LABEL
-        description:  port pgbouncer connects to
+        description: Port that pgbouncer will connects to
     - database:
         usage: LABEL
         rename: real_datname
-        description: actual database name pgbouncer connects to
+        description: The real database name pgbouncer connects to
     - force_user:
         usage: DISCARD
     - pool_size:
         usage: COUNTER
-        description: maximum number of server connections
+        description: Maximum number of server connections
     - reserve_pool:
         usage: GAUGE
-        description: maximum number of additional connections for this database
+        description: Maximum number of additional connections for this database
     - pool_mode:
         usage: DISCARD
     - max_connections:
         usage: GAUGE
-        description: maximum number of allowed connections for this database
+        description: Maximum number of allowed connections for this database
     - current_connections:
         usage: GAUGE
-        description: current number of connections for this database
+        description: Current number of connections for this database
     - paused:
         usage: GAUGE
-        description: 1 if this database is currently paused, else 0
+        description: True(1) if this database is currently paused, else 0
     - disabled:
         usage: GAUGE
-        description: 1 if this database is currently disabled, else 0
+        description: True(1) if this database is currently disabled, else 0
 
 

@@ -20,11 +20,8 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_stat:
   name: pgbouncer_stat
-  desc: "pgbouncer stats per database: http://www.pgbouncer.org/usage.html#show-stats"
-
-  query: |
-    SHOW STATS;
-
+  desc: Pgbouncer stats per database   # http://www.pgbouncer.org/usage.html#show-stats
+  query: SHOW STATS;
   ttl: 10
   min_version: 10800
   tags:
@@ -34,7 +31,7 @@ pgbouncer_stat:
     - database:
         usage: LABEL
         rename: datname
-        description: database name
+        description: Name of database
     - total_xact_count:
         usage: GAUGE
         description: Total number of SQL transactions pooled by pgbouncer

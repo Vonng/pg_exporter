@@ -7,11 +7,8 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_list:
   name: pgbouncer_list
-  desc: "pgbouncer entry list: http://www.pgbouncer.org/usage.html#show-lists"
-
-  query: |
-    SHOW LISTS;
-
+  desc: Pgbouncer entry list # http://www.pgbouncer.org/usage.html#show-lists
+  query: SHOW LISTS;
   ttl: 10
   min_version: 10800
   fatal: true
@@ -21,8 +18,8 @@ pgbouncer_list:
   metrics:
     - list:
         usage: LABEL
-        description: pgbouncer internal list name
+        description: Pgbouncer internal list name
     - items:
         usage: GAUGE
-        description: count of curresponding pgbouncer object
+        description: Number of curresponding pgbouncer object
 
