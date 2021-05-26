@@ -1,21 +1,7 @@
 
-# OBSOLETE: will be replace by pg_recv
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_walreceiver.pg_walreceiver_13
-#┃ PostgreSQL walreceiver metrics since 13 (add sender host and port)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_walreceiver_init_lsn{pid,status,sender_host,sender_port,slot_name}    COUNTER  first time received lsn when WAL receiver is started
-#┃ pg_walreceiver_init_tli{pid,status,sender_host,sender_port,slot_name}    GAUGE    first time received timeline number when WAL receiver is started
-#┃ pg_walreceiver_last_lsn{pid,status,sender_host,sender_port,slot_name}    COUNTER  latest lsn that already flushed to standby disk
-#┃ pg_walreceiver_last_tli{pid,status,sender_host,sender_port,slot_name}    GAUGE    latest timeline that already flushed to standby disk
-#┃ pg_walreceiver_send_ts{pid,status,sender_host,sender_port,slot_name}     GAUGE    send time of last message received from origin WAL sender
-#┃ pg_walreceiver_receive_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    receipt time of last message received from origin WAL sender
-#┃ pg_walreceiver_report_lsn{pid,status,sender_host,sender_port,slot_name}  COUNTER  with time zone	Time of last write-ahead log location reported to origin WAL sender
-#┃ pg_walreceiver_report_ts{pid,status,sender_host,sender_port,slot_name}   GAUGE    timestamp of last time reporting to sender
-#┃ pg_walreceiver_current_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    current_timestamp
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_walreceiver_13:
-  name: pg_walreceiver
+
+pg_recv_13:
+  name: pg_recv
   desc: PostgreSQL walreceiver metrics since 13 (add sender host and port)
   query: |
     SELECT pid,
@@ -98,8 +84,8 @@ pg_walreceiver_13:
 #┃ pg_walreceiver_report_ts{pid,status,sender_host,sender_port,slot_name}   GAUGE    timestamp of last time reporting to sender
 #┃ pg_walreceiver_current_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    current_timestamp
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_walreceiver_11:
-  name: pg_walreceiver
+pg_recv_11:
+  name: pg_recv
   desc: PostgreSQL walreceiver metrics since 11 (add sender host and port)
   query: |
     SELECT pid,
@@ -184,9 +170,10 @@ pg_walreceiver_11:
 #┃ pg_walreceiver_report_ts{pid,status,sender_host,sender_port,slot_name}   GAUGE    timestamp of last time reporting to sender
 #┃ pg_walreceiver_current_ts{pid,status,sender_host,sender_port,slot_name}  GAUGE    current_timestamp
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pg_walreceiver_96:
-  name: pg_walreceiver
-  desc: "PostgreSQL walreceiver metrics 9.6~10: https://www.postgresql.org/docs/9.6/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW"
+pg_recv_96:
+  name: pg_recv
+  desc: PostgreSQL walreceiver metrics v9.6 v10
+   # https://www.postgresql.org/docs/9.6/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW
   query: |
     SELECT pid,
            status,
