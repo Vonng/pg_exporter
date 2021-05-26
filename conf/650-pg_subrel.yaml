@@ -1,0 +1,23 @@
+
+
+pg_subrel:
+  name: pg_subrel
+  desc: PostgreSQL subscripted relation group by state
+  query: SELECT CURRENT_CATALOG AS datname, subname, srsubstate::TEXT AS state, count(*) AS count FROM pg_subscription s LEFT JOIN pg_subscription_rel sr ON s.oid = sr.srsubid GROUP BY 2,3;
+  ttl: 10
+  min_version: 100000
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Name of the database which publication belonged
+    - subname:
+        usage: LABEL
+        description: Name of the subscription
+    - state:
+        usage: LABEL
+        description: State of table in subscription, i=initialize, d=data copy, s=sync, r=ready
+    - count:
+        usage: GAUGE
+        description: Count of relation in this subscription and corresponding state
+
