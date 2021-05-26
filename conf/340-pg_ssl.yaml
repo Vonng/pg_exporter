@@ -1,0 +1,17 @@
+
+pg_ssl:
+  name: pg_ssl
+  desc: PostgreSQL SSL client conenction count
+  query: |
+    SELECT count(*) FILTER (WHERE ssl) AS enabled, count(*) FILTER ( WHERE NOT ssl) AS disabled FROM pg_stat_ssl;
+
+  ttl: 10
+  min_version: 090500
+
+  metrics:
+    - enabled:
+        usage: GAUGE
+        description: Number of client connection that use ssl
+    - disabled:
+        usage: GAUGE
+        description: Number of client connection that does not use ssl
