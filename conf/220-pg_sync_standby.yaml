@@ -3,17 +3,13 @@
 #┃ pg_sync_standby
 #┃ PostgreSQL synchronous standby status and names
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_sync_standby_disabled{names}  GAUGE    1 if disabled, 0 if enabled
 #┃ pg_sync_standby_enabled{names}   GAUGE    1 if enabled, 0 if disabled
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pg_sync_standby:
   name: pg_sync_standby
   desc: PostgreSQL synchronous standby status and names
   query: |
-    SELECT CASE names WHEN NULL THEN '""' WHEN '' THEN 'null' ELSE names END AS names,
-           CASE names WHEN NULL THEN 1 WHEN '' THEN 1 ELSE 0 END               AS disabled,
-           CASE names WHEN NULL THEN 0 WHEN '' THEN 0 ELSE 1 END               AS enabled
-    FROM (SELECT current_setting('synchronous_standby_names') AS names) t;
+    SELECT CASE WHEN names <> '' THEN names ELSE '<null>' END AS names, CASE WHEN names <> '' THEN 1 ELSE 0 END AS enabled FROM (SELECT current_setting('synchronous_standby_names') AS names) n;
 
   ttl: 10
   min_version: 090400
@@ -23,12 +19,9 @@ pg_sync_standby:
   metrics:
     - names:
         usage: LABEL
-        description: a list of standby servers that can support synchronous replication, empty if not enabled
-    - disabled:
-        usage: GAUGE
-        description: 1 if disabled, 0 if enabled
+        description: List of standby servers that can support synchronous replication, <null> if not enabled
     - enabled:
         usage: GAUGE
-        description: 1 if enabled, 0 if disabled
+        description: Synchronous commit enabled, 1 if enabled, 0 if disabled
 
 
