@@ -1,0 +1,25 @@
+
+
+pg_origin:
+  name: pg_origin
+  desc: PostgreSQL replay state (approximate) for a certain origin
+  query: |
+    SELECT roname, remote_lsn - '0/0' AS remote_lsn, local_lsn - '0/0' AS local_lsn FROM pg_replication_origin o LEFT JOIN pg_replication_origin_status os ON o.roident = os.local_id;
+
+  ttl: 10
+  tags:
+    - cluster
+  min_version: 090500
+
+  metrics:
+    - roiname:
+        usage: LABEL
+        description: The external, user defined, name of a replication origin.
+    - remote_lsn:
+        usage: LABEL
+        description: The origin node's LSN up to which data has been replicated.
+    - local_lsn:
+        usage: LABEL
+        description: This node's LSN at which remote_lsn has been replicated.
+        # This node's LSN at which remote_lsn has been replicated. Used to flush commit records before persisting data to disk when using asynchronous commits.
+
