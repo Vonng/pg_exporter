@@ -4,10 +4,11 @@
 
 PG Exporter is the foundation component for Project [Pigsty](https://pigsty.cc), Which maybe the best **OpenSource** Monitoring Solution for PostgreSQL.
 
-Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10,11,12,13. 
+Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10,11,12,13,14. 
 
-Latest `pg_exporter` version: `0.3.2`
+Latest stable `pg_exporter` version is: `0.3.2` , and latest beta `pg_exporter` version is: `0.4.0beta` .
 
+> Note that the master is now in 0.4 beta. Which have a overhaul on default configuration pg_exporter.yaml. You can still use old version of pg_exporter.yaml to keep metrics in consistence.
 
 
 ## Features
@@ -19,7 +20,7 @@ Latest `pg_exporter` version: `0.3.2`
 * Dynamic Planning: User could provide multiple branches of a metric queries. Queries matches server version & fact & tag will be actually installed.
 * Configurable caching policy & query timeout
 * Rich metrics about `pg_exporter` itself.
-* Auto discovery multi database in the same cluster (multiple database scrape **TBD**) 
+* Auto discovery multi database in the same cluster (beta)
 * Tested and verified in real world production environment for years (200+ Nodes)
 * Metrics overhelming!  Gives you complete insight on your favourate elephant!
 * (Pgbouncer mode is enabled when target dbname is `pgbouncer`)
@@ -65,13 +66,15 @@ usage: pg_exporter [<flags>]
 Flags:
   --help                        Show context-sensitive help (also try --help-long and --help-man).
   --url=URL                     postgres target url
-  --config="pg_exporter.yaml"   path to config dir or file
-  --label=""                    constant lables: separated list label=value pair
-  --tag=""                      tags, separated list of server tag
+  --config=CONFIG               path to config dir or file
+  --label=""                    constant lables:comma separated list of label=value pair
+  --tag=""                      tags,comma separated list of server tag
   --disable-cache               force not using cache
-  --auto-discovery              automatically scrape all database for given server (TBD)
-  --exclude-database="postgres,template0,template1"
+  --disable-intro               disable collector level introspection metrics
+  --auto-discovery              automatically scrape all database for given server
+  --exclude-database="template0,template1,postgres"
                                 excluded databases when enabling auto-discovery
+  --include-database=""         included databases when enabling auto-discovery
   --namespace=""                prefix of built-in metrics, (pg|pgbouncer) by default
   --fail-fast                   fail fast instead of waiting during start-up
   --web.listen-address=":9630"  prometheus web server listen address
@@ -184,9 +187,58 @@ Current `pg_exporter` is shipped with following metrics collector definition fil
 
 > #### Note
 >
-> Supported version: PostgreSQL 10, 11, 12, 13
+> Supported version: PostgreSQL 10, 11, 12, 13, 14beta
 >
 > But you can still get PostgreSQL 9.4, 9.5, 9.6 support by switching to older version collector definition
+
+* [pg](conf/110-pg.yaml)
+* [pg_meta](conf/120-pg_meta.yaml)
+* [pg_setting](conf/130-pg_setting.yaml)
+* [pg_repl](conf/210-pg_repl.yaml)
+* [pg_sync_standby](conf/220-pg_sync_standby.yaml)
+* [pg_downstream](conf/230-pg_downstream.yaml)
+* [pg_slot](conf/240-pg_slot.yaml)
+* [pg_recv](conf/250-pg_recv.yaml)
+* [pg_sub](conf/260-pg_sub.yaml)
+* [pg_origin](conf/270-pg_origin.yaml)
+* [pg_size](conf/310-pg_size.yaml)
+* [pg_archiver](conf/320-pg_archiver.yaml)
+* [pg_bgwriter](conf/330-pg_bgwriter.yaml)
+* [pg_ssl](conf/340-pg_ssl.yaml)
+* [pg_checkpoint](conf/350-pg_checkpoint.yaml)
+* [pg_recovery](conf/360-pg_recovery.yaml)
+* [pg_slru](conf/370-pg_slru.yaml)
+* [pg_shmem](conf/380-pg_shmem.yaml)
+* [pg_wal](conf/390-pg_wal.yaml)
+* [pg_activity](conf/410-pg_activity.yaml)
+* [pg_wait](conf/420-pg_wait.yaml)
+* [pg_backend](conf/430-pg_backend.yaml)
+* [pg_xact](conf/440-pg_xact.yaml)
+* [pg_lock](conf/450-pg_lock.yaml)
+* [pg_query](conf/460-pg_query.yaml)
+* [pg_vacuuming](conf/510-pg_vacuuming.yaml)
+* [pg_indexing](conf/520-pg_indexing.yaml)
+* [pg_clustering](conf/530-pg_clustering.yaml)
+* [pg_backup](conf/540-pg_backup.yaml)
+* [pg_db](conf/610-pg_db.yaml)
+* [pg_db_confl](conf/620-pg_db_confl.yaml)
+* [pg_pubrel](conf/640-pg_pubrel.yaml)
+* [pg_subrel](conf/650-pg_subrel.yaml)
+* [pg_class](conf/710-pg_class.yaml)
+* [pg_relkind](conf/720-pg_relkind.yaml)
+* [pg_table](conf/730-pg_table.yaml)
+* [pg_index](conf/740-pg_index.yaml)
+* [pg_func](conf/750-pg_func.yaml)
+* [pg_seq](conf/760-pg_seq.yaml)
+* [pg_defpart](conf/770-pg_defpart.yaml)
+* [pg_table_size](conf/810-pg_table_size.yaml)
+* [pg_table_bloat](conf/820-pg_table_bloat.yaml)
+* [pg_index_bloat](conf/830-pg_index_bloat.yaml)
+* [pgbouncer_list](conf/910-pgbouncer_list.yaml)
+* [pgbouncer_database](conf/920-pgbouncer_database.yaml)
+* [pgbouncer_stat](conf/930-pgbouncer_stat.yaml)
+* [pgbouncer_pool](conf/940-pgbouncer_pool.yaml)
+
 
 * [doc](conf/000-doc.yaml)
 * [pg](conf/110-pg.yaml)
@@ -234,6 +286,7 @@ Current `pg_exporter` is shipped with following metrics collector definition fil
 Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir. and here is a [sample](conf/100-doc.txt) config.
 
 ```yaml
+
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ 1. Configuration File
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
@@ -333,36 +386,36 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #┃
 #┃
 #┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ Collector Presets
+#┃ 4. Collector Presets
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ pg_exporter is shipped with a series of preset collector (already numbered and ordered with file prefix)
 #┃
-#┃ 1xx  Common, basic information
-#┃ 2xx  Replication metrics:  sender, receiver, downstream, sync standby, slots
-#┃ 3xx  Persist metrics:      size, background writer, checkpoint, recovery, cache, shmem usage
+#┃ 1xx  Basic metrics:        basic info, meta data, settings
+#┃ 2xx  Replication metrics:  replication, walreceiver, downstream, sync standby, slots, subscription
+#┃ 3xx  Persist metrics:      size, wal, background writer, checkpoint, recovery, cache, shmem usage
 #┃ 4xx  Activity metrics:     backend count group by state, wait event, locks, xacts, queries
-#┃ 5xx  Maintenance metrics:  progress of vacuum, indexing, clustering, and basebackup
-#┃ 6xx  Database metrics:     pg_database and pg_stat_database
-#┃ 7xx  Object metrics:       pg_class, table, index, function, partition table
-#┃ 8xx  Optional metrics:     optional metrics collector (usually slow)
-#┃ 9xx  Pgbouncer metrics:    metrics from admin database `pgbouncer`
+#┃ 5xx  Progress metrics:     clustering, vacuuming, indexing, basebackup, copy
+#┃ 6xx  Database metrics:     pg_database, publication, subscription
+#┃ 7xx  Object metrics:       pg_class, table, index, function, sequence, default partition
+#┃ 8xx  Optional metrics:     optional metrics collector (disable by default, slow queries)
+#┃ 9xx  Pgbouncer metrics:    metrics from pgbouncer admin database `pgbouncer`
 #┃
 #┃ 100-599 Metrics for entire database cluster  (scrape once)
-#┃ 600-899 Metrics for single database instance (scrape for each database)
+#┃ 600-899 Metrics for single database instance (scrape for each database ,except for pg_db itself)
 #┃
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Cache TTL
+#┃ 5. Cache TTL
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Cache can be used for reducing query overhead, it can be enabled by setting a non-zero value for `ttl`
 #┃ It is highly recommended using cache to avoid duplicate scrapes. Especially when you got multiple prometheus
 #┃ scraping same instance with slow monitoring queries. Setting `ttl` to zero or leaving blank will disable
-#┃ result caching, which is default behavior
+#┃ result caching, which is the default behavior
 #┃
 #┃ TTL has to be smaller than your scrape interval. 15s scrape interval and 10s TTL is a good start for
 #┃ production environment. Some expensive monitoring query (such as table bloat check) will have longer `ttl`
 #┃ which can also be used as a mechanism to achieve 'different scrape frequency'
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Query Timeout
+#┃ 6. Query Timeout
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Collectors can be configured with a optional Timeout. If collector's query executing more that that
 #┃ timeout, it will be canceled immediately. Setting `timeout` to 0 or leaving blank will reset it to
@@ -370,9 +423,9 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #┃ All query have a default timeout 100ms, if exceed, the query will be canceled immediately to avoid
 #┃ avalanche. You can explict overwrite that option. but be ware: in some extreme case, if all your
 #┃ timeout sum up greater your scrape/cache interval (usually 15s) , the query may still be jammed.
-#┃ or , you can just disable potential slow queries with --tag=bulky
+#┃ or, you can just disable potential slow queries.
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Version Compatibility
+#┃ 7. Version Compatibility
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Each collector have two optional version compatibility parameters: `min_version` and `max_version`.
 #┃ These two parameters specify version compatibility of the collector. If target postgres/pgbouncer
@@ -383,7 +436,7 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #┃ And beware that version compatibility range is left-inclusive right exclusive: [min,max), set to zero or
 #┃ leaving blank will effect as -inf or +inf
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Fatality
+#┃ 8. Fatality
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ If collector marked with `fatal` fails, entire scrape operation will be marked as fail, and key metrics
 #┃ `pg_up` / `pgbouncer_up` will be reset to 0. It always a good practice to setup AT LEAST ONE fatal
@@ -392,14 +445,15 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #┃ If collector without `fatal` flag fails, it will increase global fail counters. But the scrape operation
 #┃ will carry on. The entire scrape result will not be marked as fail, thus will not affect `<xx>_up` metric.
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Skip
+#┃ 9. Skip
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Collector with `skip` flag set to true will NOT be installed.
+#┃ This could be a handy option to disable collectors
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Tags and Planning
+#┃ 10. Tags and Planning
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Tags are designed for collector planning. It can be handy to customize which queries runs on which
-#┃ instances. And enables you using same configuration file everywhere
+#┃ Tags are designed for collector planning & schedule. It can be handy to customize which queries runs
+#┃ on which instances. And thus you can use one-single monolith config for multiple environment
 #┃
 #┃  Tags are list of string, each string could be:
 #┃  Pre-defined special tags
@@ -419,6 +473,7 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #┃  and match them with tags and other metadata (such as supported version range). Collector will only
 #┃  be installed if and only if it is compatible with target server.
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 ```
 

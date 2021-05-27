@@ -59,6 +59,7 @@ var (
 	constLabels       = kingpin.Flag("label", "constant lables:comma separated list of label=value pair").Default("").Envar("PG_EXPORTER_LABEL").String()
 	serverTags        = kingpin.Flag("tag", "tags,comma separated list of server tag").Default("").Envar("PG_EXPORTER_TAG").String()
 	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_DISABLE_CACHE").Bool()
+	disableIntro      = kingpin.Flag("disable-intro", "disable collector level introspection metrics").Default("false").Envar("PG_EXPORTER_NAMESPACE").Bool()
 	autoDiscovery     = kingpin.Flag("auto-discovery", "automatically scrape all database for given server").Default("false").Envar("PG_EXPORTER_AUTO_DISCOVERY").Bool()
 	excludeDatabase   = kingpin.Flag("exclude-database", "excluded databases when enabling auto-discovery").Default("template0,template1,postgres").Envar("PG_EXPORTER_EXCLUDE_DATABASE").String()
 	includeDatabase   = kingpin.Flag("include-database", "included databases when enabling auto-discovery").Default("").Envar("PG_EXPORTER_EXCLUDE_DATABASE").String()
@@ -1167,6 +1168,7 @@ type Exporter struct {
 	dsn             string            // primary dsn
 	configPath      string            // config file path /directory
 	disableCache    bool              // always execute query when been scrapped
+	disableIntro    bool              // disable query level introspection metrics
 	autoDiscovery   bool              // discovery other database on primary server
 	pgbouncerMode   bool              // is primary server a pgbouncer ?
 	failFast        bool              // fail fast instead fof waiting during start-up ?
@@ -1291,30 +1293,34 @@ func (e *Exporter) collectServerMetrics(s *Server) {
 	e.queryScrapeMetricCount.Reset()
 	e.queryScrapeHitCount.Reset()
 
-	e.serverScrapeDuration.WithLabelValues(s.Database).Set(s.Duration())
-	e.serverScrapeTotalSeconds.WithLabelValues(s.Database).Set(s.totalTime)
-	e.serverScrapeTotalCount.WithLabelValues(s.Database).Set(s.totalCount)
-	if s.Error() != nil {
-		e.serverScrapeErrorCount.WithLabelValues(s.Database).Add(1)
-	}
+	servers := e.IterateServer()
+	servers = append(servers, e.server) // append primary server to extra server list
+	for _, s := range servers {
+		e.serverScrapeDuration.WithLabelValues(s.Database).Set(s.Duration())
+		e.serverScrapeTotalSeconds.WithLabelValues(s.Database).Set(s.totalTime)
+		e.serverScrapeTotalCount.WithLabelValues(s.Database).Set(s.totalCount)
+		if s.Error() != nil {
+			e.serverScrapeErrorCount.WithLabelValues(s.Database).Add(1)
+		}
 
-	for queryName, counter := range s.queryCacheTTL {
-		e.queryCacheTTL.WithLabelValues(s.Database, queryName).Set(counter)
-	}
-	for queryName, counter := range s.queryScrapeTotalCount {
-		e.queryScrapeTotalCount.WithLabelValues(s.Database, queryName).Set(counter)
-	}
-	for queryName, counter := range s.queryScrapeHitCount {
-		e.queryScrapeHitCount.WithLabelValues(s.Database, queryName).Set(counter)
-	}
-	for queryName, counter := range s.queryScrapeErrorCount {
-		e.queryScrapeErrorCount.WithLabelValues(s.Database, queryName).Set(counter)
-	}
-	for queryName, counter := range s.queryScrapeMetricCount {
-		e.queryScrapeMetricCount.WithLabelValues(s.Database, queryName).Set(counter)
-	}
-	for queryName, counter := range s.queryScrapeDuration {
-		e.queryScrapeDuration.WithLabelValues(s.Database, queryName).Set(counter)
+		for queryName, counter := range s.queryCacheTTL {
+			e.queryCacheTTL.WithLabelValues(s.Database, queryName).Set(counter)
+		}
+		for queryName, counter := range s.queryScrapeTotalCount {
+			e.queryScrapeTotalCount.WithLabelValues(s.Database, queryName).Set(counter)
+		}
+		for queryName, counter := range s.queryScrapeHitCount {
+			e.queryScrapeHitCount.WithLabelValues(s.Database, queryName).Set(counter)
+		}
+		for queryName, counter := range s.queryScrapeErrorCount {
+			e.queryScrapeErrorCount.WithLabelValues(s.Database, queryName).Set(counter)
+		}
+		for queryName, counter := range s.queryScrapeMetricCount {
+			e.queryScrapeMetricCount.WithLabelValues(s.Database, queryName).Set(counter)
+		}
+		for queryName, counter := range s.queryScrapeDuration {
+			e.queryScrapeDuration.WithLabelValues(s.Database, queryName).Set(counter)
+		}
 	}
 }
 
@@ -1618,6 +1624,13 @@ func WithConstLabels(s string) ExporterOpt {
 func WithCacheDisabled(disableCache bool) ExporterOpt {
 	return func(e *Exporter) {
 		e.disableCache = disableCache
+	}
+}
+
+// WithIntroDisabled will pass introspection option to server
+func WithIntroDisabled(disableIntro bool) ExporterOpt {
+	return func(s *Exporter) {
+		s.disableIntro = disableIntro
 	}
 }
 
@@ -2045,6 +2058,7 @@ func Reload() error {
 		WithConfig(*configPath),
 		WithConstLabels(*constLabels),
 		WithCacheDisabled(*disableCache),
+		WithIntroDisabled(*disableIntro),
 		WithFailFast(*failFast),
 		WithNamespace(*exporterNamespace),
 		WithAutoDiscovery(*autoDiscovery),

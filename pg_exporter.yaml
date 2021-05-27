@@ -604,9 +604,9 @@ pg_setting:
            CASE current_setting('wal_log_hints') WHEN 'on' THEN 1 ELSE 0 END AS wal_log_hints;
 
   ttl: 10
+  min_version: 090600
   tags:
     - cluster
-  min_version: 090600
 
   metrics:
     - max_connections:
@@ -903,7 +903,7 @@ pg_slot_14:
     FROM pg_replication_slots s LEFT OUTER JOIN pg_stat_replication_slots ss ON s.slot_name = ss.slot_name;
 
   ttl: 10
-  min_version: 130000
+  min_version: 140000
   tags:
     - cluster
     - primary
@@ -999,6 +999,7 @@ pg_slot_13:
 
   ttl: 10
   min_version: 130000
+  max_version: 140000
   tags:
     - cluster
     - primary
@@ -1114,10 +1115,10 @@ pg_recv_13:
            last_msg_send_time AS msg_send_time,last_msg_receipt_time AS msg_recv_time,latest_end_time AS reported_time,now() AS time FROM pg_stat_wal_receiver;
 
   ttl: 10
+  min_version: 130000
   tags:
     - cluster
     - replica
-  min_version: 130000
 
   metrics:
     - sender_host:
@@ -1326,9 +1327,9 @@ pg_sub_10:
     FROM pg_stat_subscription WHERE relid ISNULL;
 
   ttl: 10
+  min_version: 100000
   tags:
     - cluster
-  min_version: 100000
 
   metrics:
     - subname:
@@ -1366,10 +1367,10 @@ pg_origin:
   query: SELECT roname, remote_lsn - '0/0' AS remote_lsn, local_lsn - '0/0' AS local_lsn FROM pg_replication_origin o LEFT JOIN pg_replication_origin_status os ON o.roident = os.local_id;
 
   ttl: 10
-  tags:
-    - cluster
   min_version: 090500
   skip: true
+  tags:
+    - cluster
 
   metrics:
     - roiname:
@@ -1413,6 +1414,9 @@ pg_archiver:
   query: SELECT archived_count AS finish_count, failed_count, last_archived_time AS last_finish_time, last_failed_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_archiver;
   ttl: 60
   min_version: 090400
+  tags:
+    - cluster
+
   metrics:
     - finish_count:
         usage: COUNTER
@@ -1455,6 +1459,8 @@ pg_bgwriter:
 
   ttl: 10
   min_version: 090400
+  tags:
+    - cluster
 
   metrics:
     - checkpoints_timed:
@@ -1501,6 +1507,8 @@ pg_ssl:
 
   ttl: 10
   min_version: 090500
+  tags:
+    - cluster
 
   metrics:
     - enabled:
@@ -2534,7 +2542,6 @@ pg_class:
   name: pg_class
   desc: Postgres relation catalog info db level normal version
   query: SELECT CURRENT_CATALOG AS datname,relnamespace::RegNamespace || '.' || relname AS relname, relkind,relpages,reltuples,CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,pg_relation_size(oid) AS relsize,relnatts FROM pg_class c WHERE relnamespace = ANY(SELECT oid FROM pg_namespace WHERE nspname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast'])) AND relkind = ANY(ARRAY['r', 'i', 'm', 't']) ORDER BY relpages DESC LIMIT 256;
-
   ttl: 60
   timeout: 1
   min_version: 090400
@@ -2571,18 +2578,22 @@ pg_relkind:
   name: pg_relkind
   desc: Postgres relation count by kind (category, r,i,m,t,...)
 
-  query: SELECT relkind, count(*) AS count FROM pg_class GROUP BY relkind;
+  query: SELECT CURRENT_CATALOG AS datname, relkind, count(*) AS count FROM pg_class GROUP BY relkind;
   ttl: 60
   timeout: 1
   min_version: 090400
 
   metrics:
+    - datname:
+        usage: LABEL
+        description: Name of database
     - relkind:
         usage: LABEL
         description: Kind of this relation, could be r,i,S,t,v,m,c,f,p,I
     - count:
         usage: GAUGE
         description: Number of relations of corresponding relkind
+
 
 pg_table_13:
   name: pg_table
@@ -2830,7 +2841,6 @@ pg_table_10_12:
 
 
 
-
 pg_index:
   name: pg_index
   desc: PostgreSQL index metrics
@@ -2895,7 +2905,7 @@ pg_func:
 
 pg_seq:
   desc: PostgreSQL sequence metrics
-  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname) d LIMIT 256;
+  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname) d LIMIT 128;
   ttl: 10
   min_version: 100000
   metrics:
@@ -2917,7 +2927,6 @@ pg_seq:
         usage: COUNTER
         description: Number of buffer hits in this sequence
 
-
 pg_defpart:
   name: pg_defpart
   desc: PostgreSQL default partition tuples
@@ -2936,8 +2945,6 @@ pg_defpart:
     - tuples:
         usage: GAUGE
         description: Number of tuples in this default partition
-
-
 
 pg_table_size:
   desc: PostgreSQL table size metrics, quite slow
@@ -2975,7 +2982,6 @@ pg_table_size:
     - toastsize:
         usage: GAUGE
         description: Bytes of toast tables of this table
-
 
 # pg_table_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
 # ----------------------------------------------------------------------
@@ -3024,7 +3030,7 @@ pg_table_size:
 pg_table_bloat:
   name: pg_table_bloat
   desc: PostgreSQL table bloat metrics, require auxiliary view monitor.pg_table_bloat to work
-  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_table_bloat;
+  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_table_bloat ORDER BY size DESC LIMIT 64;
 
   ttl: 300
   timeout: 2
@@ -3046,7 +3052,6 @@ pg_table_bloat:
     - ratio:
         usage: GAUGE
         description: Estimated bloat ratio of this table from 0 to 1
-
 
 
 # -- pg_index_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
@@ -3099,7 +3104,7 @@ pg_table_bloat:
 pg_index_bloat:
   name: pg_index_bloat
   desc: PostgreSQL index bloat metrics (btree only), require monitor.pg_index_bloat
-  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_index_bloat;
+  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_index_bloat ORDER BY size DESC LIMIT 64;
 
   ttl: 300
   timeout: 2

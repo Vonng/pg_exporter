@@ -107,6 +107,7 @@ pg_slot_13:
 
   ttl: 10
   min_version: 130000
+  max_version: 140000
   tags:
     - cluster
     - primary
@@ -156,7 +157,7 @@ pg_slot_13:
 
 
 
-pg_slot_10_13:
+pg_slot_10_12:
   name: pg_slot
   desc: PostgreSQL replication slot metrics v10 v11 v12
   query: |
@@ -167,7 +168,7 @@ pg_slot_10_13:
 
   ttl: 10
   min_version: 100000
-  max_version: 140000
+  max_version: 130000
   tags:
     - cluster
     - primary
