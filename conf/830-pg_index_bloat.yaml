@@ -49,7 +49,7 @@
 pg_index_bloat:
   name: pg_index_bloat
   desc: PostgreSQL index bloat metrics (btree only), require monitor.pg_index_bloat
-  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_index_bloat;
+  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_index_bloat ORDER BY size DESC LIMIT 64;
 
   ttl: 300
   timeout: 2

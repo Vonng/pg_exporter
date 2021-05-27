@@ -46,7 +46,7 @@
 pg_table_bloat:
   name: pg_table_bloat
   desc: PostgreSQL table bloat metrics, require auxiliary view monitor.pg_table_bloat to work
-  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_table_bloat;
+  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_table_bloat ORDER BY size DESC LIMIT 64;
 
   ttl: 300
   timeout: 2
@@ -68,5 +68,4 @@ pg_table_bloat:
     - ratio:
         usage: GAUGE
         description: Estimated bloat ratio of this table from 0 to 1
-
 

@@ -28,9 +28,9 @@ pg_setting:
            CASE current_setting('wal_log_hints') WHEN 'on' THEN 1 ELSE 0 END AS wal_log_hints;
 
   ttl: 10
+  min_version: 090600
   tags:
     - cluster
-  min_version: 090600
 
   metrics:
     - max_connections:

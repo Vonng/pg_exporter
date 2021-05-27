@@ -1,5 +1,4 @@
 
-
 pg_table_size:
   desc: PostgreSQL table size metrics, quite slow
   query: |
@@ -36,4 +35,3 @@ pg_table_size:
     - toastsize:
         usage: GAUGE
         description: Bytes of toast tables of this table
-

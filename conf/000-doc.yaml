@@ -112,36 +112,36 @@
 #┃
 #┃
 #┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ Collector Presets
+#┃ 4. Collector Presets
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ pg_exporter is shipped with a series of preset collector (already numbered and ordered with file prefix)
 #┃
-#┃ 1xx  Common, basic information
-#┃ 2xx  Replication metrics:  sender, receiver, downstream, sync standby, slots
-#┃ 3xx  Persist metrics:      size, background writer, checkpoint, recovery, cache, shmem usage
+#┃ 1xx  Basic metrics:        basic info, meta data, settings
+#┃ 2xx  Replication metrics:  replication, walreceiver, downstream, sync standby, slots, subscription
+#┃ 3xx  Persist metrics:      size, wal, background writer, checkpoint, recovery, cache, shmem usage
 #┃ 4xx  Activity metrics:     backend count group by state, wait event, locks, xacts, queries
-#┃ 5xx  Maintenance metrics:  progress of vacuum, indexing, clustering, and basebackup
-#┃ 6xx  Database metrics:     pg_database and pg_stat_database
-#┃ 7xx  Object metrics:       pg_class, table, index, function, partition table
-#┃ 8xx  Optional metrics:     optional metrics collector (usually slow)
-#┃ 9xx  Pgbouncer metrics:    metrics from admin database `pgbouncer`
+#┃ 5xx  Progress metrics:     clustering, vacuuming, indexing, basebackup, copy
+#┃ 6xx  Database metrics:     pg_database, publication, subscription
+#┃ 7xx  Object metrics:       pg_class, table, index, function, sequence, default partition
+#┃ 8xx  Optional metrics:     optional metrics collector (disable by default, slow queries)
+#┃ 9xx  Pgbouncer metrics:    metrics from pgbouncer admin database `pgbouncer`
 #┃
 #┃ 100-599 Metrics for entire database cluster  (scrape once)
-#┃ 600-899 Metrics for single database instance (scrape for each database)
+#┃ 600-899 Metrics for single database instance (scrape for each database ,except for pg_db itself)
 #┃
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Cache TTL
+#┃ 5. Cache TTL
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Cache can be used for reducing query overhead, it can be enabled by setting a non-zero value for `ttl`
 #┃ It is highly recommended using cache to avoid duplicate scrapes. Especially when you got multiple prometheus
 #┃ scraping same instance with slow monitoring queries. Setting `ttl` to zero or leaving blank will disable
-#┃ result caching, which is default behavior
+#┃ result caching, which is the default behavior
 #┃
 #┃ TTL has to be smaller than your scrape interval. 15s scrape interval and 10s TTL is a good start for
 #┃ production environment. Some expensive monitoring query (such as table bloat check) will have longer `ttl`
 #┃ which can also be used as a mechanism to achieve 'different scrape frequency'
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Query Timeout
+#┃ 6. Query Timeout
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Collectors can be configured with a optional Timeout. If collector's query executing more that that
 #┃ timeout, it will be canceled immediately. Setting `timeout` to 0 or leaving blank will reset it to
@@ -149,9 +149,9 @@
 #┃ All query have a default timeout 100ms, if exceed, the query will be canceled immediately to avoid
 #┃ avalanche. You can explict overwrite that option. but be ware: in some extreme case, if all your
 #┃ timeout sum up greater your scrape/cache interval (usually 15s) , the query may still be jammed.
-#┃ or , you can just disable potential slow queries with --tag=bulky
+#┃ or, you can just disable potential slow queries.
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Version Compatibility
+#┃ 7. Version Compatibility
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Each collector have two optional version compatibility parameters: `min_version` and `max_version`.
 #┃ These two parameters specify version compatibility of the collector. If target postgres/pgbouncer
@@ -162,7 +162,7 @@
 #┃ And beware that version compatibility range is left-inclusive right exclusive: [min,max), set to zero or
 #┃ leaving blank will effect as -inf or +inf
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Fatality
+#┃ 8. Fatality
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ If collector marked with `fatal` fails, entire scrape operation will be marked as fail, and key metrics
 #┃ `pg_up` / `pgbouncer_up` will be reset to 0. It always a good practice to setup AT LEAST ONE fatal
@@ -171,14 +171,15 @@
 #┃ If collector without `fatal` flag fails, it will increase global fail counters. But the scrape operation
 #┃ will carry on. The entire scrape result will not be marked as fail, thus will not affect `<xx>_up` metric.
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Skip
+#┃ 9. Skip
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 #┃ Collector with `skip` flag set to true will NOT be installed.
+#┃ This could be a handy option to disable collectors
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Tags and Planning
+#┃ 10. Tags and Planning
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ Tags are designed for collector planning. It can be handy to customize which queries runs on which
-#┃ instances. And enables you using same configuration file everywhere
+#┃ Tags are designed for collector planning & schedule. It can be handy to customize which queries runs
+#┃ on which instances. And thus you can use one-single monolith config for multiple environment
 #┃
 #┃  Tags are list of string, each string could be:
 #┃  Pre-defined special tags

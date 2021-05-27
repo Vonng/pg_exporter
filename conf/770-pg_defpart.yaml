@@ -1,5 +1,4 @@
 
-
 pg_defpart:
   name: pg_defpart
   desc: PostgreSQL default partition tuples
@@ -18,4 +17,3 @@ pg_defpart:
     - tuples:
         usage: GAUGE
         description: Number of tuples in this default partition
-

@@ -23,6 +23,8 @@ pg_bgwriter:
 
   ttl: 10
   min_version: 090400
+  tags:
+    - cluster
 
   metrics:
     - checkpoints_timed:

@@ -1,3 +1,4 @@
+
 pg_table_13:
   name: pg_table
   desc: PostgreSQL table metrics (v13 with n_ins_since_vacuum)

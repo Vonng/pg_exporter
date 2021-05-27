@@ -5,6 +5,9 @@ pg_archiver:
   query: SELECT archived_count AS finish_count, failed_count, last_archived_time AS last_finish_time, last_failed_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_archiver;
   ttl: 60
   min_version: 090400
+  tags:
+    - cluster
+
   metrics:
     - finish_count:
         usage: COUNTER

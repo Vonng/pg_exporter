@@ -6,15 +6,15 @@ pg_sub_10:
   query: |
     SELECT subname, subid AS id, pid,
            received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
-           extract(epoch from last_msg_send_time) AS msg_sent_time,
+           extract(epoch from last_msg_send_time) AS msg_send_time,
            extract(epoch from last_msg_receipt_time) AS msg_recv_time,
            extract(epoch from latest_end_time) AS reported_time
     FROM pg_stat_subscription WHERE relid ISNULL;
 
   ttl: 10
+  min_version: 100000
   tags:
     - cluster
-  min_version: 100000
 
   metrics:
     - subname:

@@ -1,5 +1,4 @@
 
-
 pg_index:
   name: pg_index
   desc: PostgreSQL index metrics

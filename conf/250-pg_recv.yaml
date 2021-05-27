@@ -11,10 +11,10 @@ pg_recv_13:
            last_msg_send_time AS msg_send_time,last_msg_receipt_time AS msg_recv_time,latest_end_time AS reported_time,now() AS time FROM pg_stat_wal_receiver;
 
   ttl: 10
+  min_version: 130000
   tags:
     - cluster
     - replica
-  min_version: 130000
 
   metrics:
     - sender_host:

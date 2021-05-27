@@ -4,10 +4,10 @@ pg_repl_12:
   name: pg_repl
   desc: PostgreSQL replication stat metrics 12+
   query: |
-    SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid, client_port,
+    SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid::TEXT, client_port,
            CASE state WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
            CASE sync_state WHEN 'async' THEN 0 WHEN 'potential' THEN 1 WHEN 'sync' THEN 2 WHEN 'quorum' THEN 3 ELSE -1 END AS sync_state,
-           sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn AS lsn,
+           sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn - '0/0' AS lsn,
            current.lsn - sent_lsn AS sent_diff, current.lsn - write_lsn AS write_diff, current.lsn - flush_lsn AS flush_diff, current.lsn - replay_lsn AS replay_diff,
            sent_lsn - '0/0' AS sent_lsn, write_lsn - '0/0' AS write_lsn, flush_lsn - '0/0' AS flush_lsn, replay_lsn - '0/0' AS replay_lsn,
            coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag, coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag, coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
@@ -106,10 +106,10 @@ pg_repl_10_11:
   name: pg_repl
   desc: PostgreSQL replication stat metrics v10 v11
   query: |
-    SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid, client_port,
+    SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid::TEXT, client_port,
            CASE state WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
            CASE sync_state WHEN 'async' THEN 0 WHEN 'potential' THEN 1 WHEN 'sync' THEN 2 WHEN 'quorum' THEN 3 ELSE -1 END AS sync_state,
-           sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn AS lsn,
+           sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn - '0/0' AS lsn,
            current.lsn - sent_lsn AS sent_diff, current.lsn - write_lsn AS write_diff, current.lsn - flush_lsn AS flush_diff, current.lsn - replay_lsn AS replay_diff,
            sent_lsn - '0/0' AS sent_lsn, write_lsn - '0/0' AS write_lsn, flush_lsn - '0/0' AS flush_lsn, replay_lsn - '0/0' AS replay_lsn,
            coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag, coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag, coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
