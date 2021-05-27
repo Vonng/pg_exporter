@@ -2,8 +2,7 @@
 pg_wal_14:
   name: pg_wal
   desc: PostgreSQL WAL statistics since v14
-  query: |
-    SELECT wal_records, wal_fpi, wal_bytes, wal_buffers_full, wal_write, wal_sync, wal_write_time, wal_sync_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_wal;
+  query: SELECT wal_records AS records, wal_fpi AS fpi, wal_bytes AS bytes, wal_buffers_full AS buffers_full, wal_write AS write, wal_sync AS sync, wal_write_time AS write_time, wal_sync_time AS sync_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_wal;
 
   ttl: 10
   tags:
