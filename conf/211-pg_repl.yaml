@@ -1,44 +1,18 @@
+
+
 pg_repl_12:
   name: pg_repl
-  desc: PostgreSQL replication stat metrics 13+
+  desc: PostgreSQL replication stat metrics 12+
   query: |
-    SELECT pid,
-           usename,
-           client_addr                                 AS addr,
-           application_name                            AS appname,
-           CASE state
-               WHEN 'streaming' THEN 0
-               WHEN 'startup' THEN 1
-               WHEN 'catchup' THEN 2
-               WHEN 'backup' THEN 3
-               WHEN 'stopping' THEN 4
-               ELSE -1 END                             AS state,
-           CASE sync_state
-               WHEN 'async' THEN 0
-               WHEN 'potential' THEN 1
-               WHEN 'sync' THEN 2
-               WHEN 'quorum' THEN 3
-               ELSE -1 END                             AS sync_state,
-           sync_state,
-           extract(EPOCH FROM current_timestamp)       AS "time",
-           extract(EPOCH FROM reply_time)              AS reply_time,
-           current.lsn                                 AS lsn,
-           current.lsn - sent_lsn                      AS sent_diff,
-           current.lsn - write_lsn                     AS write_diff,
-           current.lsn - flush_lsn                     AS flush_diff,
-           current.lsn - replay_lsn                    AS replay_diff,
-           sent_lsn - '0/0'                            AS sent_lsn,
-           write_lsn - '0/0'                           AS write_lsn,
-           flush_lsn - '0/0'                           AS flush_lsn,
-           replay_lsn - '0/0'                          AS replay_lsn,
-           coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag,
-           coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag,
-           coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
-           extract(EPOCH FROM now() - backend_start)   AS backend_uptime,
-           backend_xmin::TEXT::BIGINT                  AS backend_xmin,
-           sync_priority
-    FROM pg_stat_replication,
-         (SELECT CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END AS lsn) current;
+    SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid, client_port,
+           CASE state WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
+           CASE sync_state WHEN 'async' THEN 0 WHEN 'potential' THEN 1 WHEN 'sync' THEN 2 WHEN 'quorum' THEN 3 ELSE -1 END AS sync_state,
+           sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn AS lsn,
+           current.lsn - sent_lsn AS sent_diff, current.lsn - write_lsn AS write_diff, current.lsn - flush_lsn AS flush_diff, current.lsn - replay_lsn AS replay_diff,
+           sent_lsn - '0/0' AS sent_lsn, write_lsn - '0/0' AS write_lsn, flush_lsn - '0/0' AS flush_lsn, replay_lsn - '0/0' AS replay_lsn,
+           coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag, coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag, coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
+           extract(EPOCH FROM current_timestamp) AS "time", extract(EPOCH FROM backend_start) AS launch_time, extract(EPOCH FROM reply_time) AS reply_time
+    FROM pg_stat_replication, (SELECT CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END AS lsn) current;
 
   ttl: 10
   min_version: 120000
@@ -46,19 +20,22 @@ pg_repl_12:
     - cluster
 
   metrics:
-    - pid:
-        usage: LABEL
-        description: Process ID of a WAL sender process
-    - usename:
-        usage: LABEL
-        description: client address of wal receiver
-    - addr:
-        usage: LABEL
-        description: #
-        # IP address of the client connected to this WAL sender. If this field is null, it indicates that the client is connected via a Unix socket on the server machine.
     - appname:
         usage: LABEL
         description: Name of the application that is connected to this WAL sender
+    - usename:
+        usage: LABEL
+        description: Name of the user logged into this WAL sender process
+    - address:
+        usage: LABEL
+        description: IP address of the client connected to this WAL sender, localhost for unix socket
+        # IP address of the client connected to this WAL sender. If this field is null, it indicates that the client is connected via a Unix socket on the server machine.
+    - pid:
+        usage: LABEL
+        description: Process ID of the WAL sender process
+    - client_port:
+        usage: GAUGE
+        description: TCP port number that the client is using for communication with this WAL sender, or -1 if a Unix socket is used
     - state:
         usage: GAUGE
         description: Current WAL sender encoded state 0-4 for streaming|startup|catchup|backup|stopping
@@ -67,12 +44,13 @@ pg_repl_12:
         usage: GAUGE
         description: Encoded synchronous state of this standby server, 0-3 for async|potential|sync|quorum
         # Synchronous state of this standby server. Possible values are: async|potential|sync|quorum
-    - time:
+    - sync_priority:
+        usage: GAUGE
+        description: Priority of this standby server for being chosen as the synchronous standby
+        # Priority of this standby server for being chosen as the synchronous standby in a priority-based synchronous replication. This has no effect in a quorum-based synchronous replication.
+    - backend_xmin:
         usage: COUNTER
-        description: Current timestamp in unix epoch
-    - reply_time:
-        usage: COUNTER
-        description: Send time of last reply message received from standby server
+        description: This standby's xmin horizon reported by hot_standby_feedback.
     - lsn:
         usage: COUNTER
         description: Current log position on this server
@@ -112,63 +90,31 @@ pg_repl_12:
         usage: GAUGE
         description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it
         # Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it. This can be used to gauge the delay that synchronous_commit level remote_apply incurred while committing if this server was configured as a synchronous standby.
-    - backend_uptime:
+    - time:
+        usage: COUNTER
+        description: Current timestamp in unix epoch
+    - launch_time:
+        usage: COUNTER
+        description: Time when this process was started, i.e., when the client connected to this WAL sender
+    - reply_time:
         usage: GAUGE
-        description: Seconds since this replica connect to this server
+        description: Send time of last reply message received from standby server
         # Time when this process was started, i.e., when the client connected to this WAL sender
-    - backend_xmin:
-        usage: GAUGE
-        description: This standby's xmin horizon reported by hot_standby_feedback.
-    - sync_priority:
-        usage: GAUGE
-        description: Priority of this standby server for being chosen as the synchronous standby
-        # Priority of this standby server for being chosen as the synchronous standby in a priority-based synchronous replication. This has no effect in a quorum-based synchronous replication.
-
-
-
-
 
 
 pg_repl_10_11:
   name: pg_repl
   desc: PostgreSQL replication stat metrics v10 v11
   query: |
-    SELECT pid,
-           usename,
-           client_addr                                 AS addr,
-           application_name                            AS appname,
-           CASE state
-               WHEN 'streaming' THEN 0
-               WHEN 'startup' THEN 1
-               WHEN 'catchup' THEN 2
-               WHEN 'backup' THEN 3
-               WHEN 'stopping' THEN 4
-               ELSE -1 END                             AS state,
-           CASE sync_state
-               WHEN 'async' THEN 0
-               WHEN 'potential' THEN 1
-               WHEN 'sync' THEN 2
-               WHEN 'quorum' THEN 3
-               ELSE -1 END                             AS sync_state,
-           sync_state,
-           extract(EPOCH FROM current_timestamp)       AS "time",
-           current.lsn                                 AS lsn,
-           current.lsn - sent_lsn                      AS sent_diff,
-           current.lsn - write_lsn                     AS write_diff,
-           current.lsn - flush_lsn                     AS flush_diff,
-           current.lsn - replay_lsn                    AS replay_diff,
-           sent_lsn - '0/0'                            AS sent_lsn,
-           write_lsn - '0/0'                           AS write_lsn,
-           flush_lsn - '0/0'                           AS flush_lsn,
-           replay_lsn - '0/0'                          AS replay_lsn,
-           coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag,
-           coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag,
-           coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
-           extract(EPOCH FROM now() - backend_start)   AS backend_uptime,
-           backend_xmin::TEXT::BIGINT                  AS backend_xmin,
-           sync_priority
-    FROM pg_stat_replication,
-         (SELECT CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END AS lsn) current;
+    SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid, client_port,
+           CASE state WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
+           CASE sync_state WHEN 'async' THEN 0 WHEN 'potential' THEN 1 WHEN 'sync' THEN 2 WHEN 'quorum' THEN 3 ELSE -1 END AS sync_state,
+           sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn AS lsn,
+           current.lsn - sent_lsn AS sent_diff, current.lsn - write_lsn AS write_diff, current.lsn - flush_lsn AS flush_diff, current.lsn - replay_lsn AS replay_diff,
+           sent_lsn - '0/0' AS sent_lsn, write_lsn - '0/0' AS write_lsn, flush_lsn - '0/0' AS flush_lsn, replay_lsn - '0/0' AS replay_lsn,
+           coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag, coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag, coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
+           extract(EPOCH FROM current_timestamp) AS "time", extract(EPOCH FROM backend_start) AS launch_time
+    FROM pg_stat_replication, (SELECT CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END AS lsn) current;
 
   ttl: 10
   min_version: 100000
@@ -177,19 +123,22 @@ pg_repl_10_11:
     - cluster
 
   metrics:
-    - pid:
-        usage: LABEL
-        description: Process ID of a WAL sender process
-    - usename:
-        usage: LABEL
-        description: client address of wal receiver
-    - addr:
-        usage: LABEL
-        description: #
-        # IP address of the client connected to this WAL sender. If this field is null, it indicates that the client is connected via a Unix socket on the server machine.
     - appname:
         usage: LABEL
         description: Name of the application that is connected to this WAL sender
+    - usename:
+        usage: LABEL
+        description: Name of the user logged into this WAL sender process
+    - address:
+        usage: LABEL
+        description: IP address of the client connected to this WAL sender, localhost for unix socket
+        # IP address of the client connected to this WAL sender. If this field is null, it indicates that the client is connected via a Unix socket on the server machine.
+    - pid:
+        usage: LABEL
+        description: Process ID of the WAL sender process
+    - client_port:
+        usage: GAUGE
+        description: TCP port number that the client is using for communication with this WAL sender, or -1 if a Unix socket is used
     - state:
         usage: GAUGE
         description: Current WAL sender encoded state 0-4 for streaming|startup|catchup|backup|stopping
@@ -198,9 +147,13 @@ pg_repl_10_11:
         usage: GAUGE
         description: Encoded synchronous state of this standby server, 0-3 for async|potential|sync|quorum
         # Synchronous state of this standby server. Possible values are: async|potential|sync|quorum
-    - time:
+    - sync_priority:
+        usage: GAUGE
+        description: Priority of this standby server for being chosen as the synchronous standby
+        # Priority of this standby server for being chosen as the synchronous standby in a priority-based synchronous replication. This has no effect in a quorum-based synchronous replication.
+    - backend_xmin:
         usage: COUNTER
-        description: Current timestamp in unix epoch
+        description: This standby's xmin horizon reported by hot_standby_feedback.
     - lsn:
         usage: COUNTER
         description: Current log position on this server
@@ -240,15 +193,9 @@ pg_repl_10_11:
         usage: GAUGE
         description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it
         # Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it. This can be used to gauge the delay that synchronous_commit level remote_apply incurred while committing if this server was configured as a synchronous standby.
-    - backend_uptime:
-        usage: GAUGE
-        description: Seconds since this replica connect to this server
-        # Time when this process was started, i.e., when the client connected to this WAL sender
-    - backend_xmin:
-        usage: GAUGE
-        description: This standby's xmin horizon reported by hot_standby_feedback.
-    - sync_priority:
-        usage: GAUGE
-        description: Priority of this standby server for being chosen as the synchronous standby
-        # Priority of this standby server for being chosen as the synchronous standby in a priority-based synchronous replication. This has no effect in a quorum-based synchronous replication.
-
+    - time:
+        usage: COUNTER
+        description: Current timestamp in unix epoch
+    - launch_time:
+        usage: COUNTER
+        description: Time when this process was started, i.e., when the client connected to this WAL sender
