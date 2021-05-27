@@ -2,14 +2,14 @@
 
 pg_sub_10:
   name: pg_sub
-  desc: PostgreSQL subscription statistics
+  desc: PostgreSQL subscription statistics ()
   query: |
-    SELECT ss.subname, s.subslotname AS slotname, subid AS id, pid, subenabled,
+    SELECT subname, subid AS id, pid,
            received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
            extract(epoch from last_msg_send_time) AS msg_sent_time,
            extract(epoch from last_msg_receipt_time) AS msg_recv_time,
            extract(epoch from latest_end_time) AS reported_time
-    FROM pg_stat_subscription ss LEFT JOIN pg_subscription s  ON s.oid = ss.subid WHERE relid ISNULL;
+    FROM pg_stat_subscription WHERE relid ISNULL;
 
   ttl: 10
   tags:
@@ -20,10 +20,6 @@ pg_sub_10:
     - subname:
         usage: LABEL
         description: Name of this subscription
-    - slotname:
-        usage: LABEL
-        description: Name of the replication slot in the upstream database
-        # Name of the replication slot in the upstream database (also used for the local replication origin name); null represents NONE
     - id:
         usage: GAUGE
         description: OID of the subscription
