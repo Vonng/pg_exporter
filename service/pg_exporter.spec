@@ -1,7 +1,7 @@
 %define debug_package %{nil}
 
 Name:           pg_exporter
-Version:        0.3.2
+Version:        0.4.0
 Release:        1%{?dist}
 Summary:        Prometheus exporter for PostgreSQL/Pgbouncer server metrics
 License:        BSD
@@ -55,8 +55,9 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.yaml
 
 %changelog
-* Thu Feb 20 2020 Ruohang Feng <fengruohang@outlook.com> - 0.2.0-1
-- add yum package and linux service definition
-- add a 'skip' flag into query config
-- fix `pgbouncer_up` metrics
-- add conf reload support
+* Thu May 27 2021 Ruohang Feng <rh@vonng.com> - 0.4.0-1
+- Default metrics configuration overhaul
+- Embed default metrics definition into binary
+- add include-database and exclude-database option
+- Add multiple database implementation
+- Add reload command to rpm systemctl

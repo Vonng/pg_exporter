@@ -4,9 +4,9 @@
 // ┃ Name		:   pg_exporter.go                               ┃ //
 // ┃ Desc  		:   pg_exporter metrics exporter	             ┃ //
 // ┃ Ctime      :   2019-12-09                                   ┃ //
-// ┃ Mtime      :   2021-02-01                                   ┃ //
-// ┃ Version   	:   0.3.2              							 ┃ //
-// ┃ Support   	:   PostgreSQL 10~13 pgbouncer 1.9+              ┃ //
+// ┃ Mtime      :   2021-05-27                                   ┃ //
+// ┃ Version   	:   0.4.0              							 ┃ //
+// ┃ Support   	:   PostgreSQL 10~14 pgbouncer 1.9+              ┃ //
 // ┃ Author		:   Vonng (fengruohang@outlook.com)              ┃ //
 // ┃ Copyright (C) 2019-2021 Ruohang Feng                        ┃ //
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ //
@@ -48,7 +48,7 @@ import (
 \**********************************************************************************************/
 
 // Version is read by make build procedure
-var Version = "0.3.2"
+var Version = "0.4.0"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
@@ -60,7 +60,8 @@ var (
 	serverTags        = kingpin.Flag("tag", "tags,comma separated list of server tag").Default("").Envar("PG_EXPORTER_TAG").String()
 	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Envar("PG_EXPORTER_DISABLE_CACHE").Bool()
 	autoDiscovery     = kingpin.Flag("auto-discovery", "automatically scrape all database for given server").Default("false").Envar("PG_EXPORTER_AUTO_DISCOVERY").Bool()
-	excludeDatabase   = kingpin.Flag("exclude-database", "excluded databases when enabling auto-discovery").Default("postgres,template0,template1").Envar("PG_EXPORTER_EXCLUDE_DATABASE").String()
+	excludeDatabase   = kingpin.Flag("exclude-database", "excluded databases when enabling auto-discovery").Default("template0,template1,postgres").Envar("PG_EXPORTER_EXCLUDE_DATABASE").String()
+	includeDatabase   = kingpin.Flag("include-database", "included databases when enabling auto-discovery").Default("").Envar("PG_EXPORTER_EXCLUDE_DATABASE").String()
 	exporterNamespace = kingpin.Flag("namespace", "prefix of built-in metrics, (pg|pgbouncer) by default").Default("").Envar("PG_EXPORTER_NAMESPACE").String()
 	failFast          = kingpin.Flag("fail-fast", "fail fast instead of waiting during start-up").Envar("PG_EXPORTER_FAIL_FAST").Default("false").Bool()
 
@@ -86,18 +87,20 @@ var (
 *                                       Column                                                 *
 \**********************************************************************************************/
 const (
-	DISCARD = "DISCARD" // Ignore this column (when SELECT *)
-	LABEL   = "LABEL"   // Use this column as a label
-	COUNTER = "COUNTER" // Use this column as a counter
-	GAUGE   = "GAUGE"   // Use this column as a gauge
+	DISCARD   = "DISCARD"   // Ignore this column (when SELECT *)
+	LABEL     = "LABEL"     // Use this column as a label
+	COUNTER   = "COUNTER"   // Use this column as a counter
+	GAUGE     = "GAUGE"     // Use this column as a gauge
+	HISTOGRAM = "HISTOGRAM" // Use this column as a histogram
 )
 
 // ColumnUsage determine how to use query result column
 var ColumnUsage = map[string]bool{
-	DISCARD: false,
-	LABEL:   false,
-	COUNTER: true,
-	GAUGE:   true,
+	DISCARD:   false,
+	LABEL:     false,
+	COUNTER:   true,
+	GAUGE:     true,
+	HISTOGRAM: true,
 }
 
 // Column holds the metadata of query result
@@ -106,6 +109,7 @@ type Column struct {
 	Desc   string `yaml:"description,omitempty"`
 	Usage  string `yaml:"usage,omitempty"`
 	Rename string `yaml:"rename,omitempty"`
+	// Bucket []float64 `yaml:"bucket,omitempty"`         // histogram bucket
 }
 
 // PrometheusValueType returns column's corresponding prometheus value type
@@ -512,7 +516,7 @@ func (q *QueryInstance) execute() {
 
 	// execution
 	if q.Timeout != 0 { // if timeout is provided, use context
-		log.Debugf("query [%s] executing begin with time limit: %v", q.Name, q.TimeoutDuration())
+		log.Debugf("query [%s] @ server [%s] executing begin with time limit: %v", q.Name, q.Server.Database, q.TimeoutDuration())
 		ctx, cancel := context.WithTimeout(context.Background(), q.TimeoutDuration())
 		defer cancel()
 		rows, err = q.Server.QueryContext(ctx, q.SQL)
@@ -755,7 +759,7 @@ func PostgresPrecheck(s *Server) (err error) {
 		}
 		s.DB.SetMaxIdleConns(1)
 		s.DB.SetMaxOpenConns(1)
-		s.DB.SetConnMaxLifetime(60 * time.Second)
+		s.DB.SetConnMaxLifetime(120 * time.Second)
 	}
 
 	// retrieve version info
@@ -1160,20 +1164,22 @@ func WithServerTags(tags []string) ServerOpt {
 // exporter contains one or more (auto-discover-database) servers that can scrape metrics with Query
 type Exporter struct {
 	// config params provided from ExporterOpt
-	dsn               string            // primary dsn
-	configPath        string            // config file path /directory
-	disableCache      bool              // always execute query when been scrapped
-	autoDiscovery     bool              // discovery other database on primary server
-	pgbouncerMode     bool              // is primary server a pgbouncer ?
-	failFast          bool              // fail fast instead fof waiting during start-up ?
-	excludedDatabases map[string]bool   // excluded database for auto discovery
-	constLabels       prometheus.Labels // prometheus const k=v labels
-	tags              []string
-	namespace         string
+	dsn             string            // primary dsn
+	configPath      string            // config file path /directory
+	disableCache    bool              // always execute query when been scrapped
+	autoDiscovery   bool              // discovery other database on primary server
+	pgbouncerMode   bool              // is primary server a pgbouncer ?
+	failFast        bool              // fail fast instead fof waiting during start-up ?
+	excludeDatabase map[string]bool   // excluded database for auto discovery
+	includeDatabase map[string]bool   // include database for auto discovery
+	constLabels     prometheus.Labels // prometheus const k=v labels
+	tags            []string
+	namespace       string
 
 	// internal status
 	lock    sync.RWMutex       // export lock
 	server  *Server            // primary server
+	sLock   sync.RWMutex       // server map lock
 	servers map[string]*Server // auto discovered peripheral servers
 	queries map[string]*Query  // metrics query definition
 
@@ -1243,10 +1249,15 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	defer e.lock.Unlock()
 	e.scrapeTotalCount.Add(1)
 
-	// TODO: multi-server
 	e.scrapeBegin = time.Now()
+	// scrape primary server
 	s := e.server
 	s.Collect(ch)
+
+	// scrape extra servers if exists
+	for _, srv := range e.IterateServer() {
+		srv.Collect(ch)
+	}
 	e.scrapeDone = time.Now()
 
 	e.lastScrapeTime.Set(float64(e.scrapeDone.Unix()))
@@ -1329,9 +1340,9 @@ func (e *Exporter) Close() {
 			log.Errorf("fail closing server %s: %s", e.server.Name(), err.Error())
 		}
 	}
-	// close peripheral servers
-	for _, server := range e.servers {
-		err := server.Close()
+	// close peripheral servers (we may skip acquire lock here)
+	for _, srv := range e.IterateServer() {
+		err := srv.Close()
 		if err != nil {
 			log.Errorf("fail closing server %s: %s", e.server.Name(), err.Error())
 		}
@@ -1468,6 +1479,7 @@ func (e *Exporter) collectInternalMetrics(ch chan<- prometheus.Metric) {
 // NewExporter construct a PG Exporter instance for given dsn
 func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 	e = &Exporter{dsn: dsn}
+	e.servers = make(map[string]*Server, 0)
 	for _, opt := range opts {
 		opt(e)
 	}
@@ -1488,7 +1500,7 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 
 	// register db change callback
 	if e.autoDiscovery {
-		log.Infof("auto discovery is enabled, exclucded database: %v", e.excludedDatabases)
+		log.Infof("auto discovery is enabled, excludeDatabase=%v, includeDatabase=%v", e.excludeDatabase, e.includeDatabase)
 		e.server.onDatabaseChange = e.OnDatabaseChange
 	}
 
@@ -1520,21 +1532,69 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 func (e *Exporter) OnDatabaseChange(change map[string]bool) {
 	// TODO: spawn or destroy database on dbchange
 	for dbname, add := range change {
+		verb := "del"
+		if add {
+			verb = "add"
+		}
+
 		if dbname == e.server.Database {
 			continue // skip primary database change
 		}
-		if _, found := e.excludedDatabases[dbname]; found {
-			log.Infof("skip database change:%v %v according to excluded databases", dbname, add)
+		if _, found := e.excludeDatabase[dbname]; found {
+			log.Infof("skip database change: %v %v according to in excluded database list", verb, dbname)
 			continue // skip exclude databases changes
+		}
+		if len(e.includeDatabase) > 0 {
+			if _, found := e.includeDatabase[dbname]; !found {
+				log.Infof("skip database change: %v %v according to not in include database list", verb, dbname)
+				continue // skip non-include databases changes
+			}
 		}
 		if add {
 			// TODO: spawn new server
-			log.Infof("database %s is installed due to auto-discovery", dbname)
+			e.CreateServer(dbname)
 		} else {
 			// TODO: close old server
-			log.Warnf("database %s is removed due to auto-discovery", dbname)
+			e.RemoveServer(dbname)
 		}
 	}
+}
+
+func (e *Exporter) CreateServer(dbname string) {
+	newDSN := replaceUrlDatabase(e.dsn, dbname)
+	log.Infof("spawn new server for database %s : %s", dbname, shadowDSN(newDSN))
+	newServer := NewServer(
+		newDSN,
+		WithQueries(e.queries),
+		WithConstLabel(e.constLabels),
+		WithCachePolicy(e.disableCache),
+		WithServerTags(e.tags),
+	)
+	newServer.Forked = true // important!
+
+	e.sLock.Lock()
+	e.servers[dbname] = newServer
+	log.Infof("database %s is installed due to auto-discovery", dbname)
+	defer e.sLock.Unlock()
+}
+
+func (e *Exporter) RemoveServer(dbname string) {
+	e.sLock.Lock()
+	delete(e.servers, dbname)
+	log.Warnf("database %s is removed due to auto-discovery", dbname)
+	e.sLock.Unlock()
+}
+
+// IterateServer will get snapshot of extra servers
+func (e *Exporter) IterateServer() (res []*Server) {
+	if len(e.servers) > 0 {
+		e.sLock.RLock()
+		defer e.sLock.RUnlock()
+		for _, srv := range e.servers {
+			res = append(res, srv)
+		}
+	}
+	return
 }
 
 // ExporterOpt configures Exporter
@@ -1589,15 +1649,27 @@ func WithAutoDiscovery(flag bool) ExporterOpt {
 	}
 }
 
-// WithExcludeDatabases configures exporter with excluded database
-func WithExcludeDatabases(excludeStr string) ExporterOpt {
+// WithExcludeDatabase configures exporter with excluded database
+func WithExcludeDatabase(excludeStr string) ExporterOpt {
 	return func(e *Exporter) {
 		exclMap := make(map[string]bool)
 		exclList := parseCSV(excludeStr)
 		for _, item := range exclList {
 			exclMap[item] = true
 		}
-		e.excludedDatabases = exclMap
+		e.excludeDatabase = exclMap
+	}
+}
+
+// WithIncludeDatabase configures exporter with excluded database
+func WithIncludeDatabase(includeStr string) ExporterOpt {
+	return func(e *Exporter) {
+		inclMap := make(map[string]bool)
+		inclList := parseCSV(includeStr)
+		for _, item := range inclList {
+			inclMap[item] = true
+		}
+		e.includeDatabase = inclMap
 	}
 }
 
@@ -1902,6 +1974,17 @@ func ProcessURL(pgUrlStr string) string {
 	return u.String()
 }
 
+// replace
+func replaceUrlDatabase(pgUrlStr, dbname string) string {
+	u, err := url.Parse(pgUrlStr)
+	if err != nil {
+		log.Errorf("invalid url format %s", pgUrlStr)
+		return ""
+	}
+	u.Path = "/" + dbname
+	return u.String()
+}
+
 // RetrieveConfig config path
 func RetrieveConfig() (res string) {
 	// priority: cli-args > env  > default settings (check exist)
@@ -1965,7 +2048,8 @@ func Reload() error {
 		WithFailFast(*failFast),
 		WithNamespace(*exporterNamespace),
 		WithAutoDiscovery(*autoDiscovery),
-		WithExcludeDatabases(*excludeDatabase),
+		WithExcludeDatabase(*excludeDatabase),
+		WithIncludeDatabase(*includeDatabase),
 		WithTags(*serverTags),
 	)
 	// if launch new exporter failed, do nothing
@@ -1983,6 +2067,7 @@ func Reload() error {
 		prometheus.Unregister(PgExporter)
 	}
 	PgExporter = newExporter
+	runtime.GC()
 	log.Infof("server reloaded")
 	return nil
 }
@@ -1992,8 +2077,8 @@ func ParseArgs() {
 	kingpin.Version(fmt.Sprintf("pg_exporter %s (built with %s)\n", Version, runtime.Version()))
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Parse()
-	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, autoDiscovery=%v, excludeDatabase=%v listenAdress=%v metricPath=%v",
-		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *listenAddress, *metricPath)
+	log.Debugf("init pg_exporter, configPath=%v constLabels=%v, disableCache=%v, autoDiscovery=%v, excludeDatabase=%v includeDatabase=%v, listenAdress=%v metricPath=%v",
+		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *includeDatabase, *listenAddress, *metricPath)
 	*pgURL = ProcessURL(RetrieveTargetURL())
 	*configPath = RetrieveConfig()
 }
@@ -2053,7 +2138,8 @@ func Run() {
 		WithFailFast(*failFast),
 		WithNamespace(*exporterNamespace),
 		WithAutoDiscovery(*autoDiscovery),
-		WithExcludeDatabases(*excludeDatabase),
+		WithExcludeDatabase(*excludeDatabase),
+		WithIncludeDatabase(*includeDatabase),
 		WithTags(*serverTags),
 	)
 	if err != nil {
