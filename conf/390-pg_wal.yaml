@@ -30,10 +30,10 @@ pg_wal_14:
         description: Number of times WAL files were synced to disk via issue_xlog_fsync request
     - write_time:
         usage: COUNTER
-        description: Total amount of time spent writing WAL buffers to disk via XLogWrite request in milliseconds
+        description: Total amount of time spent writing WAL buffers to disk via XLogWrite request in ms
     - sync_time:
         usage: COUNTER
-        description: Total amount of time spent syncing WAL files to disk via issue_xlog_fsync request, in milliseconds
+        description: Total amount of time spent syncing WAL files to disk via issue_xlog_fsync request, in ms
     - reset_time:
         usage: COUNTER
         description: When statistics were last reset

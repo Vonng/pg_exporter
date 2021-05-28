@@ -5,7 +5,7 @@ pg_table_13:
 
   query: |
     SELECT CURRENT_CATALOG AS datname, t.schemaname || '.' || t.relname AS relname, t.relid,
-           seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,seq_scan + idx_scan AS tbl_scan, seq_tup_read + idx_tup_fetch AS tup_read,
+           seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,coalesce(seq_scan,0) + coalesce(idx_scan,0) AS tbl_scan, coalesce(seq_tup_read,0) + coalesce(idx_tup_fetch,0) AS tup_read,
            n_tup_ins,n_tup_upd,n_tup_del,(n_tup_ins + n_tup_upd + n_tup_del) AS n_tup_mod,n_tup_hot_upd,n_live_tup,n_dead_tup,
            n_mod_since_analyze,n_ins_since_vacuum,last_vacuum,last_autovacuum,last_analyze,last_autoanalyze,vacuum_count,autovacuum_count,analyze_count,autoanalyze_count,
            heap_blks_read,heap_blks_hit,idx_blks_read,idx_blks_hit,toast_blks_read,toast_blks_hit,tidx_blks_read,tidx_blks_hit
@@ -129,7 +129,7 @@ pg_table_10_12:
 
   query: |
     SELECT CURRENT_CATALOG AS datname, t.schemaname || '.' || t.relname AS relname, t.relid,
-           seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,seq_scan + idx_scan AS tbl_scan, seq_tup_read + idx_tup_fetch AS tup_read,
+           seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,coalesce(seq_scan,0) + coalesce(idx_scan,0) AS tbl_scan, coalesce(seq_tup_read,0) + coalesce(idx_tup_fetch,0) AS tup_read,
            n_tup_ins,n_tup_upd,n_tup_del,(n_tup_ins + n_tup_upd + n_tup_del) AS n_tup_mod,n_tup_hot_upd,n_live_tup,n_dead_tup,
            n_mod_since_analyze,last_vacuum,last_autovacuum,last_analyze,last_autoanalyze,vacuum_count,autovacuum_count,analyze_count,autoanalyze_count,
            heap_blks_read,heap_blks_hit,idx_blks_read,idx_blks_hit,toast_blks_read,toast_blks_hit,tidx_blks_read,tidx_blks_hit
