@@ -1,56 +1,85 @@
-VERSION=`cat pg_exporter.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
+#==============================================================#
+# File      :   Makefile
+# Mtime     :   2021-05-18
+# Copyright (C) 2018-2021 Ruohang Feng
+#==============================================================#
 
+# Get Current Version
+VERSION=0.4.0
+# VERSION=`cat exporter/const.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
+
+# Release Dir
+LINUX_DIR:=bin/release/v$(VERSION)/pg_exporter_v$(VERSION)_linux-amd64
+DARWIN_DIR:=bin/release/v$(VERSION)/pg_exporter_v$(VERSION)_darwin-amd64
+WINDOWS_DIR:=bin/release/v$(VERSION)/pg_exporter_v$(VERSION)_windows-amd64
+
+
+###############################################################
+#                        Shortcuts                            #
+###############################################################
 build:
 	go build -o pg_exporter
 
 clean:
 	rm -rf pg_exporter conf.tar.gz
 
+
+###############################################################
+#                      Configuration                          #
+###############################################################
+# generate merged config from separated configuration
+conf:
+	rm -rf pg_exporter.yaml
+	cat config/collector/*.yml >> pg_exporter.yml
+
+
+###############################################################
+#                         Release                             #
+###############################################################
+
+release-dir:
+	mkdir -p bin/release/v$(VERSION)
+
+release-clean:
+	rm -rf bin/release/v$(VERSION)
+
 release-darwin:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build  -a -ldflags '-extldflags "-static"' -o pg_exporter
-	upx pg_exporter
-	mkdir -p bin/pg_exporter_v$(VERSION)_darwin-amd64
-	mv -f pg_exporter bin/pg_exporter_v$(VERSION)_darwin-amd64/
-	cp -f pg_exporter.yaml bin/pg_exporter_v$(VERSION)_darwin-amd64/
-	tar -czf bin/pg_exporter_v$(VERSION)_darwin-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_darwin-amd64
-	rm -rf bin/pg_exporter_v$(VERSION)_darwin-amd64
+	rm -rf $(DARWIN_DIR) && mkdir -p $(DARWIN_DIR)
+	CGO_ENABLED=0 GOmOS=darwin GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o $(DARWIN_DIR)/pg_exporter
+	upx $(DARWIN_DIR)/pg_exporter
+	cp -f pg_exporter.yml $(DARWIN_DIR)/pg_exporter.yml
+	tar -czf bin/release/v$(VERSION)/pg_exporter_v$(VERSION)_darwin-amd64.tar.gz -C bin/release/v$(VERSION) pg_exporter_v$(VERSION)_darwin-amd64
+	rm -rf $(DARWIN_DIR)
 
-release-linux: clean
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -a -ldflags '-extldflags "-static"' -o pg_exporter
-	upx pg_exporter
-	mkdir -p bin/pg_exporter_v$(VERSION)_linux-amd64
-	mv -f pg_exporter bin/pg_exporter_v$(VERSION)_linux-amd64/
-	cp -f pg_exporter.yaml bin/pg_exporter_v$(VERSION)_linux-amd64/
-	cp -f service/pg_exporter.default bin/pg_exporter_v$(VERSION)_linux-amd64/
-	cp -f service/pg_exporter.service bin/pg_exporter_v$(VERSION)_linux-amd64/
-	tar -czf bin/pg_exporter_v$(VERSION)_linux-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_linux-amd64
-	rm -rf bin/pg_exporter_v$(VERSION)_linux-amd64
+release-linux:
+	rm -rf $(DARWIN_DIR) && mkdir -p $(LINUX_DIR)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o $(LINUX_DIR)/pg_exporter
+	upx $(LINUX_DIR)/pg_exporter
+	cp -f pg_exporter.yml $(LINUX_DIR)/pg_exporter.yml
+	cp -f service/pg_exporter.* $(LINUX_DIR)/
+	tar -czf bin/release/v$(VERSION)/pg_exporter_v$(VERSION)_linux-amd64.tar.gz -C bin/release/v$(VERSION) pg_exporter_v$(VERSION)_linux-amd64
+	rm -rf $(LINUX_DIR)
 
-release-windows: clean
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build  -a -ldflags '-extldflags "-static"' -o pg_exporter
-	upx pg_exporter
-	mkdir -p bin/pg_exporter_v$(VERSION)_windows-amd64
-	mv -f pg_exporter bin/pg_exporter_v$(VERSION)_windows-amd64/
-	cp -f pg_exporter.yaml bin/pg_exporter_v$(VERSION)_windows-amd64/
-	tar -czf bin/pg_exporter_v$(VERSION)_windows-amd64.tar.gz -C bin pg_exporter_v$(VERSION)_windows-amd64
-	rm -rf bin/pg_exporter_v$(VERSION)_windows-amd64
+# build docker image
+docker: linux
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
+	docker build -t pg_exporter .
 
+# build centos/redhat rpm package
 rpm:
 	./make-rpm.sh
 
+release: clean conf release-linux release-darwin # release-windows
+
+
+###############################################################
+#                         Develop                             #
+###############################################################
 install: build
 	sudo install -m 0755 pg_exporter /usr/bin/pg_exporter
 
 uninstall:
 	sudo rm -rf /usr/bin/pg_exporter
-
-conf:
-	rm -rf pg_exporter.yaml
-	cat conf/*.yaml >> pg_exporter.yaml
-
-docker: linux
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
-	docker build -t pg_exporter .
 
 run:
 	go run pg_exporter.go --log.level=Info --config=conf --auto-discovery
@@ -60,8 +89,5 @@ curl:
 
 upload:
 	./upload.sh
-
-release: clean conf release-linux release-darwin # release-windows
-
 
 .PHONY: build clean release-linux release-darwin release-windows rpm release linux docker run curl conf upload
