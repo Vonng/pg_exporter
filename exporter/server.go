@@ -1,18 +1,3 @@
-/***********************************************************************\
-Copyright © 2021 Ruohang Feng <rh@vonng.com>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-\***********************************************************************/
 package exporter
 
 import (
@@ -62,7 +47,7 @@ type Server struct {
 	Planned        bool     // if false, server will trigger a plan before collect
 
 	// query
-	instances []*QueryInstance  // query instance
+	instances []*Collector      // query instance
 	queries   map[string]*Query // queries map, keys are config file top layer key
 	labels    prometheus.Labels // constant labels
 
@@ -87,7 +72,7 @@ func (s *Server) Name() string {
 	if s.Database != "" {
 		return s.Database
 	}
-	return shadowDSN(s.dsn)
+	return ShadowPGURL(s.dsn)
 }
 
 // Name is coalesce(s.Database, dsn)
@@ -164,6 +149,7 @@ func PostgresPrecheck(s *Server) (err error) {
 	(SELECT array_agg(extname) AS extensions FROM pg_extension);`
 	ctx, cancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel2()
+	//if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, &databases, &namespaces, &extensions); err != nil {
 	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions)); err != nil {
 		s.UP = false
 		return fmt.Errorf("fail fetching server version: %w", err)
@@ -232,11 +218,11 @@ func (s *Server) Plan(queries ...*Query) {
 	}
 
 	// check query compatibility
-	instances := make([]*QueryInstance, 0)
+	instances := make([]*Collector, 0)
 	var installedNames, discardedNames []string
 	for name, query := range s.queries {
 		if ok, reason := s.Compatible(query); ok {
-			instances = append(instances, NewQueryInstance(query, s))
+			instances = append(instances, NewCollector(query, s))
 			installedNames = append(installedNames, name)
 		} else {
 			discardedNames = append(discardedNames, name)
@@ -474,7 +460,7 @@ func NewServer(dsn string, opts ...ServerOpt) *Server {
 	for _, opt := range opts {
 		opt(s)
 	}
-	s.Database = parseDatname(dsn)
+	s.Database = ParseDatname(dsn)
 	if s.Database != "pgbouncer" {
 		s.PgbouncerMode = false
 		s.beforeScrape = PostgresPrecheck

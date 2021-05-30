@@ -6,7 +6,7 @@
 
 # Get Current Version
 VERSION=0.4.0
-# VERSION=`cat exporter/const.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
+# VERSION=`cat exporter/global.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
 
 # Release Dir
 LINUX_DIR:=bin/release/v$(VERSION)/pg_exporter_v$(VERSION)_linux-amd64
@@ -19,6 +19,10 @@ WINDOWS_DIR:=bin/release/v$(VERSION)/pg_exporter_v$(VERSION)_windows-amd64
 ###############################################################
 build:
 	go build -o pg_exporter
+
+build2:
+	CGO_ENABLED=0 GOmOS=darwin GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
+	upx -9 pg_exporter
 
 clean:
 	rm -rf pg_exporter conf.tar.gz

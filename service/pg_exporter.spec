@@ -10,7 +10,7 @@ URL:            https://www.vonng.com/%{name}
 Source0:        %{name}_v%{version}_linux-amd64.tar.gz
 Source1:        %{name}.service
 Source2:        %{name}.default
-Source3:        %{name}.yaml
+Source3:        %{name}.yml
 
 %{?systemd_requires}
 Requires(pre): shadow-utils
@@ -27,7 +27,7 @@ Supported version: Postgres9.4+ & Pgbouncer 1.8+
 %install
 mkdir -p %{buildroot}/%{_bindir} %{buildroot}/%{_sysconfdir}/%{name} %{buildroot}/%{_sysconfdir}/default %{buildroot}%{_unitdir}
 install -m 0755 %{name} %{buildroot}/%{_bindir}/%{name}
-install -m 0644 %{name}.yaml %{buildroot}/%{_sysconfdir}/%{name}/%{name}.yaml
+install -m 0644 %{name}.yml %{buildroot}/%{_sysconfdir}/%{name}/%{name}.yml
 install -m 0644 %{name}.service %{buildroot}%{_unitdir}/%{name}.service
 install -m 0640 %{name}.default %{buildroot}/%{_sysconfdir}/default/%{name}
 
@@ -52,7 +52,7 @@ exit 0
 %{_bindir}/%{name}
 %{_unitdir}/%{name}.service
 %config(noreplace) %{_sysconfdir}/default/%{name}
-%config(noreplace) %{_sysconfdir}/%{name}/%{name}.yaml
+%config(noreplace) %{_sysconfdir}/%{name}/%{name}.yml
 
 %changelog
 * Thu May 27 2021 Ruohang Feng <rh@vonng.com> - 0.4.0-1

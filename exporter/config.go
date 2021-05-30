@@ -1,29 +1,36 @@
-/***********************************************************************\
-Copyright © 2021 Ruohang Feng <rh@vonng.com>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-\***********************************************************************/
 package exporter
 
 import (
 	"fmt"
 	"github.com/prometheus/common/log"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 )
+
+// GetConfig will try load config from target path
+func GetConfig() (res string) {
+	// priority: cli-args > env  > default settings (check exist)
+	if res = *configPath; res != "" {
+		log.Infof("retrieve config path %s from command line", res)
+		return res
+	}
+	if res = os.Getenv("PG_EXPORTER_CONFIG"); res != "" {
+		log.Infof("retrieve config path %s from PG_EXPORTER_CONFIG", res)
+		return res
+	}
+
+	candidate := []string{"pg_exporter.yaml", "pg_exporter.yml", "/etc/pg_exporter.yaml", "/etc/pg_exporter"}
+	for _, res = range candidate {
+		if _, err := os.Stat(res); err == nil { // default1 exist
+			log.Infof("fallback on default config path: %s", res)
+			return res
+		}
+	}
+	return ""
+}
 
 // ParseConfig turn config content into Query struct
 func ParseConfig(content []byte) (queries map[string]*Query, err error) {
