@@ -14,16 +14,15 @@ Latest stable `pg_exporter` version is: `0.4.0`.
 ## Features
 
 * Support [Pigsty](https://pigsty.cc/en/)
-* Support both Postgres & Pgbouncer
+* Support both Postgres & Pgbouncer (Pgbouncer mode is enabled when target dbname is `pgbouncer`)
 * Flexible: Almost all metrics are defined in customizable configuration files in SQL style. 
 * Fine-grained execution control (Tags Filter, Facts Filter, Version Filter, Timeout, Cache, etc...)
 * Dynamic Planning: User could provide multiple branches of a metric queries. Queries matches server version & fact & tag will be actually installed.
 * Configurable caching policy & query timeout
 * Rich metrics about `pg_exporter` itself.
-* Auto discovery multi database in the same cluster (beta)
+* Auto discovery multi-database in the same instance
 * Tested and verified in real world production environment for years (200+ Nodes)
 * Metrics overhelming!  Gives you complete insight on your favourate elephant!
-* (Pgbouncer mode is enabled when target dbname is `pgbouncer`)
 
 
 
@@ -40,7 +39,7 @@ export PG_EXPORTER_CONFIG='/path/to/conf/file/or/dir'
 pg_exporter
 ```
 
-`pg_exporter` only built-in with 3 metrics: `pg_up`,`pg_version` , and  `pg_in_recovery`. **All other metrics are defined in configuration files** . You cound use pre-defined configuration file: [`pg_exporter.yaml`](pg_exporter.yaml) or use separated metric query in [conf](https://github.com/Vonng/pg_exporter/tree/master/conf)  dir.
+`pg_exporter` only built-in with 3 metrics: `pg_up`,`pg_version` , and  `pg_in_recovery`. **All other metrics are defined in configuration files** . You cound use pre-defined configuration file: [`pg_exporter.yml`](pg_exporter.yml) or use separated metric query in [conf](https://github.com/Vonng/pg_exporter/tree/master/config/collector)  dir.
 
 
 
@@ -191,53 +190,54 @@ Current `pg_exporter` is shipped with following metrics collector definition fil
 >
 > But you can still get PostgreSQL 9.4, 9.5, 9.6 support by switching to older version collector definition
 
-* [pg](conf/110-pg.yaml)
-* [pg_meta](conf/120-pg_meta.yaml)
-* [pg_setting](conf/130-pg_setting.yaml)
-* [pg_repl](conf/210-pg_repl.yaml)
-* [pg_sync_standby](conf/220-pg_sync_standby.yaml)
-* [pg_downstream](conf/230-pg_downstream.yaml)
-* [pg_slot](conf/240-pg_slot.yaml)
-* [pg_recv](conf/250-pg_recv.yaml)
-* [pg_sub](conf/260-pg_sub.yaml)
-* [pg_origin](conf/270-pg_origin.yaml)
-* [pg_size](conf/310-pg_size.yaml)
-* [pg_archiver](conf/320-pg_archiver.yaml)
-* [pg_bgwriter](conf/330-pg_bgwriter.yaml)
-* [pg_ssl](conf/340-pg_ssl.yaml)
-* [pg_checkpoint](conf/350-pg_checkpoint.yaml)
-* [pg_recovery](conf/360-pg_recovery.yaml)
-* [pg_slru](conf/370-pg_slru.yaml)
-* [pg_shmem](conf/380-pg_shmem.yaml)
-* [pg_wal](conf/390-pg_wal.yaml)
-* [pg_activity](conf/410-pg_activity.yaml)
-* [pg_wait](conf/420-pg_wait.yaml)
-* [pg_backend](conf/430-pg_backend.yaml)
-* [pg_xact](conf/440-pg_xact.yaml)
-* [pg_lock](conf/450-pg_lock.yaml)
-* [pg_query](conf/460-pg_query.yaml)
-* [pg_vacuuming](conf/510-pg_vacuuming.yaml)
-* [pg_indexing](conf/520-pg_indexing.yaml)
-* [pg_clustering](conf/530-pg_clustering.yaml)
-* [pg_backup](conf/540-pg_backup.yaml)
-* [pg_db](conf/610-pg_db.yaml)
-* [pg_db_confl](conf/620-pg_db_confl.yaml)
-* [pg_pubrel](conf/640-pg_pubrel.yaml)
-* [pg_subrel](conf/650-pg_subrel.yaml)
-* [pg_class](conf/710-pg_class.yaml)
-* [pg_relkind](conf/720-pg_relkind.yaml)
-* [pg_table](conf/730-pg_table.yaml)
-* [pg_index](conf/740-pg_index.yaml)
-* [pg_func](conf/750-pg_func.yaml)
-* [pg_seq](conf/760-pg_seq.yaml)
-* [pg_defpart](conf/770-pg_defpart.yaml)
-* [pg_table_size](conf/810-pg_table_size.yaml)
-* [pg_table_bloat](conf/820-pg_table_bloat.yaml)
-* [pg_index_bloat](conf/830-pg_index_bloat.yaml)
-* [pgbouncer_list](conf/910-pgbouncer_list.yaml)
-* [pgbouncer_database](conf/920-pgbouncer_database.yaml)
-* [pgbouncer_stat](conf/930-pgbouncer_stat.yaml)
-* [pgbouncer_pool](conf/940-pgbouncer_pool.yaml)
+- [doc](config/collector/000-doc.yml)
+- [pg](config/collector/110-pg.yml)
+- [pg_meta](config/collector/120-pg_meta.yml)
+- [pg_setting](config/collector/130-pg_setting.yml)
+- [pg_repl](config/collector/210-pg_repl.yml)
+- [pg_sync_standby](config/collector/220-pg_sync_standby.yml)
+- [pg_downstrem](config/collector/230-pg_downstrem.yml)
+- [pg_slot](config/collector/240-pg_slot.yml)
+- [pg_recv](config/collector/250-pg_recv.yml)
+- [pg_sub](config/collector/260-pg_sub.yml)
+- [pg_origin](config/collector/270-pg_origin.yml)
+- [pg_size](config/collector/310-pg_size.yml)
+- [pg_archiver](config/collector/320-pg_archiver.yml)
+- [pg_bgwriter](config/collector/330-pg_bgwriter.yml)
+- [pg_ssl](config/collector/340-pg_ssl.yml)
+- [pg_checkpoint](config/collector/350-pg_checkpoint.yml)
+- [pg_recovery](config/collector/360-pg_recovery.yml)
+- [pg_slru](config/collector/370-pg_slru.yml)
+- [pg_shmem](config/collector/380-pg_shmem.yml)
+- [pg_wal](config/collector/390-pg_wal.yml)
+- [pg_activity](config/collector/410-pg_activity.yml)
+- [pg_wait](config/collector/420-pg_wait.yml)
+- [pg_backend](config/collector/430-pg_backend.yml)
+- [pg_xact](config/collector/440-pg_xact.yml)
+- [pg_lock](config/collector/450-pg_lock.yml)
+- [pg_query](config/collector/460-pg_query.yml)
+- [pg_vacuuming](config/collector/510-pg_vacuuming.yml)
+- [pg_indexing](config/collector/520-pg_indexing.yml)
+- [pg_clustering](config/collector/530-pg_clustering.yml)
+- [pg_backup](config/collector/540-pg_backup.yml)
+- [pg_db](config/collector/610-pg_db.yml)
+- [pg_db_conf](config/collector/620-pg_db_conf.yml)
+- [pg_pubrel](config/collector/640-pg_pubrel.yml)
+- [pg_subrel](config/collector/650-pg_subrel.yml)
+- [pg_class](config/collector/710-pg_class.yml)
+- [pg_relkind](config/collector/720-pg_relkind.yml)
+- [pg_table](config/collector/730-pg_table.yml)
+- [pg_index](config/collector/740-pg_index.yml)
+- [pg_func](config/collector/750-pg_func.yml)
+- [pg_seq](config/collector/760-pg_seq.yml)
+- [pg_defpart](config/collector/770-pg_defpart.yml)
+- [pg_table_size](config/collector/810-pg_table_size.yml)
+- [pg_table_bloat](config/collector/820-pg_table_bloat.yml)
+- [pg_index_bloat](config/collector/830-pg_index_bloat.yml)
+- [pgbouncer_list](config/collector/910-pgbouncer_list.yml)
+- [pgbouncer_database](config/collector/920-pgbouncer_database.yml)
+- [pgbouncer_stat](config/collector/930-pgbouncer_stat.yml)
+- [pgbouncer_pooy](config/collector/940-pgbouncer_pooy.yml)
 
 
 `pg_exporter` will generate approximately 200~300 metrics for completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate serveral 1k ~ 10k metrics. You may need modifying or disable some  database-level metrics on database with serveral thousands or more tables in order to complete scrape in time.
@@ -245,7 +245,6 @@ Current `pg_exporter` is shipped with following metrics collector definition fil
 Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir. and here is a [sample](conf/100-doc.txt) config.
 
 ```yaml
-
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ 1. Configuration File
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
