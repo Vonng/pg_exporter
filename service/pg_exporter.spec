@@ -4,7 +4,7 @@ Name:           pg_exporter
 Version:        0.4.0
 Release:        1%{?dist}
 Summary:        Prometheus exporter for PostgreSQL/Pgbouncer server metrics
-License:        BSD
+License:        Apache-2.0 License
 URL:            https://www.vonng.com/%{name}
 
 Source0:        %{name}_v%{version}_linux-amd64.tar.gz
