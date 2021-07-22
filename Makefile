@@ -33,7 +33,7 @@ clean:
 ###############################################################
 # generate merged config from separated configuration
 conf:
-	rm -rf pg_exporter.yaml
+	rm -rf pg_exporter.yml
 	cat config/collector/*.yml >> pg_exporter.yml
 
 
