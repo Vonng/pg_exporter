@@ -13,7 +13,7 @@ Latest stable `pg_exporter` version is: `0.4.0`.
 
 ## Features
 
-* Support [Pigsty](https://pigsty.cc/en/)
+* Support [Pigsty](https://pigsty.cc)
 * Support both Postgres & Pgbouncer (Pgbouncer mode is enabled when target dbname is `pgbouncer`)
 * Flexible: Almost all metrics are defined in customizable configuration files in SQL style. 
 * Fine-grained execution control (Tags Filter, Facts Filter, Version Filter, Timeout, Cache, etc...)
