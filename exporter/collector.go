@@ -123,7 +123,6 @@ func (q *Collector) execute() {
 	columnNames, err := rows.Columns()
 	if err != nil {
 		q.err = fmt.Errorf("query [%s] fail retriving rows meta: %w", q.Name, err)
-		q.scrapeDone = time.Now()
 		return
 	}
 	columnIndexes := make(map[string]int, len(columnNames)) // column name to index
@@ -145,7 +144,6 @@ func (q *Collector) execute() {
 		err = rows.Scan(colArgs...)
 		if err != nil {
 			q.err = fmt.Errorf("fail scanning rows: %w", err)
-			q.scrapeDone = time.Now()
 			return
 		}
 
