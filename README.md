@@ -39,7 +39,7 @@ export PG_EXPORTER_CONFIG='/path/to/conf/file/or/dir'
 pg_exporter
 ```
 
-`pg_exporter` only built-in with 3 metrics: `pg_up`,`pg_version` , and  `pg_in_recovery`. **All other metrics are defined in configuration files** . You cound use pre-defined configuration file: [`pg_exporter.yml`](pg_exporter.yml) or use separated metric query in [conf](https://github.com/Vonng/pg_exporter/tree/master/config/collector)  dir.
+`pg_exporter` only built-in with 3 metrics: `pg_up`,`pg_version` , and  `pg_in_recovery`. **All other metrics are defined in configuration files** . You could use the pre-defined configuration file: [`pg_exporter.yml`](pg_exporter.yml) or use separated metric query in [conf](https://github.com/Vonng/pg_exporter/tree/master/config/collector)  dir.
 
 
 
