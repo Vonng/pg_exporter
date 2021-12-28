@@ -7,7 +7,9 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -111,11 +113,49 @@ func PgbouncerPrecheck(s *Server) (err error) {
 		s.DB.SetConnMaxLifetime(connMaxLifeTime)
 	}
 
-	if _, err = s.DB.Exec(`SHOW VERSION;`); err != nil {
+	var version string
+	ctx, cancel := context.WithTimeout(context.Background(), s.GetConnectTimeout())
+	defer cancel()
+	if err = s.DB.QueryRowContext(ctx, `SHOW VERSION;`).Scan(&version); err != nil {
 		// TODO: since pgbouncer 1.12- using NOTICE to tell version, we just leave it blank here
-		return nil
+		log.Warnf("server [%s] fail to get pgbouncer version", s.Name())
+		// return fmt.Errorf("fail fetching pgbouncer server version: %w", err)
+	} else {
+		s.Version = ParseSemver(version)
+		if s.Version != 0 {
+			log.Infof("server [%s] parse pgbouncer version from %s to %v", s.Name(), version, s.Version)
+		} else {
+			log.Warnf("server [%s] fail to parse pgbouncer version from %v", s.Name(), version)
+		}
 	}
 	return nil
+}
+
+// ParseSemver will turn semantic version string into integer
+func ParseSemver(semverStr string) int {
+	semverRe := regexp.MustCompile(`(\d+)\.(\d+)\.(\d+)`)
+	semver := semverRe.FindStringSubmatch(semverStr)
+	log.Debugf("parse pgbouncer semver string %s", semverStr)
+	if len(semver) != 4 {
+		return 0
+	}
+	verNum := 0
+	if major, err := strconv.Atoi(semver[1]); err != nil {
+		return 0
+	} else {
+		verNum += major * 10000
+	}
+	if minor, err := strconv.Atoi(semver[2]); err != nil {
+		return 0
+	} else {
+		verNum += minor * 100
+	}
+	if release, err := strconv.Atoi(semver[3]); err != nil {
+		return 0
+	} else {
+		verNum += release
+	}
+	return verNum
 }
 
 // PostgresPrecheck checks postgres connection and gathering facts
@@ -237,9 +277,9 @@ func (s *Server) Plan(queries ...*Query) {
 	for name, query := range s.queries {
 		if ok, reason := s.Compatible(query); ok {
 			instances = append(instances, NewCollector(query, s))
-			installedNames = append(installedNames, name)
+			installedNames = append(installedNames, query.Branch)
 		} else {
-			discardedNames = append(discardedNames, name)
+			discardedNames = append(discardedNames, query.Branch)
 			log.Debugf("query [%s].%s discarded because of %s", query.Name, name, reason)
 		}
 	}

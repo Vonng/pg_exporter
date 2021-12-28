@@ -179,3 +179,4 @@ func (q *Query) TemplateSQL() string {
 func (q *Query) TimeoutDuration() time.Duration {
 	return time.Duration(float64(time.Second) * q.Timeout)
 }
+
