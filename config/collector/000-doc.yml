@@ -6,7 +6,7 @@
 #┃ Desc  :   pg_exporter metrics collector definition          ┃#
 #┃ Ver   :   PostgreSQL 10~14 pgbouncer 1.9+                   ┃#
 #┃ Ctime :   2019-12-09                                        ┃#
-#┃ Mtime :   2021-05-27                                        ┃#
+#┃ Mtime :   2021-12-28                                        ┃#
 #┃ Copyright (C) 2019-2021 Ruohang Feng                        ┃#
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛#
 #################################################################

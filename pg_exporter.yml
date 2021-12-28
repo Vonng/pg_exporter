@@ -6,7 +6,7 @@
 #┃ Desc  :   pg_exporter metrics collector definition          ┃#
 #┃ Ver   :   PostgreSQL 10~14 pgbouncer 1.9+                   ┃#
 #┃ Ctime :   2019-12-09                                        ┃#
-#┃ Mtime :   2021-07-22                                        ┃#
+#┃ Mtime :   2021-12-28                                        ┃#
 #┃ Copyright (C) 2019-2021 Ruohang Feng                        ┃#
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛#
 #################################################################
@@ -758,7 +758,7 @@ pg_repl_10_11:
 
   ttl: 10
   min_version: 100000
-  max_version: 120000
+  max_version: 110000
   tags:
     - cluster
 
