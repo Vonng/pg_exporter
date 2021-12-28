@@ -14,6 +14,11 @@ import (
 )
 
 /**********************************************************************************************\
+*                                       Const                                                  *
+\**********************************************************************************************/
+const connMaxLifeTime = 1 * time.Minute // close connection after 1 minute to avoid conn leak
+
+/**********************************************************************************************\
 *                                       Server                                                 *
 \**********************************************************************************************/
 
@@ -39,12 +44,14 @@ type Server struct {
 	Namespaces map[string]bool // all available schema in target cluster
 	Extensions map[string]bool // all available extension in target cluster
 
-	Tags           []string // server tags set by cli arg --tag
-	PgbouncerMode  bool     // indicate it is a pgbouncer server
-	DisableCache   bool     // force executing, ignoring caching policy
-	ExcludeDbnames []string // if ExcludeDbnames is provided, Auto Database Discovery is enabled
-	Forked         bool     // is this a forked server ? (does not run cluster level query)
-	Planned        bool     // if false, server will trigger a plan before collect
+	Tags            []string // server tags set by cli arg --tag
+	PgbouncerMode   bool     // indicate it is a pgbouncer server
+	DisableCache    bool     // force executing, ignoring caching policy
+	ExcludeDbnames  []string // if ExcludeDbnames is provided, Auto Database Discovery is enabled
+	Forked          bool     // is this a forked server ? (does not run cluster level query)
+	Planned         bool     // if false, server will trigger a plan before collect
+	ConnectTimeout  int      // connect timeout for this server in ms
+	ConnMaxLifetime int      // connection max lifetime for this server in seconds
 
 	// query
 	instances []*Collector      // query instance
@@ -65,6 +72,13 @@ type Server struct {
 	queryScrapeErrorCount  map[string]float64 // internal query metrics: times failed
 	queryScrapeMetricCount map[string]float64 // internal query metrics: number of metrics scrapped
 	queryScrapeDuration    map[string]float64 // internal query metrics: time spend on executing
+}
+
+func (s *Server) GetConnectTimeout() time.Duration {
+	if s.ConnectTimeout <= 0 {
+		return 100 * time.Millisecond
+	}
+	return time.Duration(s.ConnectTimeout) * time.Millisecond
 }
 
 // Name is coalesce(s.Database, dsn)
@@ -94,7 +108,7 @@ func PgbouncerPrecheck(s *Server) (err error) {
 		}
 		s.DB.SetMaxIdleConns(1)
 		s.DB.SetMaxOpenConns(1)
-		s.DB.SetConnMaxLifetime(60 * time.Second)
+		s.DB.SetConnMaxLifetime(connMaxLifeTime)
 	}
 
 	if _, err = s.DB.Exec(`SHOW VERSION;`); err != nil {
@@ -114,7 +128,7 @@ func PostgresPrecheck(s *Server) (err error) {
 		}
 		s.DB.SetMaxIdleConns(1)
 		s.DB.SetMaxOpenConns(1)
-		s.DB.SetConnMaxLifetime(120 * time.Second)
+		s.DB.SetConnMaxLifetime(connMaxLifeTime)
 	}
 
 	// retrieve version info
