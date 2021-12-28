@@ -2541,7 +2541,9 @@ pg_subrel:
 pg_class:
   name: pg_class
   desc: Postgres relation catalog info db level normal version
-  query: SELECT CURRENT_CATALOG AS datname,relnamespace::RegNamespace || '.' || relname AS relname, relkind,relpages,reltuples,CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,pg_relation_size(oid) AS relsize,relnatts FROM pg_class c WHERE relnamespace = ANY(SELECT oid FROM pg_namespace WHERE nspname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast'])) AND relkind = ANY(ARRAY['r', 'i', 'm', 't']) ORDER BY relpages DESC LIMIT 256;
+  query: |
+    SELECT CURRENT_CATALOG AS datname,relnamespace::RegNamespace || '.' || relname AS relname, relkind,relpages,reltuples,CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,pg_relation_size(oid) AS relsize,relnatts FROM pg_class c
+        WHERE relnamespace = ANY(SELECT oid FROM pg_namespace WHERE nspname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast','columnar']) AND nspname !~'timescaledb' AND nspname !~'citus') AND relkind = ANY(ARRAY['r', 'i', 'm', 't']) ORDER BY relpages DESC LIMIT 256;
   ttl: 60
   timeout: 1
   min_version: 090400
@@ -2601,11 +2603,12 @@ pg_table_13:
 
   query: |
     SELECT CURRENT_CATALOG AS datname, t.schemaname || '.' || t.relname AS relname, t.relid,
-           seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,coalesce(seq_scan,0) + coalesce(idx_scan,0) AS tbl_scan, coalesce(seq_tup_read,0) + coalesce(idx_tup_fetch,0) AS tup_read,
+           seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,seq_scan + idx_scan AS tbl_scan, seq_tup_read + idx_tup_fetch AS tup_read,
            n_tup_ins,n_tup_upd,n_tup_del,(n_tup_ins + n_tup_upd + n_tup_del) AS n_tup_mod,n_tup_hot_upd,n_live_tup,n_dead_tup,
            n_mod_since_analyze,n_ins_since_vacuum,last_vacuum,last_autovacuum,last_analyze,last_autoanalyze,vacuum_count,autovacuum_count,analyze_count,autoanalyze_count,
            heap_blks_read,heap_blks_hit,idx_blks_read,idx_blks_hit,toast_blks_read,toast_blks_hit,tidx_blks_read,tidx_blks_hit
-    FROM pg_stat_user_tables t, LATERAL (SELECT * FROM pg_statio_user_tables tio WHERE t.relid = tio.relid) p
+    FROM pg_stat_user_tables t, LATERAL (SELECT * FROM pg_statio_user_tables tio WHERE t.relid = tio.relid LIMIT 1) p
+    WHERE t.schemaname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast','columnar']) AND t.schemaname !~'timescaledb' AND t.schemaname !~'citus'
     ORDER BY 8 DESC LIMIT 128;
 
   ttl: 10
@@ -2725,11 +2728,12 @@ pg_table_10_12:
 
   query: |
     SELECT CURRENT_CATALOG AS datname, t.schemaname || '.' || t.relname AS relname, t.relid,
-           seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,coalesce(seq_scan,0) + coalesce(idx_scan,0) AS tbl_scan, coalesce(seq_tup_read,0) + coalesce(idx_tup_fetch,0) AS tup_read,
+           seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,seq_scan + idx_scan AS tbl_scan, seq_tup_read + idx_tup_fetch AS tup_read,
            n_tup_ins,n_tup_upd,n_tup_del,(n_tup_ins + n_tup_upd + n_tup_del) AS n_tup_mod,n_tup_hot_upd,n_live_tup,n_dead_tup,
            n_mod_since_analyze,last_vacuum,last_autovacuum,last_analyze,last_autoanalyze,vacuum_count,autovacuum_count,analyze_count,autoanalyze_count,
            heap_blks_read,heap_blks_hit,idx_blks_read,idx_blks_hit,toast_blks_read,toast_blks_hit,tidx_blks_read,tidx_blks_hit
-    FROM pg_stat_user_tables t, LATERAL (SELECT * FROM pg_statio_user_tables tio WHERE t.relid = tio.relid) p
+    FROM pg_stat_user_tables t, LATERAL (SELECT * FROM pg_statio_user_tables tio WHERE t.relid = tio.relid LIMIT 1) p
+    WHERE t.schemaname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast','columnar']) AND t.schemaname !~'timescaledb' AND t.schemaname !~'citus'
     ORDER BY 8 DESC LIMIT 128;
 
   ttl: 10
@@ -2845,9 +2849,10 @@ pg_index:
   name: pg_index
   desc: PostgreSQL index metrics
   query: |
-    SELECT CURRENT_CATALOG AS datname, schemaname || '.' || indexrelname AS idxname, schemaname || '.' || relname AS relname ,idx_scan, idx_tup_read, idx_tup_fetch, idx_blks_read, idx_blks_hit
-      FROM pg_stat_user_indexes psui, LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid) p2
-      ORDER BY idx_tup_read DESC LIMIT 128;
+    SELECT CURRENT_CATALOG AS datname, schemaname || '.' || indexrelname AS idxname, schemaname || '.' || relname AS relname ,indexrelid AS relid, idx_scan, idx_tup_read, idx_tup_fetch, idx_blks_read, idx_blks_hit
+    FROM pg_stat_user_indexes psui, LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid LIMIT 1) p2
+    WHERE schemaname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast','columnar']) AND schemaname !~'timescaledb' AND schemaname !~'citus'
+    ORDER BY idx_tup_read DESC LIMIT 128;
 
   ttl: 10
   timeout: 1
@@ -2863,6 +2868,9 @@ pg_index:
     - relname:
         usage: LABEL
         description: Name of the table for this index (full-qualifed schema name)
+    - relid:
+        usage: LABEL
+        description: Relation oid of this index
     - idx_scan:
         usage: COUNTER
         description: Number of index scans initiated on this index
@@ -2905,7 +2913,7 @@ pg_func:
 
 pg_seq:
   desc: PostgreSQL sequence metrics
-  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname) d LIMIT 128;
+  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname LIMIT 1) d LIMIT 128;
   ttl: 10
   min_version: 100000
   metrics:

@@ -1,7 +1,7 @@
 
 pg_seq:
   desc: PostgreSQL sequence metrics
-  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname) d LIMIT 128;
+  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname LIMIT 1) d LIMIT 128;
   ttl: 10
   min_version: 100000
   metrics:

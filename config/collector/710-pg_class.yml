@@ -7,7 +7,9 @@
 pg_class:
   name: pg_class
   desc: Postgres relation catalog info db level normal version
-  query: SELECT CURRENT_CATALOG AS datname,relnamespace::RegNamespace || '.' || relname AS relname, relkind,relpages,reltuples,CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,pg_relation_size(oid) AS relsize,relnatts FROM pg_class c WHERE relnamespace = ANY(SELECT oid FROM pg_namespace WHERE nspname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast'])) AND relkind = ANY(ARRAY['r', 'i', 'm', 't']) ORDER BY relpages DESC LIMIT 256;
+  query: |
+    SELECT CURRENT_CATALOG AS datname,relnamespace::RegNamespace || '.' || relname AS relname, relkind,relpages,reltuples,CASE WHEN relkind = 'i' THEN NULL ELSE age(relfrozenxid) END AS relage,pg_relation_size(oid) AS relsize,relnatts FROM pg_class c
+        WHERE relnamespace = ANY(SELECT oid FROM pg_namespace WHERE nspname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast','columnar']) AND nspname !~'timescaledb' AND nspname !~'citus') AND relkind = ANY(ARRAY['r', 'i', 'm', 't']) ORDER BY relpages DESC LIMIT 256;
   ttl: 60
   timeout: 1
   min_version: 090400
