@@ -28,8 +28,9 @@ type Exporter struct {
 	excludeDatabase map[string]bool   // excluded database for auto discovery
 	includeDatabase map[string]bool   // include database for auto discovery
 	constLabels     prometheus.Labels // prometheus const k=v labels
-	tags            []string
-	namespace       string
+	tags            []string          // tags passed to this exporter for scheduling purpose
+	namespace       string            // metrics prefix ('pg' or 'pgbouncer' by default)
+	connectTimeout  int               // timeout in ms when perform server pre-check
 
 	// internal status
 	lock    sync.RWMutex       // export lock
@@ -355,6 +356,7 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 		WithConstLabel(e.constLabels),
 		WithCachePolicy(e.disableCache),
 		WithServerTags(e.tags),
+		WithServerConnectTimeout(e.connectTimeout),
 	)
 
 	// register db change callback
@@ -388,8 +390,9 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 	return
 }
 
+// OnDatabaseChange will spawn new Server when new database is created
+// and destroy Server if corresponding database is dropped
 func (e *Exporter) OnDatabaseChange(change map[string]bool) {
-	// TODO: spawn or destroy database on dbchange
 	for dbname, add := range change {
 		verb := "del"
 		if add {
@@ -419,6 +422,8 @@ func (e *Exporter) OnDatabaseChange(change map[string]bool) {
 	}
 }
 
+// CreateServer will spawn new database server from a database name combined with existing dsn string
+// This happens when a database is newly created
 func (e *Exporter) CreateServer(dbname string) {
 	newDSN := ReplaceDatname(e.dsn, dbname)
 	log.Infof("spawn new server for database %s : %s", dbname, ShadowPGURL(newDSN))
@@ -428,6 +433,7 @@ func (e *Exporter) CreateServer(dbname string) {
 		WithConstLabel(e.constLabels),
 		WithCachePolicy(e.disableCache),
 		WithServerTags(e.tags),
+		WithServerConnectTimeout(e.connectTimeout),
 	)
 	newServer.Forked = true // important!
 
@@ -437,6 +443,8 @@ func (e *Exporter) CreateServer(dbname string) {
 	defer e.sLock.Unlock()
 }
 
+// RemoveServer will destroy Server from Exporter according to database name
+// This happens when a database is dropped
 func (e *Exporter) RemoveServer(dbname string) {
 	e.sLock.Lock()
 	delete(e.servers, dbname)
@@ -536,6 +544,14 @@ func WithIncludeDatabase(includeStr string) ExporterOpt {
 			inclMap[item] = true
 		}
 		e.includeDatabase = inclMap
+	}
+}
+
+// WithConnectTimeout will specify timeout for conn pre-check.
+// It's useful to increase this value when monitoring a remote instance (cross DC, cross AZ)
+func WithConnectTimeout(timeout int) ExporterOpt {
+	return func(e *Exporter) {
+		e.connectTimeout = timeout
 	}
 }
 

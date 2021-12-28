@@ -86,7 +86,10 @@ uninstall:
 	sudo rm -rf /usr/bin/pg_exporter
 
 run:
-	go run pg_exporter.go --log.level=Info --config=conf --auto-discovery
+	go run main.go --log.level=Info --config=pg_exporter.yml --auto-discovery
+
+debug:
+	go run main.go --log.level=Debug --config=pg_exporter.yml --auto-discovery
 
 curl:
 	curl localhost:9630/metrics | grep -v '#' | grep pg_

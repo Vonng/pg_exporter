@@ -55,6 +55,7 @@ func Reload() error {
 		WithExcludeDatabase(*excludeDatabase),
 		WithIncludeDatabase(*includeDatabase),
 		WithTags(*serverTags),
+		WithConnectTimeout(*connectTimeout),
 	)
 	// if launch new exporter failed, do nothing
 	if err != nil {

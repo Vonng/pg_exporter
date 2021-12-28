@@ -133,7 +133,7 @@ func PostgresPrecheck(s *Server) (err error) {
 
 	// retrieve version info
 	var version int
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), s.GetConnectTimeout())
 	defer cancel()
 	if err = s.DB.QueryRowContext(ctx, `SHOW server_version_num;`).Scan(&version); err != nil {
 		s.UP = false
@@ -161,7 +161,7 @@ func PostgresPrecheck(s *Server) (err error) {
 	(SELECT array_agg(datname) AS databases FROM pg_database),
 	(SELECT array_agg(nspname) AS namespaces FROM pg_namespace),
 	(SELECT array_agg(extname) AS extensions FROM pg_extension);`
-	ctx, cancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel2 := context.WithTimeout(context.Background(), s.GetConnectTimeout())
 	defer cancel2()
 	//if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, &databases, &namespaces, &extensions); err != nil {
 	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions)); err != nil {
@@ -523,5 +523,14 @@ func WithQueries(queries map[string]*Query) ServerOpt {
 func WithServerTags(tags []string) ServerOpt {
 	return func(s *Server) {
 		s.Tags = tags
+	}
+}
+
+// WithServerConnectTimeout will set a connect timeout for server precheck queries
+// otherwise, a default value 100ms will be used.
+// Increase this value if you are monitoring a remote (cross-DC, cross-AZ) instance
+func WithServerConnectTimeout(timeout int) ServerOpt {
+	return func(s *Server) {
+		s.ConnectTimeout = timeout
 	}
 }
