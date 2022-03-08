@@ -170,7 +170,8 @@ func Run() {
 	http.HandleFunc("/version", VersionFunc)
 	// reload
 	http.HandleFunc("/reload", ReloadFunc)
-	// explain
+	// explain & stat
+	http.HandleFunc("/stat", PgExporter.StatFunc)
 	http.HandleFunc("/explain", PgExporter.ExplainFunc)
 	// alive
 	http.HandleFunc("/up", PgExporter.UpCheckFunc)

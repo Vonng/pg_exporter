@@ -1,12 +1,14 @@
 package exporter
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	"html/template"
 	"regexp"
 	"sort"
 	"strconv"
@@ -36,13 +38,15 @@ type Server struct {
 	onDatabaseChange func(change map[string]bool) // hook: invoke when database list is changed
 
 	// postgres fact gather from server
-	UP         bool            // indicate whether target server is connectable
-	Recovery   bool            // is server in recovering
-	Version    int             // pg server version num
-	Database   string          // database name of current server connection
-	Username   string          // current username
+	UP       bool   // indicate whether target server is connectable
+	Recovery bool   // is server in recovering
+	Version  int    // pg server version num
+	Database string // database name of current server connection
+	Username string // current username
+
 	Databases  map[string]bool // all available database in target cluster
 	dblistLock sync.Mutex      // lock when access Databases map
+
 	Namespaces map[string]bool // all available schema in target cluster
 	Extensions map[string]bool // all available extension in target cluster
 
@@ -56,9 +60,9 @@ type Server struct {
 	ConnMaxLifetime int      // connection max lifetime for this server in seconds
 
 	// query
-	instances []*Collector      // query instance
-	queries   map[string]*Query // queries map, keys are config file top layer key
-	labels    prometheus.Labels // constant labels
+	Collectors []*Collector      // query collector instance (installed query)
+	queries    map[string]*Query // queries map, keys are config file top layer key
+	labels     prometheus.Labels // constant labels
 
 	// internal stats
 	serverInit  time.Time // server init timestamp
@@ -288,7 +292,7 @@ func (s *Server) Plan(queries ...*Query) {
 	sort.Slice(instances, func(i, j int) bool {
 		return instances[i].Priority < instances[j].Priority
 	})
-	s.instances = instances
+	s.Collectors = instances
 
 	// reset statistics after planning
 	s.ResetStats()
@@ -306,7 +310,7 @@ func (s *Server) ResetStats() {
 	s.queryScrapeMetricCount = make(map[string]float64, 0)
 	s.queryScrapeDuration = make(map[string]float64, 0)
 
-	for _, query := range s.instances {
+	for _, query := range s.Collectors {
 		s.queryCacheTTL[query.Name] = 0
 		s.queryScrapeTotalCount[query.Name] = 0
 		s.queryScrapeHitCount[query.Name] = 0
@@ -413,16 +417,56 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 }
 
 // Explain will print all queries that registered to server
-func (s *Server) Explain() (res []string) {
-	for _, i := range s.instances {
+func (s *Server) Explain() string {
+	var res []string
+	for _, i := range s.Collectors {
 		res = append(res, i.Explain())
 	}
-	return
+	return strings.Join(res, "\n")
+}
+
+var statsTemplate, _ = template.New("Query").Parse(`
+<div style="border-style: solid; padding-left: 20px; padding-bottom: 10px;">
+{{ range .Collectors }}<tr>{{ . }}<td></td></tr>{{ end }}
+</div>
+`)
+
+// Stat will turn Server internal stats into HTML
+func (s *Server) Stat() string {
+	buf := new(bytes.Buffer)
+	//err := statsTemplate.Execute(buf, s)
+	//if err != nil {
+	//	log.Errorf("fail to generate server stats html")
+	//	return fmt.Sprintf("fail to generate server stat html, %s", err.Error())
+	//}
+
+	fmt.Println("%-32s %-10s %-10s %-10s %-10s %-10s %-10s\n", "total", "hit", "error", "metric", "expire", "duration")
+	for _, query := range s.Collectors {
+		fmt.Printf("%-32s %-10d %-10d %-10d %-10d %-10f %-10f\n",
+			query.Name,
+			int(s.queryScrapeTotalCount[query.Name]),
+			int(s.queryScrapeHitCount[query.Name]),
+			int(s.queryScrapeErrorCount[query.Name]),
+			int(s.queryScrapeMetricCount[query.Name]),
+			s.queryCacheTTL[query.Name],
+			s.queryScrapeDuration[query.Name],
+		)
+	}
+	return buf.String()
+}
+
+// ExplainHTML will print server stats in HTML format
+func (s *Server) ExplainHTML() string {
+	var res []string
+	for _, i := range s.Collectors {
+		res = append(res, i.HTML())
+	}
+	return strings.Join(res, "</br></br>")
 }
 
 // Describe implement prometheus.Collector
 func (s *Server) Describe(ch chan<- *prometheus.Desc) {
-	for _, instance := range s.instances {
+	for _, instance := range s.Collectors {
 		instance.Describe(ch)
 	}
 }
@@ -444,7 +488,7 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 		s.Plan()
 	}
 
-	for _, query := range s.instances {
+	for _, query := range s.Collectors {
 		query.Collect(ch)
 		s.queryCacheTTL[query.Name] = query.cacheTTL()
 		s.queryScrapeTotalCount[query.Name]++

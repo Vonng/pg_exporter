@@ -5,7 +5,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
@@ -178,9 +177,14 @@ func (e *Exporter) collectServerMetrics(s *Server) {
 	}
 }
 
-// Explain is just yet another wrapper of server.Explain
+// Explain is just yet another wrapper of server.ExplainHTML
 func (e *Exporter) Explain() string {
-	return strings.Join(e.server.Explain(), "\n\n")
+	return e.server.Explain()
+}
+
+// Stat is just yet another wrapper of server.Stat
+func (e *Exporter) Stat() string {
+	return e.server.Stat()
 }
 
 // Check will perform an immediate server health check
@@ -562,6 +566,12 @@ func WithConnectTimeout(timeout int) ExporterOpt {
 func (e *Exporter) ExplainFunc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	_, _ = w.Write([]byte(e.Explain()))
+}
+
+// StatFunc expose html statistics
+func (e *Exporter) StatFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	_, _ = w.Write([]byte(e.Stat()))
 }
 
 // UpCheckFunc tells whether target instance is alive, 200 up 503 down

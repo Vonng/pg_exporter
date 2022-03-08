@@ -1,7 +1,7 @@
 %define debug_package %{nil}
 
 Name:           pg_exporter
-Version:        0.4.0
+Version:        0.4.1
 Release:        1%{?dist}
 Summary:        Prometheus exporter for PostgreSQL/Pgbouncer server metrics
 License:        Apache-2.0 License
@@ -55,7 +55,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.yml
 
 %changelog
-* Thu May 27 2021 Ruohang Feng <rh@vonng.com> - 0.4.0-1
+* Thu May 27 2021 Ruohang Feng <rh@vonng.com> - 0.4.1-1
 - Default metrics configuration overhaul
 - Embed default metrics definition into binary
 - add include-database and exclude-database option

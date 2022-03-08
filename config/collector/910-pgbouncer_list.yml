@@ -3,7 +3,7 @@
 #┃ pgbouncer_list
 #┃ pgbouncer entry list: http://www.pgbouncer.org/usage.html#show-lists
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pgbouncer_list_items{list}  GAUGE    count of curresponding pgbouncer object
+#┃ pgbouncer_list_items{list}  GAUGE    count of corresponding pgbouncer object
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_list:
   name: pgbouncer_list
@@ -21,5 +21,5 @@ pgbouncer_list:
         description: Pgbouncer internal list name
     - items:
         usage: GAUGE
-        description: Number of curresponding pgbouncer object
+        description: Number of corresponding pgbouncer object
 

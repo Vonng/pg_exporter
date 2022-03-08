@@ -5,7 +5,7 @@
 #==============================================================#
 
 # Get Current Version
-VERSION=0.4.0
+VERSION=0.4.1
 # VERSION=`cat exporter/global.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
 
 # Release Dir

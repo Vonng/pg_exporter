@@ -3140,7 +3140,7 @@ pg_index_bloat:
 #┃ pgbouncer_list
 #┃ pgbouncer entry list: http://www.pgbouncer.org/usage.html#show-lists
 #┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pgbouncer_list_items{list}  GAUGE    count of curresponding pgbouncer object
+#┃ pgbouncer_list_items{list}  GAUGE    count of corresponding pgbouncer object
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_list:
   name: pgbouncer_list
@@ -3158,7 +3158,7 @@ pgbouncer_list:
         description: Pgbouncer internal list name
     - items:
         usage: GAUGE
-        description: Number of curresponding pgbouncer object
+        description: Number of corresponding pgbouncer object
 
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3364,7 +3364,7 @@ pgbouncer_stat:
 #┃ pgbouncer_pool_maxwait{datname,user}          GAUGE    how long the first(oldest) client in the queue has waited, in seconds, key metric
 #┃ pgbouncer_pool_maxwait_us{datname,user}       GAUGE    microsecond part of the maximum waiting time.
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-pgbouncer_pool:
+pgbouncer_pool_116:
   name: pgbouncer_pool
   desc: Pgbouncer pool stats (1.16+)    # http://www.pgbouncer.org/usage.html#show-pools
   query: SHOW POOLS;
