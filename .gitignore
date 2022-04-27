@@ -1,5 +1,5 @@
 # binary files
-bin/
+temp/
 pg_exporter
 
 # IDE files
@@ -21,3 +21,4 @@ deploy/
 upload.sh
 
 temp/
+dist/
