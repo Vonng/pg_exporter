@@ -3,10 +3,11 @@ pg_index:
   name: pg_index
   desc: PostgreSQL index metrics
   query: |
-    SELECT CURRENT_CATALOG AS datname, schemaname || '.' || indexrelname AS idxname, schemaname || '.' || relname AS relname ,indexrelid AS relid, idx_scan, idx_tup_read, idx_tup_fetch, idx_blks_read, idx_blks_hit
-    FROM pg_stat_user_indexes psui, LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid LIMIT 1) p2
-    WHERE schemaname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast','columnar']) AND schemaname !~'timescaledb' AND schemaname !~'citus'
-    ORDER BY idx_tup_read DESC LIMIT 128;
+    SELECT CURRENT_CATALOG AS datname, schemaname || '.' || indexrelname AS idxname, schemaname || '.' || relname AS relname ,indexrelid AS relid,
+    relpages, reltuples, idx_scan, idx_tup_read, idx_tup_fetch, idx_blks_read, idx_blks_hit
+    FROM pg_stat_user_indexes psui, LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid LIMIT 1) p2, 
+         LATERAL (SELECT relpages,reltuples FROM pg_class c WHERE c.oid = psui.indexrelid LIMIT 1) p3
+    WHERE schemaname <> ALL(ARRAY['pg_catalog','information_schema','pg_toast','columnar']) AND schemaname !~'timescaledb' AND schemaname !~'citus' ORDER BY idx_tup_read DESC LIMIT 512;
 
   ttl: 10
   timeout: 1
@@ -25,6 +26,13 @@ pg_index:
     - relid:
         usage: LABEL
         description: Relation oid of this index
+    - relpages:
+        usage: GAUGE
+        description: Size of the on-disk representation of this index in pages
+        # Size of the on-disk representation of this table in pages (of size BLCKSZ). This is only an estimate used by the planner. It is updated by VACUUM, ANALYZE, and a few DDL commands such as CREATE INDEX.
+    - reltuples:
+        usage: GAUGE
+        description: Estimate relation tuples
     - idx_scan:
         usage: COUNTER
         description: Number of index scans initiated on this index
