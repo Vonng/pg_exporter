@@ -5,7 +5,7 @@
 #==============================================================#
 
 # Get Current Version
-VERSION=0.4.1
+VERSION=0.5.0
 # VERSION=`cat exporter/global.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
 
 # Release Dir
@@ -56,11 +56,11 @@ release-darwin:
 	rm -rf $(DARWIN_DIR)
 
 release-linux:
-	rm -rf $(DARWIN_DIR) && mkdir -p $(LINUX_DIR)
+	rm -rf $(LINUX_DIR) && mkdir -p $(LINUX_DIR)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o $(LINUX_DIR)/pg_exporter
 	upx $(LINUX_DIR)/pg_exporter
 	cp -f pg_exporter.yml $(LINUX_DIR)/pg_exporter.yml
-	cp -f service/pg_exporter.* $(LINUX_DIR)/
+	cp -f package/pg_exporter.* $(LINUX_DIR)/
 	tar -czf bin/release/v$(VERSION)/pg_exporter_v$(VERSION)_linux-amd64.tar.gz -C bin/release/v$(VERSION) pg_exporter_v$(VERSION)_linux-amd64
 	rm -rf $(LINUX_DIR)
 
@@ -71,7 +71,11 @@ docker: linux
 
 # build centos/redhat rpm package
 rpm:
-	./make-rpm.sh
+	CGO_ENABLED=0 GOmOS=linux GOARCH=amd64 go build -a -ldflags '-extldflags "-static"'
+	upx pg_exporter
+	nfpm package --packager rpm
+	nfpm package --packager deb
+	mv *.rpm *.deb bin/release/v$(VERSION)
 
 release: clean conf release-linux release-darwin # release-windows
 
