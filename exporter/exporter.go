@@ -184,6 +184,7 @@ func (e *Exporter) Explain() string {
 
 // Stat is just yet another wrapper of server.Stat
 func (e *Exporter) Stat() string {
+	log.Debugf("stats invoked")
 	return e.server.Stat()
 }
 

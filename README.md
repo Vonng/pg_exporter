@@ -1,28 +1,29 @@
 # PG Exporter
 
-[Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics. **Gives you complete insight on your favourate elephant!**
+[Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) metrics. **Gives you a complete insight into your favorite elephant!**
 
-PG Exporter is the foundation component for Project [Pigsty](https://pigsty.cc), Which maybe the best **OpenSource** Monitoring Solution for PostgreSQL.
+PG Exporter is the foundation component for Project [Pigsty](https://pigsty.cc), Which may be the best **OpenSource** Monitoring Solution for PostgreSQL. Check [Demo](http://demo.pigsty.cc) for details.
 
 Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10,11,12,13,14. 
 
-Latest stable `pg_exporter` version is: `0.4.0`.
+The latest stable `pg_exporter` version is `0.4.1`.
 
-> Note that default metrics are overhauled on 0.4 You can still use old version of pg_exporter.yaml to keep metrics in consistence.
+> Note that default metrics are overhauled on 0.4 You can still use an old version of `pg_exporter.yml` to keep metrics consistency.
+
 
 
 ## Features
 
-* Support [Pigsty](https://pigsty.cc)
+* Support [Pigsty](https://pigsty.cc), the battery-include PostgreSQL distribution with **ultimate observability**.
 * Support both Postgres & Pgbouncer (Pgbouncer mode is enabled when target dbname is `pgbouncer`)
 * Flexible: Almost all metrics are defined in customizable configuration files in SQL style. 
 * Fine-grained execution control (Tags Filter, Facts Filter, Version Filter, Timeout, Cache, etc...)
-* Dynamic Planning: User could provide multiple branches of a metric queries. Queries matches server version & fact & tag will be actually installed.
+* Dynamic Planning: The user could provide multiple branches of a collector. Queries match the server version & facts & tags will be actually installed.
 * Configurable caching policy & query timeout
 * Rich metrics about `pg_exporter` itself.
-* Auto discovery multi-database in the same instance
-* Tested and verified in real world production environment for years (200+ Nodes)
-* Metrics overhelming!  Gives you complete insight on your favourate elephant!
+* Auto-discovery multi-database in the same instance
+* Tested and verified in a real-world production environment for years (200+ Nodes)
+* Metrics Overwhelming!  Gives you a complete insight into your favorite elephant!
 
 
 
@@ -30,8 +31,8 @@ Latest stable `pg_exporter` version is: `0.4.0`.
 
 To run this exporter, you will need two things
 
-* **Where** to scrape:  A postgres or pgbouncer URL given via `PG_EXPORTER_URL`  or `--url`
-* **What** to scrape: A path to config file or directory, by default `./pg_exporter.yaml` or `/etc/pg_exporter`
+* **Where** to scrape:  A Postgres or pgbouncer URL given via `PG_EXPORTER_URL`  or `--url`
+* **What** to scrape: A path to config file or directory, by default `./pg_exporter.yml` or `/etc/pg_exporter`
 
 ```bash
 export PG_EXPORTER_URL='postgres://postgres:password@localhost:5432/postgres'
@@ -79,6 +80,7 @@ Flags:
   --web.listen-address=":9630"  prometheus web server listen address
   --web.telemetry-path="/metrics"
                                 URL path under which to expose metrics.
+  --connect-timeout=5           connection timeout in seconds
   --dry-run                     dry run and print raw configs
   --explain                     explain server planned queries
   --version                     Show application version.
@@ -87,18 +89,19 @@ Flags:
 ```
 
 * `--url` or `PG_EXPORTER_URL` defines **where** to scrape, it should be a valid DSN or URL. (note that `sslmode=disable` must be specifed explicitly for database that does not using SSL)
-* `--config` or `PG_EXPORTER_CONFIG` defines **how** to scrape. It could be a single yaml files or a directory contains a series of separated yaml config. In the later case, config will be load in alphabetic order.
-* `--label` or `PG_EXPORTER_LABEL` defines **constant labels** that are added into all metrics. It should be a comma separated list of `label=value` pair.
-* `--tag` or `PG_EXPORTER_TAG` will mark this exporter with given tags. Tags are comma separated list of string. which could be used for query filtering and execution control.
+* `--config` or `PG_EXPORTER_CONFIG` defines **how** to scrape. It could be a single YAML file or a directory containing a series of separated YAML configs, which config will be loaded in alphabetic order.
+* `--label` or `PG_EXPORTER_LABEL` defines **constant labels** that are added to all metrics. It should be a comma-separated list of `label=value` pairs.
+* `--tag` or `PG_EXPORTER_TAG` will mark this exporter with given tags. Tags are a comma-separated-value list of strings. which could be used for query filtering and execution control.
 * `--disable-cache` or `PG_EXPORTER_DISABLE_CACHE` will disable metric cache.
-* `--auto-discovery` or `PG_EXPORTER_AUTO_DISCOVERY` will automatically spawn peripheral servers for other databases in target PostgreSQL server. except for those listed in `--exclude-databse`. (Not implemented yet)
-* `--exclude-database`  or `PG_EXPORTER_EXCLUDE_DATABASE` is a comma separated list of database name. Which are not scrapped when `--auto-discovery` is enabled
-* `--namespace` or `PG_EXPORTER_NAMESPACE` defineds **internal metrics prefix**, by default  `pg|pgbouncer`.
-* `--fail-fast` or `PG_EXPORTER_FAIL_FAST` is a flag. During start-up, `pg_exporter` will wait if target is down. with `--fail-fast=true`, `pg_exporter` will fail instead of wait on start-up procedure if target is down
-* `--listenAddress` or `PG_EXPORTER_LISTEN_ADDRESS` is the endpoint that expose metrics
-* `--metricPath` or `PG_EXPORTER_TELEMETRY_PATH` is the URL path under which to expose metrics.
+* `--auto-discovery` or `PG_EXPORTER_AUTO_DISCOVERY` will automatically spawn peripheral servers for other databases in the target PostgreSQL server. except for those listed in `--exclude-database`. (Not implemented yet)
+* `--exclude-database` or `PG_EXPORTER_EXCLUDE_DATABASE` is a comma-separated list of the database name. Which are not scrapped when `--auto-discovery` is enabled
+* `--namespace` or `PG_EXPORTER_NAMESPACE` defined **internal metrics prefix**, by default `pg|pgbouncer`.
+* `--fail-fast` or `PG_EXPORTER_FAIL_FAST` is a flag. During start-up, `pg_exporter` will wait if the target is down. with `--fail-fast=true`, `pg_exporter` will fail instead of waiting on the start-up procedure if the target is down
+* `--listen-address` or `PG_EXPORTER_LISTEN_ADDRESS` is the endpoint that exposes metrics
+* `--metric-path or `PG_EXPORTER_TELEMETRY_PATH` is the URL path under which to expose metrics.
+* `--connect-timeout` or `PG_EXPORTER_CONNECT_TIMEOUT` is the timeout for connecting to the target.
 * `--dry-run` will print configuration files
-* `--explain` will actually connect to target server and planning queries for it. Then explain which queries are installed.
+* `--explain` will actually connect to the target server and plan queries for it. Then explain which queries are installed.
 
 ## API
 
@@ -176,19 +179,19 @@ A Redhat 7 / CentOS 7 rpm is shipped on release page. Includes:
 
 ## Configuration
 
-Configs are core part of `pg_exporter`. Actually this project contains more lines of YAML than go.
+Configs lie in the core of `pg_exporter`. Actually, this project contains more lines of YAML than go.
 
 * A monolith battery-include configuration file: [`pg_exporter.yaml`](pg_exporter.yaml)
 * Separated metrics definition in [`conf`](conf/)
-* Example of how to write a config files:  [`doc.txt`](conf/100-doc.yaml)
+* Example of how to write a config file:  [`doc.txt`](conf/100-doc.yaml)
 
-Current `pg_exporter` is shipped with following metrics collector definition files
+Current `pg_exporter` is shipped with the following metrics collector definition files
 
 > #### Note
 >
-> Supported version: PostgreSQL 10, 11, 12, 13, 14beta
+> Supported version: PostgreSQL 10, 11, 12, 13, 14
 >
-> But you can still get PostgreSQL 9.4, 9.5, 9.6 support by switching to older version collector definition
+> But you can still get PostgreSQL 9.4, 9.5, 9.6 support by switching to the older version collector definition
 
 - [doc](config/collector/000-doc.yml)
 - [pg](config/collector/110-pg.yml)
@@ -239,8 +242,7 @@ Current `pg_exporter` is shipped with following metrics collector definition fil
 - [pgbouncer_stat](config/collector/930-pgbouncer_stat.yml)
 - [pgbouncer_pooy](config/collector/940-pgbouncer_pooy.yml)
 
-
-`pg_exporter` will generate approximately 200~300 metrics for completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate serveral 1k ~ 10k metrics. You may need modifying or disable some  database-level metrics on database with serveral thousands or more tables in order to complete scrape in time.
+`pg_exporter` will generate approximately 200~300 metrics for a completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate several 1k ~ 10k metrics. You may need to modify or disable some database-level metrics on a database with several thousand or more tables in order to complete the scrape in time.
 
 Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir. and here is a [sample](conf/100-doc.txt) config.
 
@@ -441,7 +443,7 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 
 ## Dashboards
 
-You could visualize these metrics via fancy grafana dashboards.  There are lot's of dashboards available based `pg_exporter`, Check [pigsty](https://github.com/Vonng/pigsty) for detail.
+You could visualize these metrics via fancy grafana dashboards.  There are lots of dashboards available based on `pg_exporter`, Check [pigsty](https://github.com/Vonng/pigsty) for detail.
 
 ### PG Overview
 
@@ -471,7 +473,7 @@ You could visualize these metrics via fancy grafana dashboards.  There are lot's
 
 ## About
 
-Author：Vonng ([fengruohang@outlook.com](mailto:fengruohang@outlook.com))
+Author: Vonng ([fengruohang@outlook.com](mailto:fengruohang@outlook.com))
 
 License: [Apache Apache License Version 2.0](LICENSE)
 

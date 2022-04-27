@@ -439,18 +439,17 @@ func (s *Server) Stat() string {
 	//	log.Errorf("fail to generate server stats html")
 	//	return fmt.Sprintf("fail to generate server stat html, %s", err.Error())
 	//}
-
-	fmt.Println("%-32s %-10s %-10s %-10s %-10s %-10s %-10s\n", "total", "hit", "error", "metric", "expire", "duration")
+	buf.WriteString(fmt.Sprintf("%-24s %-10s %-10s %-10s %-10s %-6s %-10s\n", "name", "total", "hit", "error", "metric", "ttl/s", "duration/ms"))
 	for _, query := range s.Collectors {
-		fmt.Printf("%-32s %-10d %-10d %-10d %-10d %-10f %-10f\n",
+		buf.WriteString(fmt.Sprintf("%-24s %-10d %-10d %-10d %-10d %-6d %-10f\n",
 			query.Name,
 			int(s.queryScrapeTotalCount[query.Name]),
 			int(s.queryScrapeHitCount[query.Name]),
 			int(s.queryScrapeErrorCount[query.Name]),
 			int(s.queryScrapeMetricCount[query.Name]),
-			s.queryCacheTTL[query.Name],
-			s.queryScrapeDuration[query.Name],
-		)
+			int(s.queryCacheTTL[query.Name]),
+			s.queryScrapeDuration[query.Name]*1000,
+		))
 	}
 	return buf.String()
 }
