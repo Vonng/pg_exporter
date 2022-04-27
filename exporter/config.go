@@ -22,7 +22,7 @@ func GetConfig() (res string) {
 		return res
 	}
 
-	candidate := []string{"pg_exporter.yaml", "pg_exporter.yml", "/etc/pg_exporter.yaml", "/etc/pg_exporter"}
+	candidate := []string{"pg_exporter.yml", "/etc/pg_exporter.yml", "/etc/pg_exporter"}
 	for _, res = range candidate {
 		if _, err := os.Stat(res); err == nil { // default1 exist
 			log.Infof("fallback on default config path: %s", res)
