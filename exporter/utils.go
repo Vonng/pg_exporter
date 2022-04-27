@@ -14,13 +14,22 @@ import (
 *                                     Auxiliaries                                              *
 \**********************************************************************************************/
 
-// castString will force interface{} into float64
-func castFloat64(t interface{}) float64 {
+// castFloat64 will cast datum into float64 with scale & default value
+func castFloat64(t interface{}, s string, d string) float64 {
+	var scale = 1.0
+	if s != "" {
+		if scaleFactor, err := strconv.ParseFloat(s, 64); err != nil {
+			log.Warnf("invalid column scale: %v ", s)
+		} else {
+			scale = scaleFactor
+		}
+	}
+
 	switch v := t.(type) {
 	case int64:
-		return float64(v)
+		return float64(v) * scale
 	case float64:
-		return v
+		return v * scale
 	case time.Time:
 		return float64(v.Unix())
 	case []byte:
@@ -30,20 +39,28 @@ func castFloat64(t interface{}) float64 {
 			log.Warnf("fail casting []byte to float64: %v", t)
 			return math.NaN()
 		}
-		return result
+		return result * scale
 	case string:
 		result, err := strconv.ParseFloat(v, 64)
 		if err != nil {
 			log.Warnf("fail casting string to float64: %v", t)
 			return math.NaN()
 		}
-		return result
+		return result * scale
 	case bool:
 		if v {
 			return 1.0
 		}
 		return 0.0
 	case nil:
+		if d != "" {
+			result, err := strconv.ParseFloat(d, 64)
+			if err != nil {
+				log.Warnf("invalid column default: %v", d)
+				return math.NaN()
+			}
+			return result
+		}
 		return math.NaN()
 	default:
 		log.Warnf("fail casting unknown to float64: %v", t)

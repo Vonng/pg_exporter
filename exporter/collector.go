@@ -162,12 +162,13 @@ func (q *Collector) execute() {
 		// get metrics, warn if column not exist
 		for _, metricName := range q.MetricNames {
 			if dataIndex, found := columnIndexes[metricName]; found { // the metric column is found in result
-				q.result = append(q.result, prometheus.MustNewConstMetric(
-					q.descriptors[metricName], // always find desc & column via name
-					q.Columns[metricName].PrometheusValueType(),
-					castFloat64(colData[dataIndex]),
-					labels...,
-				))
+				q.result = append(q.result,
+					prometheus.MustNewConstMetric(
+						q.descriptors[metricName], // always find desc & column via name
+						q.Columns[metricName].PrometheusValueType(),
+						castFloat64(colData[dataIndex], q.Columns[metricName].Scale, q.Columns[metricName].Default),
+						labels...,
+					))
 			} else {
 				log.Warnf("missing metric column %s.%s in result", q.Name, metricName)
 			}

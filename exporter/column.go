@@ -32,7 +32,7 @@ type Column struct {
 	Usage   string    `yaml:"usage,omitempty"`   // column usage
 	Rename  string    `yaml:"rename,omitempty"`  // rename column
 	Bucket  []float64 `yaml:"bucket,omitempty"`  // histogram bucket
-	Scale   float64   `yaml:"scale,omitempty"`   // scale factor
+	Scale   string    `yaml:"scale,omitempty"`   // scale factor
 	Default string    `yaml:"default,omitempty"` // default value
 	Desc    string    `yaml:"description,omitempty"`
 }
