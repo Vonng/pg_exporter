@@ -1,6 +1,6 @@
 #==============================================================#
 # File      :   Makefile
-# Mtime     :   2021-05-18
+# Mtime     :   2022-04-27
 # Copyright (C) 2018-2021 Ruohang Feng
 #==============================================================#
 
@@ -77,7 +77,7 @@ rpm:
 	nfpm package --packager deb
 	mv *.rpm *.deb bin/release/v$(VERSION)
 
-release: clean conf release-linux release-darwin # release-windows
+release: clean conf release-linux release-darwin rpm # release-windows
 
 
 ###############################################################
