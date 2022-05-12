@@ -1,5 +1,4 @@
 
-
 pg_recovery:
   name: pg_recovery
   desc: PostgreSQL control recovery metrics (9.6+)
@@ -34,3 +33,4 @@ pg_recovery:
     - require_record:
         usage: GAUGE
         description: End-of-backup record required
+

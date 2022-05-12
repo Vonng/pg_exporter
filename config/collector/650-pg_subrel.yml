@@ -1,5 +1,4 @@
 
-
 pg_subrel:
   name: pg_subrel
   desc: PostgreSQL subscripted relation group by state

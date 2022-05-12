@@ -1,5 +1,4 @@
 
-
 pg_recv_13:
   name: pg_recv
   desc: PostgreSQL walreceiver metrics 13+ (add written and flush lsn)
@@ -207,5 +206,4 @@ pg_recv_10:
     - time:
         usage: GAUGE
         description: Time of current snapshot
-
 

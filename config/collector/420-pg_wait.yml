@@ -1,5 +1,4 @@
 
-
 pg_wait:
   name: pg_wait
   desc: PostgreSQL backend client count group by wait event type since 9.6

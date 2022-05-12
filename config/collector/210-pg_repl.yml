@@ -1,5 +1,4 @@
 
-
 pg_repl_12:
   name: pg_repl
   desc: PostgreSQL replication stat metrics 12+
@@ -118,7 +117,7 @@ pg_repl_10_11:
 
   ttl: 10
   min_version: 100000
-  max_version: 110000
+  max_version: 120000
   tags:
     - cluster
 
@@ -199,3 +198,4 @@ pg_repl_10_11:
     - launch_time:
         usage: COUNTER
         description: Time when this process was started, i.e., when the client connected to this WAL sender
+

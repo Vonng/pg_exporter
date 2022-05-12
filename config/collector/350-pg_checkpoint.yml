@@ -66,3 +66,4 @@ pg_checkpoint:
     - elapse:
         usage: GAUGE
         description: Seconds elapsed since latest checkpoint in seconds
+

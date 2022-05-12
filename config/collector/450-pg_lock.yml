@@ -1,5 +1,4 @@
 
-
 pg_lock:
   name: pg_lock
   desc: PostgreSQL lock distribution by mode and database

@@ -38,3 +38,4 @@ pg_table_size:
         usage: GAUGE
         default: 0
         description: Bytes of toast tables of this table
+

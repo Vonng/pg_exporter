@@ -61,4 +61,3 @@ pg_setting:
         usage: GAUGE
         description: whether wal_log_hints is enabled, 1 enabled 0 disabled
 
-

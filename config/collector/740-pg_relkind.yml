@@ -1,5 +1,4 @@
 
-
 pg_relkind:
   name: pg_relkind
   desc: Postgres relation count by kind (category, r,i,m,t,...)

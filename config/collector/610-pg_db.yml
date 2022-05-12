@@ -1,5 +1,4 @@
 
-
 pg_db_14:
   name: pg_db
   desc: PostgreSQL database stats from pg_stat_database v14 (with 7 new time & session metrics)
@@ -365,7 +364,4 @@ pg_db_10_11:
     - reset_time:
         usage: COUNTER
         description: Time at which database statistics were last reset
-
-
-
 

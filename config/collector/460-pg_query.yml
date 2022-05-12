@@ -39,7 +39,6 @@ pg_query_13:
 
 
 
-
 pg_query_94_12:
   name: pg_query
   desc: PostgreSQL query statement metrics, require pg_stat_statements installed in schema monitor, 9.4 ~ 12

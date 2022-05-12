@@ -17,3 +17,4 @@ pg_ssl:
     - disabled:
         usage: GAUGE
         description: Number of client connection that does not use ssl
+

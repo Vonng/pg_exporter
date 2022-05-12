@@ -1,5 +1,4 @@
 
-
 pg_backend:
   name: pg_backend
   desc: PostgreSQL backend client count group by wait event type since 9.6
@@ -17,3 +16,4 @@ pg_backend:
     - count:
         usage: GAUGE
         description: Database backend process count by backend_type
+

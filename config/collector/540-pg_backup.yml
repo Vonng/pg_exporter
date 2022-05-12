@@ -30,3 +30,4 @@ pg_backup:
     - sent_bytes:
         usage: GAUGE
         description: Amount of data streamed
+

@@ -1,5 +1,4 @@
 
-
 pg_slru_13:
   name: pg_slru
   desc: PostgreSQL simple-least-recently-used (SLRU) cache statistics v13
@@ -38,3 +37,4 @@ pg_slru_13:
     - reset_time:
         usage: COUNTER
         description: Time at which these statistics were last reset
+

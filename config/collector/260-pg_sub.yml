@@ -1,5 +1,4 @@
 
-
 pg_sub_10:
   name: pg_sub
   desc: PostgreSQL subscription statistics ()
@@ -42,3 +41,4 @@ pg_sub_10:
     - reported_time:
         usage: GAUGE
         description: Time of last write-ahead log location reported to origin WAL sender
+

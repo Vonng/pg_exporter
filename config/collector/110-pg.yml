@@ -43,7 +43,7 @@ pg_primary_only:
   tags:
     - cluster
     - primary
-  ttl: 10
+  ttl: 1
   # timeout: 0.1
   min_version: 100000
   # max_version: 0
@@ -163,7 +163,7 @@ pg_replica_only:
   tags:
     - cluster
     - replica
-  ttl: 10
+  ttl: 1
   # timeout: 0.1
   min_version: 100000
   # max_version: 0
@@ -234,5 +234,4 @@ pg_replica_only:
         name: backup_time
         description: seconds since current backup start
         usage: GAUGE
-
 

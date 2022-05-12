@@ -39,3 +39,4 @@ pg_wal_14:
     - reset_time:
         usage: COUNTER
         description: When statistics were last reset
+

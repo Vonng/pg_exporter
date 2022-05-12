@@ -33,3 +33,4 @@ pg_activity:
     - max_conn_duration:
         usage: GAUGE
         description: Max backend session duration since state change among (datname, state)
+

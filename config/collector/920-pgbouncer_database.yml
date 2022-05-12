@@ -109,4 +109,3 @@ pgbouncer_database_108_115:
         usage: GAUGE
         description: True(1) if this database is currently disabled, else 0
 
-

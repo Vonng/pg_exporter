@@ -1,5 +1,4 @@
 
-
 pg_pubrel:
   name: pg_pubrel
   desc: PostgreSQL publication and relation count

@@ -48,3 +48,4 @@ pg_index:
     - idx_blks_hit:
         usage: COUNTER
         description: Number of buffer hits in this index
+

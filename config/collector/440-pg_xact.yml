@@ -20,4 +20,3 @@ pg_xact:
         usage: GAUGE
         description: Current active transaction count
 
-

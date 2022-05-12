@@ -22,3 +22,4 @@ pg_seq:
     - blks_hit:
         usage: COUNTER
         description: Number of buffer hits in this sequence
+
