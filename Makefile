@@ -75,9 +75,13 @@ rpm:
 	mv *.rpm *.deb dist/$(VERSION)
 
 # build docker image
-docker: release-linux
+docker: build-linux
 	docker build -t pg_exporter .
 
+docker-build:
+	docker build -t vonng/pg_exporter .
+	docker image tag vonng/pg_exporter vonng/pg_exporter:$(VERSION)
+	docker image push --all-tags vonng/pg_exporter
 
 ###############################################################
 #                         Develop                             #
