@@ -1,6 +1,6 @@
 #==============================================================#
 # File      :   Makefile
-# Mtime     :   2022-04-27
+# Mtime     :   2022-05-13
 # Copyright (C) 2018-2021 Ruohang Feng
 #==============================================================#
 
@@ -76,8 +76,6 @@ rpm:
 
 # build docker image
 docker: build-linux
-	docker build -t pg_exporter .
-
 docker-build:
 	docker build -t vonng/pg_exporter .
 	docker image tag vonng/pg_exporter vonng/pg_exporter:$(VERSION)

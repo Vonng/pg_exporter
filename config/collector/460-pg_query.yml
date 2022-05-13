@@ -29,9 +29,11 @@ pg_query_13:
         description: Total number of rows retrieved or affected by the statement
     - exec_time:
         usage: COUNTER
+        scale: 1e-3
         description: Total time spent executing the statement, in µs
     - io_time:
         usage: COUNTER
+        scale: 1e-3
         description: Total time the statement spent reading and writing blocks, in µs
     - wal_bytes:
         usage: COUNTER
@@ -68,8 +70,10 @@ pg_query_94_12:
         description: Total number of rows retrieved or affected by the statement
     - exec_time:
         usage: COUNTER
+        scale: 1e-3
         description: Total time spent executing the statement, in µs
     - io_time:
         usage: COUNTER
+        scale: 1e-3
         description: Total time the statement spent reading and writing blocks, in µs
 

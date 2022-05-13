@@ -7,16 +7,16 @@
 #┃ pgbouncer_stat_total_query_count{datname}  GAUGE    Total number of SQL queries pooled by pgbouncer
 #┃ pgbouncer_stat_total_received{datname}     COUNTER  Total volume in bytes of network traffic received by pgbouncer
 #┃ pgbouncer_stat_total_sent{datname}         COUNTER  Total volume in bytes of network traffic sent by pgbouncer
-#┃ pgbouncer_stat_total_xact_time{datname}    COUNTER  Total number of microseconds spent when in a transaction
-#┃ pgbouncer_stat_total_query_time{datname}   COUNTER  Total number of microseconds spent when executing queries
-#┃ pgbouncer_stat_total_wait_time{datname}    COUNTER  Time spent by clients waiting for a server, in microseconds
+#┃ pgbouncer_stat_total_xact_time{datname}    COUNTER  Total number of seconds spent when in a transaction
+#┃ pgbouncer_stat_total_query_time{datname}   COUNTER  Total number of seconds spent when executing queries
+#┃ pgbouncer_stat_total_wait_time{datname}    COUNTER  Time spent by clients waiting for a server, in seconds
 #┃ pgbouncer_stat_avg_xact_count{datname}     GAUGE    Average transactions per second in last stat period
 #┃ pgbouncer_stat_avg_query_count{datname}    GAUGE    Average queries per second in last stat period
 #┃ pgbouncer_stat_avg_recv{datname}           GAUGE    Average received (from clients) bytes per second
 #┃ pgbouncer_stat_avg_sent{datname}           GAUGE    Average sent (to clients) bytes per second
-#┃ pgbouncer_stat_avg_xact_time{datname}      GAUGE    Average transaction duration, in microseconds
-#┃ pgbouncer_stat_avg_query_time{datname}     GAUGE    Average query duration, in microseconds
-#┃ pgbouncer_stat_avg_wait_time{datname}      GAUGE    Time spent by clients waiting for a server, in microseconds (average per second).
+#┃ pgbouncer_stat_avg_xact_time{datname}      GAUGE    Average transaction duration, in seconds
+#┃ pgbouncer_stat_avg_query_time{datname}     GAUGE    Average query duration, in seconds
+#┃ pgbouncer_stat_avg_wait_time{datname}      GAUGE    Time spent by clients waiting for a server, in seconds (average per second).
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 pgbouncer_stat:
   name: pgbouncer_stat
@@ -46,13 +46,16 @@ pgbouncer_stat:
         description: Total volume in bytes of network traffic sent by pgbouncer
     - total_xact_time:
         usage: COUNTER
-        description: Total number of microseconds spent when in a transaction
+        scale: 1e-6
+        description: Total number of seconds spent when in a transaction
     - total_query_time:
         usage: COUNTER
-        description: Total number of microseconds spent when executing queries
+        scale: 1e-6
+        description: Total number of seconds spent when executing queries
     - total_wait_time:
         usage: COUNTER
-        description: Time spent by clients waiting for a server, in microseconds
+        scale: 1e-6
+        description: Time spent by clients waiting for a server, in seconds
     - avg_xact_count:
         usage: GAUGE
         description: Average transactions per second in last stat period
@@ -67,11 +70,14 @@ pgbouncer_stat:
         description: Average sent (to clients) bytes per second
     - avg_xact_time:
         usage: GAUGE
-        description: Average transaction duration, in microseconds
+        scale: 1e-6
+        description: Average transaction duration, in seconds
     - avg_query_time:
         usage: GAUGE
-        description: Average query duration, in microseconds
+        scale: 1e-6
+        description: Average query duration, in seconds
     - avg_wait_time:
         usage: GAUGE
-        description: Time spent by clients waiting for a server, in microseconds (average per second).
+        scale: 1e-6
+        description: Time spent by clients waiting for a server, in seconds (average per second).
 

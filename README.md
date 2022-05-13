@@ -164,7 +164,7 @@ CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o pg_expo
 To build a docker image, use:
 
 ```
-docker build -t pg_exporter .
+make docker
 ```
 
 Or [download](https://github.com/Vonng/pg_exporter/releases) the latest prebuilt binaries from release pages.
