@@ -75,7 +75,7 @@ rpm:
 	mv *.rpm *.deb dist/$(VERSION)
 
 # build docker image
-docker: build-linux
+docker: build-linux docker-build
 docker-build:
 	docker build -t vonng/pg_exporter .
 	docker image tag vonng/pg_exporter vonng/pg_exporter:$(VERSION)
