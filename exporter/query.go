@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/prometheus/common/log"
 	"gopkg.in/yaml.v3"
-	"strings"
 	"text/template"
 	"time"
 )
@@ -41,27 +40,28 @@ type Query struct {
 	MetricNames []string           `yaml:"-"` // column (name) that used as metric
 }
 
-var queryTemplate, _ = template.New("Query").Parse(`
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ {{ .Name }}{{ if ne .Name .Branch}}.{{ .Branch }}{{end}}
-┃ {{ .Desc }}
-┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-┃ Tags     ┆ {{ .Tags }}
-┃ TTL      ┆ {{ .TTL }}
-┃ Priority ┆ {{ .Priority }}
-┃ Timeout  ┆ {{ .TimeoutDuration }}
-┃ Fatal    ┆ {{ .Fatal }}
-┃ Version  ┆ {{ if ne .MinVersion 0 }}{{ .MinVersion }}{{ else }}lower{{ end }} ~ {{ if ne .MaxVersion 0 }}{{ .MaxVersion }}{{ else }}higher{{ end }}
-┃ Source   ┆ {{ .Path }}
-┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-{{ range .ColumnList }}┃ {{ . }}
-{{ end }}┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-{{ range .MetricList }}┃ {{ .String }}
-{{ end }}┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-┃ {{ .TemplateSQL }}
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{{.MarshalYAML}}
-
+var queryTemplate, _ = template.New("Query").Parse(`##
+# SYNNOPSIS
+#       {{ .Name }}{{ if ne .Name .Branch }}.{{ .Branch }}{{ end }}_*
+#
+# DESCRIPTION
+#       {{ with .Desc }}{{ . }}{{ else }}N/A{{ end }}
+#
+# OPTIONS
+#       Tags       [{{ range $i, $e := .Tags }}{{ if $i }}, {{ end }}{{ $e }}{{ end }}]
+#       TTL        {{ .TTL }}
+#       Priority   {{ .Priority }}
+#       Timeout    {{ .TimeoutDuration }}
+#       Fatal      {{ .Fatal }}
+#       Version    {{ if ne .MinVersion 0 }}{{ .MinVersion }}{{ else }}lower{{ end }} ~ {{ if ne .MaxVersion 0 }}{{ .MaxVersion }}{{ else }}higher{{ end }}
+#       Source     {{ .Path }}
+#
+# METRICS
+{{- range .ColumnList }}
+#       {{ .Name }} ({{ .Usage }})
+#           {{ with .Desc }}{{ . }}{{ else }}N/A{{ end }}{{ end }}
+#
+{{.MarshalYAML -}}
 `)
 
 var htmlTemplate, _ = template.New("Query").Parse(`
@@ -177,11 +177,6 @@ func (q *Query) MetricList() (res []*MetricDesc) {
 		res[i] = column.MetricDesc(q.Name, q.LabelList())
 	}
 	return
-}
-
-// TemplateSQL will format SQL string with padding
-func (q *Query) TemplateSQL() string {
-	return strings.Replace(q.SQL, "\n", "\n┃ ", -1)
 }
 
 // TimeoutDuration will turn timeout settings into time.Duration
