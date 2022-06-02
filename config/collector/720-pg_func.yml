@@ -1,24 +1,62 @@
-
+##
+# SYNNOPSIS
+#       pg_func_*
+#
+# DESCRIPTION
+#       PostgreSQL function metrics
+#
+# OPTIONS
+#       Tags       []
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    90400 ~ higher
+#       Source     720-pg_func.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Name of belonged database
+#       funcname (LABEL)
+#           Name of this function, may have multiple override
+#       calls (COUNTER)
+#           Number of times this function has been called
+#       total_time (COUNTER)
+#           Total time spent in this function and all other functions called by it, in ms
+#       self_time (COUNTER)
+#           Total time spent in this function itself, not including other functions called by it, in ms
+#
 pg_func:
-  desc: PostgreSQL function metrics
-  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || funcname AS funcname, sum(calls) AS calls, sum(total_time) AS total_time, sum(self_time) AS self_time FROM pg_stat_user_functions GROUP BY 2 ORDER BY 4 DESC LIMIT 128;
-  ttl: 10
-  min_version: 090400
+    name: pg_func
+    desc: PostgreSQL function metrics
+    query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || funcname AS funcname, sum(calls) AS calls, sum(total_time) AS total_time, sum(self_time) AS self_time FROM pg_stat_user_functions GROUP BY 2 ORDER BY 4 DESC LIMIT 128;
+    tags: []
+    ttl: 10
+    timeout: 0.1
+    min_version: 90400
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Name of belonged database
+        - funcname:
+            name: funcname
+            usage: LABEL
+            description: Name of this function, may have multiple override
+        - calls:
+            name: calls
+            usage: COUNTER
+            description: Number of times this function has been called
+        - total_time:
+            name: total_time
+            usage: COUNTER
+            description: Total time spent in this function and all other functions called by it, in ms
+        - self_time:
+            name: self_time
+            usage: COUNTER
+            description: Total time spent in this function itself, not including other functions called by it, in ms
 
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Name of belonged database
-    - funcname:
-        usage: LABEL
-        description: Name of this function, may have multiple override
-    - calls:
-        usage: COUNTER
-        description: Number of times this function has been called
-    - total_time:
-        usage: COUNTER
-        description: Total time spent in this function and all other functions called by it, in ms
-    - self_time:
-        usage: COUNTER
-        description: Total time spent in this function itself, not including other functions called by it, in ms
 

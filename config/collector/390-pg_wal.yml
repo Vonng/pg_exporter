@@ -1,42 +1,89 @@
-
+##
+# SYNNOPSIS
+#       pg_wal.pg_wal_14_*
+#
+# DESCRIPTION
+#       PostgreSQL WAL statistics since v14
+#
+# OPTIONS
+#       Tags       [cluster]
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    140000 ~ higher
+#       Source     390-pg_wal.yml
+#
+# METRICS
+#       records (COUNTER)
+#           Total number of WAL records generated
+#       fpi (COUNTER)
+#           Total number of WAL full page images generated
+#       bytes (COUNTER)
+#           Total amount of WAL generated in bytes
+#       buffers_full (COUNTER)
+#           Number of times WAL data was written to disk because WAL buffers became full
+#       write (COUNTER)
+#           Number of times WAL buffers were written out to disk via XLogWrite request.
+#       sync (COUNTER)
+#           Number of times WAL files were synced to disk via issue_xlog_fsync request
+#       write_time (COUNTER)
+#           Total amount of time spent writing WAL buffers to disk via XLogWrite request in seconds
+#       sync_time (COUNTER)
+#           Total amount of time spent syncing WAL files to disk via issue_xlog_fsync request, in seconds
+#       reset_time (COUNTER)
+#           When statistics were last reset
+#
 pg_wal_14:
-  name: pg_wal
-  desc: PostgreSQL WAL statistics since v14
-  query: SELECT wal_records AS records, wal_fpi AS fpi, wal_bytes AS bytes, wal_buffers_full AS buffers_full, wal_write AS write, wal_sync AS sync, wal_write_time AS write_time, wal_sync_time AS sync_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_wal;
+    name: pg_wal
+    desc: PostgreSQL WAL statistics since v14
+    query: SELECT wal_records AS records, wal_fpi AS fpi, wal_bytes AS bytes, wal_buffers_full AS buffers_full, wal_write AS write, wal_sync AS sync, wal_write_time AS write_time, wal_sync_time AS sync_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_wal;
+    tags:
+        - cluster
+    ttl: 10
+    timeout: 0.1
+    min_version: 140000
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - records:
+            name: records
+            usage: COUNTER
+            description: Total number of WAL records generated
+        - fpi:
+            name: fpi
+            usage: COUNTER
+            description: Total number of WAL full page images generated
+        - bytes:
+            name: bytes
+            usage: COUNTER
+            description: Total amount of WAL generated in bytes
+        - buffers_full:
+            name: buffers_full
+            usage: COUNTER
+            description: Number of times WAL data was written to disk because WAL buffers became full
+        - write:
+            name: write
+            usage: COUNTER
+            description: Number of times WAL buffers were written out to disk via XLogWrite request.
+        - sync:
+            name: sync
+            usage: COUNTER
+            description: Number of times WAL files were synced to disk via issue_xlog_fsync request
+        - write_time:
+            name: write_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Total amount of time spent writing WAL buffers to disk via XLogWrite request in seconds
+        - sync_time:
+            name: sync_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Total amount of time spent syncing WAL files to disk via issue_xlog_fsync request, in seconds
+        - reset_time:
+            name: reset_time
+            usage: COUNTER
+            description: When statistics were last reset
 
-  ttl: 10
-  tags:
-    - cluster
-  min_version: 140000
-
-  metrics:
-    - records:
-        usage: COUNTER
-        description: Total number of WAL records generated
-    - fpi:
-        usage: COUNTER
-        description: Total number of WAL full page images generated
-    - bytes:
-        usage: COUNTER
-        description: Total amount of WAL generated in bytes
-    - buffers_full:
-        usage: COUNTER
-        description: Number of times WAL data was written to disk because WAL buffers became full
-    - write:
-        usage: COUNTER
-        description: Number of times WAL buffers were written out to disk via XLogWrite request.
-    - sync:
-        usage: COUNTER
-        description: Number of times WAL files were synced to disk via issue_xlog_fsync request
-    - write_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Total amount of time spent writing WAL buffers to disk via XLogWrite request in seconds
-    - sync_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Total amount of time spent syncing WAL files to disk via issue_xlog_fsync request, in seconds
-    - reset_time:
-        usage: COUNTER
-        description: When statistics were last reset
 

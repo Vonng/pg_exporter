@@ -1,23 +1,48 @@
-
+##
+# SYNNOPSIS
+#       pg_size_*
+#
+# DESCRIPTION
+#       PostgreSQL Database, WAL, Log size since v10
+#
+# OPTIONS
+#       Tags       [cluster]
+#       TTL        60
+#       Priority   0
+#       Timeout    1s
+#       Fatal      false
+#       Version    100000 ~ higher
+#       Source     310-pg_size.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Database name, or special category 'wal' , 'log'
+#       bytes (GAUGE)
+#           File size in bytes
+#
 pg_size:
-  name: pg_size
-  desc: PostgreSQL Database, WAL, Log size since v10
-  query: |
-    SELECT datname, pg_database_size(oid) AS bytes FROM pg_database UNION ALL
-      SELECT 'log' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_logdir()) AS bytes UNION ALL
-      SELECT 'wal' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_waldir()) AS bytes;
+    name: pg_size
+    desc: PostgreSQL Database, WAL, Log size since v10
+    query: |
+        SELECT datname, pg_database_size(oid) AS bytes FROM pg_database UNION ALL
+          SELECT 'log' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_logdir()) AS bytes UNION ALL
+          SELECT 'wal' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_waldir()) AS bytes;
+    tags:
+        - cluster
+    ttl: 60
+    timeout: 1
+    min_version: 100000
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Database name, or special category 'wal' , 'log'
+        - bytes:
+            name: bytes
+            usage: GAUGE
+            description: File size in bytes
 
-  ttl: 60
-  timeout: 1
-  min_version: 100000
-  tags:
-    - cluster
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Database name, or special category 'wal' , 'log'
-    - bytes:
-        usage: GAUGE
-        description: File size in bytes
 

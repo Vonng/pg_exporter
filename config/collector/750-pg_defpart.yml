@@ -1,20 +1,50 @@
-
+##
+# SYNNOPSIS
+#       pg_defpart_*
+#
+# DESCRIPTION
+#       PostgreSQL default partition tuples
+#
+# OPTIONS
+#       Tags       []
+#       TTL        60
+#       Priority   0
+#       Timeout    1s
+#       Fatal      false
+#       Version    110000 ~ higher
+#       Source     750-pg_defpart.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Database name of this default partition
+#       relname (LABEL)
+#           Schema qualified default partition relation name
+#       tuples (GAUGE)
+#           Number of tuples in this default partition
+#
 pg_defpart:
-  name: pg_defpart
-  desc: PostgreSQL default partition tuples
-  query: SELECT CURRENT_CATALOG AS datname, relnamespace::RegNamespace || '.' || relname AS relname, reltuples AS tuples FROM pg_class WHERE relpartbound IS NOT NULL AND pg_catalog.pg_get_expr(relpartbound, oid) = 'DEFAULT' ORDER BY reltuples DESC LIMIT 64;
-  ttl: 60
-  timeout: 1
-  min_version: 110000
+    name: pg_defpart
+    desc: PostgreSQL default partition tuples
+    query: SELECT CURRENT_CATALOG AS datname, relnamespace::RegNamespace || '.' || relname AS relname, reltuples AS tuples FROM pg_class WHERE relpartbound IS NOT NULL AND pg_catalog.pg_get_expr(relpartbound, oid) = 'DEFAULT' ORDER BY reltuples DESC LIMIT 64;
+    tags: []
+    ttl: 60
+    timeout: 1
+    min_version: 110000
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Database name of this default partition
+        - relname:
+            name: relname
+            usage: LABEL
+            description: Schema qualified default partition relation name
+        - tuples:
+            name: tuples
+            usage: GAUGE
+            description: Number of tuples in this default partition
 
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this default partition
-    - relname:
-        usage: LABEL
-        description: Schema qualified default partition relation name
-    - tuples:
-        usage: GAUGE
-        description: Number of tuples in this default partition
 

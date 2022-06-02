@@ -1,63 +1,96 @@
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg_setting
-#┃ Important postgres setting entries that must kept same on entire cluster
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_setting_max_connections{}            GAUGE    number of concurrent connections to the database server
-#┃ pg_setting_max_prepared_transactions{}  GAUGE    maximum number of transactions that can be in the prepared state simultaneously
-#┃ pg_setting_max_worker_processes{}       GAUGE    maximum number of background processes that the system can support
-#┃ pg_setting_max_replication_slots{}      GAUGE    maximum number of replication slots
-#┃ pg_setting_max_wal_senders{}            GAUGE    maximum number of concurrent connections from standby servers
-#┃ pg_setting_max_locks_per_transaction{}  GAUGE    no more than this many distinct objects can be locked at any one time
-#┃ pg_setting_block_size{}                 GAUGE    pg page block size, 8192 by default
-#┃ pg_setting_data_checksums{}             GAUGE    whether data checksum is enabled, 1 enabled 0 disabled
-#┃ pg_setting_wal_log_hints{}              GAUGE    whether wal_log_hints is enabled, 1 enabled 0 disabled
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+##
+# SYNNOPSIS
+#       pg_setting_*
+#
+# DESCRIPTION
+#       Important postgres setting entries that must kept same on entire cluster
+#
+# OPTIONS
+#       Tags       [cluster]
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    90600 ~ higher
+#       Source     130-pg_setting.yml
+#
+# METRICS
+#       max_connections (GAUGE)
+#           number of concurrent connections to the database server
+#       max_prepared_transactions (GAUGE)
+#           maximum number of transactions that can be in the prepared state simultaneously
+#       max_worker_processes (GAUGE)
+#           maximum number of background processes that the system can support
+#       max_replication_slots (GAUGE)
+#           maximum number of replication slots
+#       max_wal_senders (GAUGE)
+#           maximum number of concurrent connections from standby servers
+#       max_locks_per_transaction (GAUGE)
+#           no more than this many distinct objects can be locked at any one time
+#       block_size (GAUGE)
+#           pg page block size, 8192 by default
+#       data_checksums (GAUGE)
+#           whether data checksum is enabled, 1 enabled 0 disabled
+#       wal_log_hints (GAUGE)
+#           whether wal_log_hints is enabled, 1 enabled 0 disabled
+#
 pg_setting:
-  name: pg_setting
-  desc: Important postgres setting entries that must kept same on entire cluster
-  query: |
-    SELECT current_setting('max_connections')           AS max_connections,
-           current_setting('max_prepared_transactions') AS max_prepared_transactions,
-           current_setting('max_worker_processes')      AS max_worker_processes,
-           current_setting('max_replication_slots')     AS max_replication_slots,
-           current_setting('max_wal_senders')           AS max_wal_senders,
-           current_setting('max_locks_per_transaction') AS max_locks_per_transaction,
-           current_setting('block_size')                AS block_size,
-           CASE current_setting('data_checksums') WHEN 'on' THEN 1 ELSE 0 END AS data_checksums,
-           CASE current_setting('wal_log_hints') WHEN 'on' THEN 1 ELSE 0 END AS wal_log_hints;
+    name: pg_setting
+    desc: Important postgres setting entries that must kept same on entire cluster
+    query: |
+        SELECT current_setting('max_connections')           AS max_connections,
+               current_setting('max_prepared_transactions') AS max_prepared_transactions,
+               current_setting('max_worker_processes')      AS max_worker_processes,
+               current_setting('max_replication_slots')     AS max_replication_slots,
+               current_setting('max_wal_senders')           AS max_wal_senders,
+               current_setting('max_locks_per_transaction') AS max_locks_per_transaction,
+               current_setting('block_size')                AS block_size,
+               CASE current_setting('data_checksums') WHEN 'on' THEN 1 ELSE 0 END AS data_checksums,
+               CASE current_setting('wal_log_hints') WHEN 'on' THEN 1 ELSE 0 END AS wal_log_hints;
+    tags:
+        - cluster
+    ttl: 10
+    timeout: 0.1
+    min_version: 90600
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - max_connections:
+            name: max_connections
+            usage: GAUGE
+            description: number of concurrent connections to the database server
+        - max_prepared_transactions:
+            name: max_prepared_transactions
+            usage: GAUGE
+            description: maximum number of transactions that can be in the prepared state simultaneously
+        - max_worker_processes:
+            name: max_worker_processes
+            usage: GAUGE
+            description: maximum number of background processes that the system can support
+        - max_replication_slots:
+            name: max_replication_slots
+            usage: GAUGE
+            description: maximum number of replication slots
+        - max_wal_senders:
+            name: max_wal_senders
+            usage: GAUGE
+            description: maximum number of concurrent connections from standby servers
+        - max_locks_per_transaction:
+            name: max_locks_per_transaction
+            usage: GAUGE
+            description: no more than this many distinct objects can be locked at any one time
+        - block_size:
+            name: block_size
+            usage: GAUGE
+            description: pg page block size, 8192 by default
+        - data_checksums:
+            name: data_checksums
+            usage: GAUGE
+            description: whether data checksum is enabled, 1 enabled 0 disabled
+        - wal_log_hints:
+            name: wal_log_hints
+            usage: GAUGE
+            description: whether wal_log_hints is enabled, 1 enabled 0 disabled
 
-  ttl: 10
-  min_version: 090600
-  tags:
-    - cluster
-
-  metrics:
-    - max_connections:
-        usage: GAUGE
-        description: number of concurrent connections to the database server
-    - max_prepared_transactions:
-        usage: GAUGE
-        description: maximum number of transactions that can be in the prepared state simultaneously
-    - max_worker_processes:
-        usage: GAUGE
-        description: maximum number of background processes that the system can support
-    - max_replication_slots:
-        usage: GAUGE
-        description: maximum number of replication slots
-    - max_wal_senders:
-        usage: GAUGE
-        description: maximum number of concurrent connections from standby servers
-    - max_locks_per_transaction:
-        usage: GAUGE
-        description: no more than this many distinct objects can be locked at any one time
-    - block_size:
-        usage: GAUGE
-        description: pg page block size, 8192 by default
-    - data_checksums:
-        usage: GAUGE
-        description: whether data checksum is enabled, 1 enabled 0 disabled
-    - wal_log_hints:
-        usage: GAUGE
-        description: whether wal_log_hints is enabled, 1 enabled 0 disabled
 

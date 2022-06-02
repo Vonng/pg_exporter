@@ -1,41 +1,80 @@
-
+##
+# SYNNOPSIS
+#       pg_table_size_*
+#
+# DESCRIPTION
+#       PostgreSQL table size metrics, quite slow
+#
+# OPTIONS
+#       Tags       []
+#       TTL        300
+#       Priority   0
+#       Timeout    2s
+#       Fatal      false
+#       Version    100000 ~ higher
+#       Source     810-pg_table_size.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Database name of this table
+#       relname (LABEL)
+#           Schema qualified table name
+#       bytes (GAUGE)
+#           Total bytes of this table (including toast, index, toast index)
+#       relsize (GAUGE)
+#           Bytes of this table itself (main, vm, fsm)
+#       indexsize (GAUGE)
+#           Bytes of all related indexes of this table
+#       toastsize (GAUGE)
+#           Bytes of toast tables of this table
+#
 pg_table_size:
-  desc: PostgreSQL table size metrics, quite slow
-  query: |
-    SELECT CURRENT_CATALOG AS datname, nsp.nspname || '.' || rel.relname AS relname,
-       pg_total_relation_size(rel.oid)       AS bytes,
-       pg_relation_size(rel.oid)             AS relsize,
-       pg_indexes_size(rel.oid)              AS indexsize,
-       pg_total_relation_size(reltoastrelid) AS toastsize
-    FROM pg_namespace nsp JOIN pg_class rel ON nsp.oid = rel.relnamespace
-    WHERE nspname <> ALL(ARRAY['pg_catalog', 'information_schema']) AND rel.relkind = 'r'
-    ORDER BY 3 DESC NULLS LAST LIMIT 256;
+    name: pg_table_size
+    desc: PostgreSQL table size metrics, quite slow
+    query: |
+        SELECT CURRENT_CATALOG AS datname, nsp.nspname || '.' || rel.relname AS relname,
+           pg_total_relation_size(rel.oid)       AS bytes,
+           pg_relation_size(rel.oid)             AS relsize,
+           pg_indexes_size(rel.oid)              AS indexsize,
+           pg_total_relation_size(reltoastrelid) AS toastsize
+        FROM pg_namespace nsp JOIN pg_class rel ON nsp.oid = rel.relnamespace
+        WHERE nspname <> ALL(ARRAY['pg_catalog', 'information_schema']) AND rel.relkind = 'r'
+        ORDER BY 3 DESC NULLS LAST LIMIT 256;
+    tags: []
+    ttl: 300
+    timeout: 2
+    min_version: 100000
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Database name of this table
+        - relname:
+            name: relname
+            usage: LABEL
+            description: Schema qualified table name
+        - bytes:
+            name: bytes
+            usage: GAUGE
+            default: "0"
+            description: Total bytes of this table (including toast, index, toast index)
+        - relsize:
+            name: relsize
+            usage: GAUGE
+            default: "0"
+            description: Bytes of this table itself (main, vm, fsm)
+        - indexsize:
+            name: indexsize
+            usage: GAUGE
+            default: "0"
+            description: Bytes of all related indexes of this table
+        - toastsize:
+            name: toastsize
+            usage: GAUGE
+            default: "0"
+            description: Bytes of toast tables of this table
 
-  ttl: 300
-  timeout: 2
-  min_version: 100000
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this table
-    - relname:
-        usage: LABEL
-        description: Schema qualified table name
-    - bytes:
-        usage: GAUGE
-        default: 0
-        description: Total bytes of this table (including toast, index, toast index)
-    - relsize:
-        usage: GAUGE
-        default: 0
-        description: Bytes of this table itself (main, vm, fsm)
-    - indexsize:
-        usage: GAUGE
-        default: 0
-        description: Bytes of all related indexes of this table
-    - toastsize:
-        usage: GAUGE
-        default: 0
-        description: Bytes of toast tables of this table
 
