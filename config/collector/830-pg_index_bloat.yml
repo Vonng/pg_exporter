@@ -1,74 +1,57 @@
-
-# -- pg_index_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
-# ----------------------------------------------------------------------
-# -- Index bloat estimate
-# ----------------------------------------------------------------------
-# CREATE OR REPLACE VIEW monitor.pg_index_bloat AS
-#     SELECT CURRENT_CATALOG AS datname, nspname, idxname AS relname, relpages::BIGINT * bs AS size,
-#            COALESCE((relpages - ( reltuples * (6 + ma - (CASE WHEN index_tuple_hdr % ma = 0 THEN ma ELSE index_tuple_hdr % ma END)
-#                                                    + nulldatawidth + ma - (CASE WHEN nulldatawidth % ma = 0 THEN ma ELSE nulldatawidth % ma END))
-#                                       / (bs - pagehdr)::FLOAT  + 1 )), 0) / relpages::FLOAT AS ratio
-#     FROM (
-#              SELECT nspname,
-#                     idxname,
-#                     reltuples,
-#                     relpages,
-#                     current_setting('block_size')::INTEGER                                                               AS bs,
-#                     (CASE WHEN version() ~ 'mingw32' OR version() ~ '64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END)  AS ma,
-#                     24                                                                                                   AS pagehdr,
-#                     (CASE WHEN max(COALESCE(pg_stats.null_frac, 0)) = 0 THEN 2 ELSE 6 END)                               AS index_tuple_hdr,
-#                     sum((1.0 - COALESCE(pg_stats.null_frac, 0.0)) *
-#                         COALESCE(pg_stats.avg_width, 1024))::INTEGER                                                     AS nulldatawidth
-#              FROM pg_attribute
-#                       JOIN (
-#                  SELECT pg_namespace.nspname,
-#                         ic.relname                                                   AS idxname,
-#                         ic.reltuples,
-#                         ic.relpages,
-#                         pg_index.indrelid,
-#                         pg_index.indexrelid,
-#                         tc.relname                                                   AS tablename,
-#                         regexp_split_to_table(pg_index.indkey::TEXT, ' ') :: INTEGER AS attnum,
-#                         pg_index.indexrelid                                          AS index_oid
-#                  FROM pg_index
-#                           JOIN pg_class ic ON pg_index.indexrelid = ic.oid
-#                           JOIN pg_class tc ON pg_index.indrelid = tc.oid
-#                           JOIN pg_namespace ON pg_namespace.oid = ic.relnamespace
-#                           JOIN pg_am ON ic.relam = pg_am.oid
-#                  WHERE pg_am.amname = 'btree' AND ic.relpages > 0 AND nspname NOT IN ('pg_catalog', 'information_schema')
-#              ) ind_atts ON pg_attribute.attrelid = ind_atts.indexrelid AND pg_attribute.attnum = ind_atts.attnum
-#                       JOIN pg_stats ON pg_stats.schemaname = ind_atts.nspname
-#                  AND ((pg_stats.tablename = ind_atts.tablename AND pg_stats.attname = pg_get_indexdef(pg_attribute.attrelid, pg_attribute.attnum, TRUE))
-#                      OR (pg_stats.tablename = ind_atts.idxname AND pg_stats.attname = pg_attribute.attname))
-#              WHERE pg_attribute.attnum > 0
-#              GROUP BY 1, 2, 3, 4, 5, 6
-#          ) est
-#     LIMIT 512;
-# COMMENT ON VIEW monitor.pg_index_bloat IS 'postgres index bloat estimate (btree-only)';
-
+##
+# SYNNOPSIS
+#       pg_index_bloat_*
+#
+# DESCRIPTION
+#       PostgreSQL index bloat metrics (btree only), require monitor.pg_index_bloat
+#
+# OPTIONS
+#       Tags       [schema:monitor]
+#       TTL        300
+#       Priority   0
+#       Timeout    2s
+#       Fatal      false
+#       Version    90400 ~ higher
+#       Source     830-pg_index_bloat.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Database name of this index
+#       relname (LABEL)
+#           Schema qualified index name
+#       size (GAUGE)
+#           Total bytes of this index
+#       ratio (GAUGE)
+#           Estimated bloat ratio of this index, 0~1
+#
 pg_index_bloat:
-  name: pg_index_bloat
-  desc: PostgreSQL index bloat metrics (btree only), require monitor.pg_index_bloat
-  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_index_bloat ORDER BY size DESC LIMIT 64;
+    name: pg_index_bloat
+    desc: PostgreSQL index bloat metrics (btree only), require monitor.pg_index_bloat
+    query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_index_bloat ORDER BY size DESC LIMIT 64;
+    tags:
+        - schema:monitor
+    ttl: 300
+    timeout: 2
+    min_version: 90400
+    max_version: 0
+    fatal: false
+    skip: true
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Database name of this index
+        - relname:
+            name: relname
+            usage: LABEL
+            description: Schema qualified index name
+        - size:
+            name: size
+            usage: GAUGE
+            description: Total bytes of this index
+        - ratio:
+            name: ratio
+            usage: GAUGE
+            description: Estimated bloat ratio of this index, 0~1
 
-  ttl: 300
-  timeout: 2
-  min_version: 090400
-  skip: true
-  tags:
-    - schema:monitor
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this index
-    - relname:
-        usage: LABEL
-        description: Schema qualified index name
-    - size:
-        usage: GAUGE
-        description: Total bytes of this index
-    - ratio:
-        usage: GAUGE
-        description: Estimated bloat ratio of this index, 0~1
 

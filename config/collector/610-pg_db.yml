@@ -1,376 +1,670 @@
-
-pg_db_14:
-  name: pg_db
-  desc: PostgreSQL database stats from pg_stat_database v14 (with 7 new time & session metrics)
-  query: |
-    SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
-      numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total,blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
-      conflicts,temp_files,temp_bytes,deadlocks,coalesce(checksum_failures, -1) AS cks_fails, checksum_last_failure AS cks_fail_time,blk_read_time,blk_write_time,
-      session_time,active_time,idle_in_transaction_time AS ixact_time,sessions,sessions_abandoned,sessions_fatal,sessions_killed,extract(EPOCH FROM stats_reset) AS reset_time
-    FROM pg_database d JOIN pg_stat_database sd ON d.oid = sd.datid;
-
-  ttl: 10
-  min_version: 140000
-  tags:
-    - cluster
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database
-    - datid:
-        usage: GAUGE
-        description: OID of the database
-    - age:
-        usage: GAUGE
-        description: Age of database calculated from datfrozenxid
-    - is_template:
-        usage: GAUGE
-        description: If true(1), then this database can be cloned by any user with CREATEDB privileges
-        # If true, then this database can be cloned by any user with CREATEDB privileges; if false, then only superusers or the owner of the database can clone it.
-    - allow_conn:
-        usage: GAUGE
-        description: If false(0) then no one can connect to this database.
-        # This is used to protect the template0 database from being altered.
-    - conn_limit:
-        usage: GAUGE
-        description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
-    - frozen_xid:
-        usage: GAUGE
-        description: All transaction IDs before this one have been frozened
-    - numbackends:
-        usage: GAUGE
-        description: Number of backends currently connected to this database
-        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
-    - xact_commit:
-        usage: COUNTER
-        description: Number of transactions in this database that have been committed
-        # Number of transactions in this database that have been committed
-    - xact_rollback:
-        usage: COUNTER
-        description: Number of transactions in this database that have been rolled back
-    - xact_total:
-        usage: COUNTER
-        description: Number of transactions in this database
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read in this database
-    - blks_hit:
-        usage: COUNTER
-        description: Number of times disk blocks were found already in the buffer cache
-        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
-    - blks_access:
-        usage: COUNTER
-        description: Number of times disk blocks that accessed read+hit
-    - tup_returned:
-        usage: COUNTER
-        description: Number of rows returned by queries in this database
-    - tup_fetched:
-        usage: COUNTER
-        description: Number of rows fetched by queries in this database
-    - tup_inserted:
-        usage: COUNTER
-        description: Number of rows inserted by queries in this database
-    - tup_updated:
-        usage: COUNTER
-        description: Number of rows updated by queries in this database
-    - tup_deleted:
-        usage: COUNTER
-        description: Number of rows deleted by queries in this database
-    - tup_modified:
-        usage: COUNTER
-        description: Number of rows modified by queries in this database
-    - conflicts:
-        usage: COUNTER
-        description: Number of queries canceled due to conflicts with recovery in this database
-        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
-    - temp_files:
-        usage: COUNTER
-        description: Number of temporary files created by queries in this database
-        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
-    - temp_bytes:
-        usage: COUNTER
-        description: Total amount of data written to temporary files by queries in this database.
-        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
-    - deadlocks:
-        usage: COUNTER
-        description: Number of deadlocks detected in this database
-    - cks_fails:
-        usage: COUNTER
-        description: Number of data page checksum failures detected in this database, -1 for not enabled
-        # Number of data page checksum failures detected in this database (or on a shared object), or NULL if data checksums are not enabled.
-    - cks_fail_time:
-        usage: GAUGE
-        description: Time at which the last data page checksum failure was detected in this database
-        # Time at which the last data page checksum failure was detected in this database (or on a shared object), or NULL if data checksums are not enabled.
-    - blk_read_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent reading data file blocks by backends in this database, in seconds
-        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - blk_write_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent writing data file blocks by backends in this database, in seconds
-        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - session_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent by database sessions in this database, in seconds
-        # Time spent by database sessions in this database, in milliseconds (note that statistics are only updated when the state of a session changes, so if sessions have been idle for a long time, this idle time won't be included)
-    - active_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent executing SQL statements in this database, in seconds
-        # Time spent executing SQL statements in this database, in milliseconds (this corresponds to the states active and fastpath function call in pg_stat_activity)
-    - ixact_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent idling while in a transaction in this database, in seconds
-    - sessions:
-        usage: COUNTER
-        description: Total number of sessions established to this database
-    - sessions_abandoned:
-        usage: COUNTER
-        description: Number of database sessions to this database that were terminated because connection to the client was lost
-    - sessions_fatal:
-        usage: COUNTER
-        description: Number of database sessions to this database that were terminated by fatal errors
-    - sessions_killed:
-        usage: COUNTER
-        description: Number of database sessions to this database that were terminated by operator intervention
-    - reset_time:
-        usage: COUNTER
-        description: Time at which database statistics were last reset
-
-
-
+##
+# SYNNOPSIS
+#       pg_db.pg_db_12_13_*
+#
+# DESCRIPTION
+#       PostgreSQL database stats from pg_stat_database v12 v13 (with 2 new checksum metrics)
+#
+# OPTIONS
+#       Tags       [cluster]
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    120000 ~ 140000
+#       Source     610-pg_db.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Name of the database
+#       datid (GAUGE)
+#           OID of the database
+#       age (GAUGE)
+#           Age of database calculated from datfrozenxid
+#       is_template (GAUGE)
+#           If true(1), then this database can be cloned by any user with CREATEDB privileges
+#       allow_conn (GAUGE)
+#           If false(0) then no one can connect to this database.
+#       conn_limit (GAUGE)
+#           Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
+#       frozen_xid (GAUGE)
+#           All transaction IDs before this one have been frozened
+#       numbackends (GAUGE)
+#           Number of backends currently connected to this database
+#       xact_commit (COUNTER)
+#           Number of transactions in this database that have been committed
+#       xact_rollback (COUNTER)
+#           Number of transactions in this database that have been rolled back
+#       xact_total (COUNTER)
+#           Number of transactions in this database
+#       blks_read (COUNTER)
+#           Number of disk blocks read in this database
+#       blks_hit (COUNTER)
+#           Number of times disk blocks were found already in the buffer cache
+#       blks_access (COUNTER)
+#           Number of times disk blocks that accessed read+hit
+#       tup_returned (COUNTER)
+#           Number of rows returned by queries in this database
+#       tup_fetched (COUNTER)
+#           Number of rows fetched by queries in this database
+#       tup_inserted (COUNTER)
+#           Number of rows inserted by queries in this database
+#       tup_updated (COUNTER)
+#           Number of rows updated by queries in this database
+#       tup_deleted (COUNTER)
+#           Number of rows deleted by queries in this database
+#       tup_modified (COUNTER)
+#           Number of rows modified by queries in this database
+#       conflicts (COUNTER)
+#           Number of queries canceled due to conflicts with recovery in this database
+#       temp_files (COUNTER)
+#           Number of temporary files created by queries in this database
+#       temp_bytes (COUNTER)
+#           Total amount of data written to temporary files by queries in this database.
+#       deadlocks (COUNTER)
+#           Number of deadlocks detected in this database
+#       cks_fails (COUNTER)
+#           Number of data page checksum failures detected in this database, -1 for not enabled
+#       cks_fail_time (GAUGE)
+#           Time at which the last data page checksum failure was detected in this database
+#       blk_read_time (COUNTER)
+#           Time spent reading data file blocks by backends in this database, in seconds
+#       blk_write_time (COUNTER)
+#           Time spent writing data file blocks by backends in this database, in seconds
+#       reset_time (COUNTER)
+#           Time at which database statistics were last reset
+#
 pg_db_12_13:
-  name: pg_db
-  desc: PostgreSQL database stats from pg_stat_database v12 v13 (with 2 new checksum metrics)
-  query: |
-    SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
-      numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total,blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
-      conflicts,temp_files,temp_bytes,deadlocks,coalesce(checksum_failures, -1) AS cks_fails, checksum_last_failure AS cks_fail_time,blk_read_time,blk_write_time,
-      extract(EPOCH FROM stats_reset) AS reset_time FROM pg_database d JOIN pg_stat_database sd ON d.oid = sd.datid;
+    name: pg_db
+    desc: PostgreSQL database stats from pg_stat_database v12 v13 (with 2 new checksum metrics)
+    query: |
+        SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
+          numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total,blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
+          conflicts,temp_files,temp_bytes,deadlocks,coalesce(checksum_failures, -1) AS cks_fails, checksum_last_failure AS cks_fail_time,blk_read_time,blk_write_time,
+          extract(EPOCH FROM stats_reset) AS reset_time FROM pg_database d JOIN pg_stat_database sd ON d.oid = sd.datid;
+    tags:
+        - cluster
+    ttl: 10
+    timeout: 0.1
+    min_version: 120000
+    max_version: 140000
+    fatal: false
+    skip: false
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Name of the database
+        - datid:
+            name: datid
+            usage: GAUGE
+            description: OID of the database
+        - age:
+            name: age
+            usage: GAUGE
+            description: Age of database calculated from datfrozenxid
+        - is_template:
+            name: is_template
+            usage: GAUGE
+            description: If true(1), then this database can be cloned by any user with CREATEDB privileges
+        - allow_conn:
+            name: allow_conn
+            usage: GAUGE
+            description: If false(0) then no one can connect to this database.
+        - conn_limit:
+            name: conn_limit
+            usage: GAUGE
+            description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
+        - frozen_xid:
+            name: frozen_xid
+            usage: GAUGE
+            description: All transaction IDs before this one have been frozened
+        - numbackends:
+            name: numbackends
+            usage: GAUGE
+            description: Number of backends currently connected to this database
+        - xact_commit:
+            name: xact_commit
+            usage: COUNTER
+            description: Number of transactions in this database that have been committed
+        - xact_rollback:
+            name: xact_rollback
+            usage: COUNTER
+            description: Number of transactions in this database that have been rolled back
+        - xact_total:
+            name: xact_total
+            usage: COUNTER
+            description: Number of transactions in this database
+        - blks_read:
+            name: blks_read
+            usage: COUNTER
+            description: Number of disk blocks read in this database
+        - blks_hit:
+            name: blks_hit
+            usage: COUNTER
+            description: Number of times disk blocks were found already in the buffer cache
+        - blks_access:
+            name: blks_access
+            usage: COUNTER
+            description: Number of times disk blocks that accessed read+hit
+        - tup_returned:
+            name: tup_returned
+            usage: COUNTER
+            description: Number of rows returned by queries in this database
+        - tup_fetched:
+            name: tup_fetched
+            usage: COUNTER
+            description: Number of rows fetched by queries in this database
+        - tup_inserted:
+            name: tup_inserted
+            usage: COUNTER
+            description: Number of rows inserted by queries in this database
+        - tup_updated:
+            name: tup_updated
+            usage: COUNTER
+            description: Number of rows updated by queries in this database
+        - tup_deleted:
+            name: tup_deleted
+            usage: COUNTER
+            description: Number of rows deleted by queries in this database
+        - tup_modified:
+            name: tup_modified
+            usage: COUNTER
+            description: Number of rows modified by queries in this database
+        - conflicts:
+            name: conflicts
+            usage: COUNTER
+            description: Number of queries canceled due to conflicts with recovery in this database
+        - temp_files:
+            name: temp_files
+            usage: COUNTER
+            description: Number of temporary files created by queries in this database
+        - temp_bytes:
+            name: temp_bytes
+            usage: COUNTER
+            description: Total amount of data written to temporary files by queries in this database.
+        - deadlocks:
+            name: deadlocks
+            usage: COUNTER
+            description: Number of deadlocks detected in this database
+        - cks_fails:
+            name: cks_fails
+            usage: COUNTER
+            description: Number of data page checksum failures detected in this database, -1 for not enabled
+        - cks_fail_time:
+            name: cks_fail_time
+            usage: GAUGE
+            description: Time at which the last data page checksum failure was detected in this database
+        - blk_read_time:
+            name: blk_read_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent reading data file blocks by backends in this database, in seconds
+        - blk_write_time:
+            name: blk_write_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent writing data file blocks by backends in this database, in seconds
+        - reset_time:
+            name: reset_time
+            usage: COUNTER
+            description: Time at which database statistics were last reset
 
-  ttl: 10
-  min_version: 120000
-  max_version: 140000
-  tags:
-    - cluster
-
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database
-    - datid:
-        usage: GAUGE
-        description: OID of the database
-    - age:
-        usage: GAUGE
-        description: Age of database calculated from datfrozenxid
-    - is_template:
-        usage: GAUGE
-        description: If true(1), then this database can be cloned by any user with CREATEDB privileges
-        # If true, then this database can be cloned by any user with CREATEDB privileges; if false, then only superusers or the owner of the database can clone it.
-    - allow_conn:
-        usage: GAUGE
-        description: If false(0) then no one can connect to this database.
-        # This is used to protect the template0 database from being altered.
-    - conn_limit:
-        usage: GAUGE
-        description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
-    - frozen_xid:
-        usage: GAUGE
-        description: All transaction IDs before this one have been frozened
-    - numbackends:
-        usage: GAUGE
-        description: Number of backends currently connected to this database
-        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
-    - xact_commit:
-        usage: COUNTER
-        description: Number of transactions in this database that have been committed
-        # Number of transactions in this database that have been committed
-    - xact_rollback:
-        usage: COUNTER
-        description: Number of transactions in this database that have been rolled back
-    - xact_total:
-        usage: COUNTER
-        description: Number of transactions in this database
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read in this database
-    - blks_hit:
-        usage: COUNTER
-        description: Number of times disk blocks were found already in the buffer cache
-        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
-    - blks_access:
-        usage: COUNTER
-        description: Number of times disk blocks that accessed read+hit
-    - tup_returned:
-        usage: COUNTER
-        description: Number of rows returned by queries in this database
-    - tup_fetched:
-        usage: COUNTER
-        description: Number of rows fetched by queries in this database
-    - tup_inserted:
-        usage: COUNTER
-        description: Number of rows inserted by queries in this database
-    - tup_updated:
-        usage: COUNTER
-        description: Number of rows updated by queries in this database
-    - tup_deleted:
-        usage: COUNTER
-        description: Number of rows deleted by queries in this database
-    - tup_modified:
-        usage: COUNTER
-        description: Number of rows modified by queries in this database
-    - conflicts:
-        usage: COUNTER
-        description: Number of queries canceled due to conflicts with recovery in this database
-        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
-    - temp_files:
-        usage: COUNTER
-        description: Number of temporary files created by queries in this database
-        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
-    - temp_bytes:
-        usage: COUNTER
-        description: Total amount of data written to temporary files by queries in this database.
-        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
-    - deadlocks:
-        usage: COUNTER
-        description: Number of deadlocks detected in this database
-    - cks_fails:
-        usage: COUNTER
-        description: Number of data page checksum failures detected in this database, -1 for not enabled
-        # Number of data page checksum failures detected in this database (or on a shared object), or NULL if data checksums are not enabled.
-    - cks_fail_time:
-        usage: GAUGE
-        description: Time at which the last data page checksum failure was detected in this database
-        # Time at which the last data page checksum failure was detected in this database (or on a shared object), or NULL if data checksums are not enabled.
-    - blk_read_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent reading data file blocks by backends in this database, in seconds
-        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - blk_write_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent writing data file blocks by backends in this database, in seconds
-        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - reset_time:
-        usage: COUNTER
-        description: Time at which database statistics were last reset
-
-
-
+##
+# SYNNOPSIS
+#       pg_db.pg_db_10_11_*
+#
+# DESCRIPTION
+#       PostgreSQL database stats from pg_stat_database v10 v11 (actually since 9.2)
+#
+# OPTIONS
+#       Tags       [cluster]
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    90200 ~ 120000
+#       Source     610-pg_db.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Name of the database
+#       datid (GAUGE)
+#           OID of the database
+#       age (GAUGE)
+#           Age of database calculated from datfrozenxid
+#       is_template (GAUGE)
+#           If true(1), then this database can be cloned by any user with CREATEDB privileges
+#       allow_conn (GAUGE)
+#           If false(0) then no one can connect to this database.
+#       conn_limit (GAUGE)
+#           Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
+#       frozen_xid (GAUGE)
+#           All transaction IDs before this one have been frozened
+#       numbackends (GAUGE)
+#           Number of backends currently connected to this database
+#       xact_commit (COUNTER)
+#           Number of transactions in this database that have been committed
+#       xact_rollback (COUNTER)
+#           Number of transactions in this database that have been rolled back
+#       xact_total (COUNTER)
+#           Number of transactions in this database
+#       blks_read (COUNTER)
+#           Number of disk blocks read in this database
+#       blks_hit (COUNTER)
+#           Number of times disk blocks were found already in the buffer cache
+#       blks_access (COUNTER)
+#           Number of times disk blocks that accessed read+hit
+#       tup_returned (COUNTER)
+#           Number of rows returned by queries in this database
+#       tup_fetched (COUNTER)
+#           Number of rows fetched by queries in this database
+#       tup_inserted (COUNTER)
+#           Number of rows inserted by queries in this database
+#       tup_updated (COUNTER)
+#           Number of rows updated by queries in this database
+#       tup_deleted (COUNTER)
+#           Number of rows deleted by queries in this database
+#       tup_modified (COUNTER)
+#           Number of rows modified by queries in this database
+#       conflicts (COUNTER)
+#           Number of queries canceled due to conflicts with recovery in this database
+#       temp_files (COUNTER)
+#           Number of temporary files created by queries in this database
+#       temp_bytes (COUNTER)
+#           Total amount of data written to temporary files by queries in this database.
+#       deadlocks (COUNTER)
+#           Number of deadlocks detected in this database
+#       blk_read_time (COUNTER)
+#           Time spent reading data file blocks by backends in this database, in seconds
+#       blk_write_time (COUNTER)
+#           Time spent writing data file blocks by backends in this database, in seconds
+#       reset_time (COUNTER)
+#           Time at which database statistics were last reset
+#
 pg_db_10_11:
-  name: pg_db
-  desc: PostgreSQL database stats from pg_stat_database v10 v11 (actually since 9.2)
-  query: |
-    SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
-      numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total, blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
-      conflicts,temp_files,temp_bytes,deadlocks,blk_read_time,blk_write_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_database d JOIN pg_stat_database sd ON d.oid = sd.datid;
+    name: pg_db
+    desc: PostgreSQL database stats from pg_stat_database v10 v11 (actually since 9.2)
+    query: |
+        SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
+          numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total, blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
+          conflicts,temp_files,temp_bytes,deadlocks,blk_read_time,blk_write_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_database d JOIN pg_stat_database sd ON d.oid = sd.datid;
+    tags:
+        - cluster
+    ttl: 10
+    timeout: 0.1
+    min_version: 90200
+    max_version: 120000
+    fatal: false
+    skip: false
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Name of the database
+        - datid:
+            name: datid
+            usage: GAUGE
+            description: OID of the database
+        - age:
+            name: age
+            usage: GAUGE
+            description: Age of database calculated from datfrozenxid
+        - is_template:
+            name: is_template
+            usage: GAUGE
+            description: If true(1), then this database can be cloned by any user with CREATEDB privileges
+        - allow_conn:
+            name: allow_conn
+            usage: GAUGE
+            description: If false(0) then no one can connect to this database.
+        - conn_limit:
+            name: conn_limit
+            usage: GAUGE
+            description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
+        - frozen_xid:
+            name: frozen_xid
+            usage: GAUGE
+            description: All transaction IDs before this one have been frozened
+        - numbackends:
+            name: numbackends
+            usage: GAUGE
+            description: Number of backends currently connected to this database
+        - xact_commit:
+            name: xact_commit
+            usage: COUNTER
+            description: Number of transactions in this database that have been committed
+        - xact_rollback:
+            name: xact_rollback
+            usage: COUNTER
+            description: Number of transactions in this database that have been rolled back
+        - xact_total:
+            name: xact_total
+            usage: COUNTER
+            description: Number of transactions in this database
+        - blks_read:
+            name: blks_read
+            usage: COUNTER
+            description: Number of disk blocks read in this database
+        - blks_hit:
+            name: blks_hit
+            usage: COUNTER
+            description: Number of times disk blocks were found already in the buffer cache
+        - blks_access:
+            name: blks_access
+            usage: COUNTER
+            description: Number of times disk blocks that accessed read+hit
+        - tup_returned:
+            name: tup_returned
+            usage: COUNTER
+            description: Number of rows returned by queries in this database
+        - tup_fetched:
+            name: tup_fetched
+            usage: COUNTER
+            description: Number of rows fetched by queries in this database
+        - tup_inserted:
+            name: tup_inserted
+            usage: COUNTER
+            description: Number of rows inserted by queries in this database
+        - tup_updated:
+            name: tup_updated
+            usage: COUNTER
+            description: Number of rows updated by queries in this database
+        - tup_deleted:
+            name: tup_deleted
+            usage: COUNTER
+            description: Number of rows deleted by queries in this database
+        - tup_modified:
+            name: tup_modified
+            usage: COUNTER
+            description: Number of rows modified by queries in this database
+        - conflicts:
+            name: conflicts
+            usage: COUNTER
+            description: Number of queries canceled due to conflicts with recovery in this database
+        - temp_files:
+            name: temp_files
+            usage: COUNTER
+            description: Number of temporary files created by queries in this database
+        - temp_bytes:
+            name: temp_bytes
+            usage: COUNTER
+            description: Total amount of data written to temporary files by queries in this database.
+        - deadlocks:
+            name: deadlocks
+            usage: COUNTER
+            description: Number of deadlocks detected in this database
+        - blk_read_time:
+            name: blk_read_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent reading data file blocks by backends in this database, in seconds
+        - blk_write_time:
+            name: blk_write_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent writing data file blocks by backends in this database, in seconds
+        - reset_time:
+            name: reset_time
+            usage: COUNTER
+            description: Time at which database statistics were last reset
 
-  ttl: 10
-  min_version: 090200
-  max_version: 120000
-  tags:
-    - cluster
+##
+# SYNNOPSIS
+#       pg_db.pg_db_14_*
+#
+# DESCRIPTION
+#       PostgreSQL database stats from pg_stat_database v14 (with 7 new time & session metrics)
+#
+# OPTIONS
+#       Tags       [cluster]
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    140000 ~ higher
+#       Source     610-pg_db.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Name of the database
+#       datid (GAUGE)
+#           OID of the database
+#       age (GAUGE)
+#           Age of database calculated from datfrozenxid
+#       is_template (GAUGE)
+#           If true(1), then this database can be cloned by any user with CREATEDB privileges
+#       allow_conn (GAUGE)
+#           If false(0) then no one can connect to this database.
+#       conn_limit (GAUGE)
+#           Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
+#       frozen_xid (GAUGE)
+#           All transaction IDs before this one have been frozened
+#       numbackends (GAUGE)
+#           Number of backends currently connected to this database
+#       xact_commit (COUNTER)
+#           Number of transactions in this database that have been committed
+#       xact_rollback (COUNTER)
+#           Number of transactions in this database that have been rolled back
+#       xact_total (COUNTER)
+#           Number of transactions in this database
+#       blks_read (COUNTER)
+#           Number of disk blocks read in this database
+#       blks_hit (COUNTER)
+#           Number of times disk blocks were found already in the buffer cache
+#       blks_access (COUNTER)
+#           Number of times disk blocks that accessed read+hit
+#       tup_returned (COUNTER)
+#           Number of rows returned by queries in this database
+#       tup_fetched (COUNTER)
+#           Number of rows fetched by queries in this database
+#       tup_inserted (COUNTER)
+#           Number of rows inserted by queries in this database
+#       tup_updated (COUNTER)
+#           Number of rows updated by queries in this database
+#       tup_deleted (COUNTER)
+#           Number of rows deleted by queries in this database
+#       tup_modified (COUNTER)
+#           Number of rows modified by queries in this database
+#       conflicts (COUNTER)
+#           Number of queries canceled due to conflicts with recovery in this database
+#       temp_files (COUNTER)
+#           Number of temporary files created by queries in this database
+#       temp_bytes (COUNTER)
+#           Total amount of data written to temporary files by queries in this database.
+#       deadlocks (COUNTER)
+#           Number of deadlocks detected in this database
+#       cks_fails (COUNTER)
+#           Number of data page checksum failures detected in this database, -1 for not enabled
+#       cks_fail_time (GAUGE)
+#           Time at which the last data page checksum failure was detected in this database
+#       blk_read_time (COUNTER)
+#           Time spent reading data file blocks by backends in this database, in seconds
+#       blk_write_time (COUNTER)
+#           Time spent writing data file blocks by backends in this database, in seconds
+#       session_time (COUNTER)
+#           Time spent by database sessions in this database, in seconds
+#       active_time (COUNTER)
+#           Time spent executing SQL statements in this database, in seconds
+#       ixact_time (COUNTER)
+#           Time spent idling while in a transaction in this database, in seconds
+#       sessions (COUNTER)
+#           Total number of sessions established to this database
+#       sessions_abandoned (COUNTER)
+#           Number of database sessions to this database that were terminated because connection to the client was lost
+#       sessions_fatal (COUNTER)
+#           Number of database sessions to this database that were terminated by fatal errors
+#       sessions_killed (COUNTER)
+#           Number of database sessions to this database that were terminated by operator intervention
+#       reset_time (COUNTER)
+#           Time at which database statistics were last reset
+#
+pg_db_14:
+    name: pg_db
+    desc: PostgreSQL database stats from pg_stat_database v14 (with 7 new time & session metrics)
+    query: |
+        SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
+          numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total,blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
+          conflicts,temp_files,temp_bytes,deadlocks,coalesce(checksum_failures, -1) AS cks_fails, checksum_last_failure AS cks_fail_time,blk_read_time,blk_write_time,
+          session_time,active_time,idle_in_transaction_time AS ixact_time,sessions,sessions_abandoned,sessions_fatal,sessions_killed,extract(EPOCH FROM stats_reset) AS reset_time
+        FROM pg_database d JOIN pg_stat_database sd ON d.oid = sd.datid;
+    tags:
+        - cluster
+    ttl: 10
+    timeout: 0.1
+    min_version: 140000
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Name of the database
+        - datid:
+            name: datid
+            usage: GAUGE
+            description: OID of the database
+        - age:
+            name: age
+            usage: GAUGE
+            description: Age of database calculated from datfrozenxid
+        - is_template:
+            name: is_template
+            usage: GAUGE
+            description: If true(1), then this database can be cloned by any user with CREATEDB privileges
+        - allow_conn:
+            name: allow_conn
+            usage: GAUGE
+            description: If false(0) then no one can connect to this database.
+        - conn_limit:
+            name: conn_limit
+            usage: GAUGE
+            description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
+        - frozen_xid:
+            name: frozen_xid
+            usage: GAUGE
+            description: All transaction IDs before this one have been frozened
+        - numbackends:
+            name: numbackends
+            usage: GAUGE
+            description: Number of backends currently connected to this database
+        - xact_commit:
+            name: xact_commit
+            usage: COUNTER
+            description: Number of transactions in this database that have been committed
+        - xact_rollback:
+            name: xact_rollback
+            usage: COUNTER
+            description: Number of transactions in this database that have been rolled back
+        - xact_total:
+            name: xact_total
+            usage: COUNTER
+            description: Number of transactions in this database
+        - blks_read:
+            name: blks_read
+            usage: COUNTER
+            description: Number of disk blocks read in this database
+        - blks_hit:
+            name: blks_hit
+            usage: COUNTER
+            description: Number of times disk blocks were found already in the buffer cache
+        - blks_access:
+            name: blks_access
+            usage: COUNTER
+            description: Number of times disk blocks that accessed read+hit
+        - tup_returned:
+            name: tup_returned
+            usage: COUNTER
+            description: Number of rows returned by queries in this database
+        - tup_fetched:
+            name: tup_fetched
+            usage: COUNTER
+            description: Number of rows fetched by queries in this database
+        - tup_inserted:
+            name: tup_inserted
+            usage: COUNTER
+            description: Number of rows inserted by queries in this database
+        - tup_updated:
+            name: tup_updated
+            usage: COUNTER
+            description: Number of rows updated by queries in this database
+        - tup_deleted:
+            name: tup_deleted
+            usage: COUNTER
+            description: Number of rows deleted by queries in this database
+        - tup_modified:
+            name: tup_modified
+            usage: COUNTER
+            description: Number of rows modified by queries in this database
+        - conflicts:
+            name: conflicts
+            usage: COUNTER
+            description: Number of queries canceled due to conflicts with recovery in this database
+        - temp_files:
+            name: temp_files
+            usage: COUNTER
+            description: Number of temporary files created by queries in this database
+        - temp_bytes:
+            name: temp_bytes
+            usage: COUNTER
+            description: Total amount of data written to temporary files by queries in this database.
+        - deadlocks:
+            name: deadlocks
+            usage: COUNTER
+            description: Number of deadlocks detected in this database
+        - cks_fails:
+            name: cks_fails
+            usage: COUNTER
+            description: Number of data page checksum failures detected in this database, -1 for not enabled
+        - cks_fail_time:
+            name: cks_fail_time
+            usage: GAUGE
+            description: Time at which the last data page checksum failure was detected in this database
+        - blk_read_time:
+            name: blk_read_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent reading data file blocks by backends in this database, in seconds
+        - blk_write_time:
+            name: blk_write_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent writing data file blocks by backends in this database, in seconds
+        - session_time:
+            name: session_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent by database sessions in this database, in seconds
+        - active_time:
+            name: active_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent executing SQL statements in this database, in seconds
+        - ixact_time:
+            name: ixact_time
+            usage: COUNTER
+            scale: "1e-3"
+            description: Time spent idling while in a transaction in this database, in seconds
+        - sessions:
+            name: sessions
+            usage: COUNTER
+            description: Total number of sessions established to this database
+        - sessions_abandoned:
+            name: sessions_abandoned
+            usage: COUNTER
+            description: Number of database sessions to this database that were terminated because connection to the client was lost
+        - sessions_fatal:
+            name: sessions_fatal
+            usage: COUNTER
+            description: Number of database sessions to this database that were terminated by fatal errors
+        - sessions_killed:
+            name: sessions_killed
+            usage: COUNTER
+            description: Number of database sessions to this database that were terminated by operator intervention
+        - reset_time:
+            name: reset_time
+            usage: COUNTER
+            description: Time at which database statistics were last reset
 
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database
-    - datid:
-        usage: GAUGE
-        description: OID of the database
-    - age:
-        usage: GAUGE
-        description: Age of database calculated from datfrozenxid
-    - is_template:
-        usage: GAUGE
-        description: If true(1), then this database can be cloned by any user with CREATEDB privileges
-        # If true, then this database can be cloned by any user with CREATEDB privileges; if false, then only superusers or the owner of the database can clone it.
-    - allow_conn:
-        usage: GAUGE
-        description: If false(0) then no one can connect to this database.
-        # This is used to protect the template0 database from being altered.
-    - conn_limit:
-        usage: GAUGE
-        description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
-    - frozen_xid:
-        usage: GAUGE
-        description: All transaction IDs before this one have been frozened
-    - numbackends:
-        usage: GAUGE
-        description: Number of backends currently connected to this database
-        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
-    - xact_commit:
-        usage: COUNTER
-        description: Number of transactions in this database that have been committed
-        # Number of transactions in this database that have been committed
-    - xact_rollback:
-        usage: COUNTER
-        description: Number of transactions in this database that have been rolled back
-    - xact_total:
-        usage: COUNTER
-        description: Number of transactions in this database
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read in this database
-    - blks_hit:
-        usage: COUNTER
-        description: Number of times disk blocks were found already in the buffer cache
-        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
-    - blks_access:
-        usage: COUNTER
-        description: Number of times disk blocks that accessed read+hit
-    - tup_returned:
-        usage: COUNTER
-        description: Number of rows returned by queries in this database
-    - tup_fetched:
-        usage: COUNTER
-        description: Number of rows fetched by queries in this database
-    - tup_inserted:
-        usage: COUNTER
-        description: Number of rows inserted by queries in this database
-    - tup_updated:
-        usage: COUNTER
-        description: Number of rows updated by queries in this database
-    - tup_deleted:
-        usage: COUNTER
-        description: Number of rows deleted by queries in this database
-    - tup_modified:
-        usage: COUNTER
-        description: Number of rows modified by queries in this database
-    - conflicts:
-        usage: COUNTER
-        description: Number of queries canceled due to conflicts with recovery in this database
-        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
-    - temp_files:
-        usage: COUNTER
-        description: Number of temporary files created by queries in this database
-        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
-    - temp_bytes:
-        usage: COUNTER
-        description: Total amount of data written to temporary files by queries in this database.
-        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
-    - deadlocks:
-        usage: COUNTER
-        description: Number of deadlocks detected in this database
-    - blk_read_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent reading data file blocks by backends in this database, in seconds
-        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - blk_write_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent writing data file blocks by backends in this database, in seconds
-        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - reset_time:
-        usage: COUNTER
-        description: Time at which database statistics were last reset
 

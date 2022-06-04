@@ -1,36 +1,70 @@
-
+##
+# SYNNOPSIS
+#       pg_recovery_*
+#
+# DESCRIPTION
+#       PostgreSQL control recovery metrics (9.6+)
+#
+# OPTIONS
+#       Tags       [cluster, replica]
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    90600 ~ higher
+#       Source     360-pg_recovery.yml
+#
+# METRICS
+#       min_timeline (COUNTER)
+#           Min recovery ending loc's timeline
+#       min_lsn (COUNTER)
+#           Minimum recovery ending location
+#       backup_start_lsn (COUNTER)
+#           Backup start location
+#       backup_end_lsn (COUNTER)
+#           Backup end location
+#       require_record (GAUGE)
+#           End-of-backup record required
+#
 pg_recovery:
-  name: pg_recovery
-  desc: PostgreSQL control recovery metrics (9.6+)
+    name: pg_recovery
+    desc: PostgreSQL control recovery metrics (9.6+)
+    query: |
+        SELECT min_recovery_end_timeline    AS min_timeline,
+          min_recovery_end_lsn - '0/0' AS min_lsn,
+          backup_start_lsn - '0/0'     AS backup_start_lsn,
+          backup_end_lsn - '0/0'       AS backup_end_lsn,
+          end_of_backup_record_required AS require_record
+        FROM pg_control_recovery();
+    tags:
+        - cluster
+        - replica
+    ttl: 10
+    timeout: 0.1
+    min_version: 90600
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - min_timeline:
+            name: min_timeline
+            usage: COUNTER
+            description: Min recovery ending loc's timeline
+        - min_lsn:
+            name: min_lsn
+            usage: COUNTER
+            description: Minimum recovery ending location
+        - backup_start_lsn:
+            name: backup_start_lsn
+            usage: COUNTER
+            description: Backup start location
+        - backup_end_lsn:
+            name: backup_end_lsn
+            usage: COUNTER
+            description: Backup end location
+        - require_record:
+            name: require_record
+            usage: GAUGE
+            description: End-of-backup record required
 
-  query: |
-    SELECT min_recovery_end_timeline    AS min_timeline,
-      min_recovery_end_lsn - '0/0' AS min_lsn,
-      backup_start_lsn - '0/0'     AS backup_start_lsn,
-      backup_end_lsn - '0/0'       AS backup_end_lsn,
-      end_of_backup_record_required AS require_record
-    FROM pg_control_recovery();
-
-  ttl: 10
-  min_version: 090600
-  tags:
-    - cluster
-    - replica
-
-  metrics:
-    - min_timeline:
-        usage: COUNTER
-        description: Min recovery ending loc's timeline
-    - min_lsn:
-        usage: COUNTER
-        description:  Minimum recovery ending location
-    - backup_start_lsn:
-        usage: COUNTER
-        description: Backup start location
-    - backup_end_lsn:
-        usage: COUNTER
-        description: Backup end location
-    - require_record:
-        usage: GAUGE
-        description: End-of-backup record required
 

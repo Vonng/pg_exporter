@@ -1,237 +1,293 @@
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg.pg_primary_only
-#┃ PostgreSQL basic information (on primary)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_timestamp{}             GAUGE    current database timestamp in unix epoch
-#┃ pg_uptime{}                GAUGE    seconds since postmaster start
-#┃ pg_boot_time{}             GAUGE    postmaster boot timestamp in unix epoch
-#┃ pg_lsn{}                   COUNTER  log sequence number, current write location
-#┃ pg_insert_lsn{}            COUNTER  primary only, location of current wal inserting
-#┃ pg_write_lsn{}             COUNTER  primary only, location of current wal writing
-#┃ pg_flush_lsn{}             COUNTER  primary only, location of current wal syncing
-#┃ pg_receive_lsn{}           COUNTER  replica only, location of wal synced to disk
-#┃ pg_replay_lsn{}            COUNTER  replica only, location of wal applied
-#┃ pg_conf_reload_time{}      GAUGE    seconds since last configuration reload
-#┃ pg_last_replay_time{}      GAUGE    time when last transaction been replayed
-#┃ pg_lag{}                   GAUGE    replica only, replication lag in seconds
-#┃ pg_is_in_recovery{}        GAUGE    1 if in recovery mode
-#┃ pg_is_wal_replay_paused{}  GAUGE    1 if wal play is paused
-#┃ pg_is_in_backup{}          GAUGE    1 if backup is in progress
-#┃ pg_backup_time{}           GAUGE    seconds since current backup start
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+##
+# SYNNOPSIS
+#       pg.pg_primary_only_*
+#
+# DESCRIPTION
+#       PostgreSQL basic information (on primary)
+#
+# OPTIONS
+#       Tags       [cluster, primary]
+#       TTL        1
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      true
+#       Version    100000 ~ higher
+#       Source     110-pg.yml
+#
+# METRICS
+#       timestamp (GAUGE)
+#           current database timestamp in unix epoch
+#       uptime (GAUGE)
+#           seconds since postmaster start
+#       boot_time (GAUGE)
+#           postmaster boot timestamp in unix epoch
+#       lsn (COUNTER)
+#           log sequence number, current write location
+#       insert_lsn (COUNTER)
+#           primary only, location of current wal inserting
+#       write_lsn (COUNTER)
+#           primary only, location of current wal writing
+#       flush_lsn (COUNTER)
+#           primary only, location of current wal syncing
+#       receive_lsn (COUNTER)
+#           replica only, location of wal synced to disk
+#       replay_lsn (COUNTER)
+#           replica only, location of wal applied
+#       conf_reload_time (GAUGE)
+#           seconds since last configuration reload
+#       last_replay_time (GAUGE)
+#           time when last transaction been replayed
+#       lag (GAUGE)
+#           replica only, replication lag in seconds
+#       is_in_recovery (GAUGE)
+#           1 if in recovery mode
+#       is_wal_replay_paused (GAUGE)
+#           1 if wal play is paused
+#       is_in_backup (GAUGE)
+#           1 if backup is in progress
+#       backup_time (GAUGE)
+#           seconds since current backup start
+#
 pg_primary_only:
-  name: pg
-  desc: PostgreSQL basic information (on primary)
-  query: |
-    SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-           extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
-           extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
-           pg_current_wal_lsn() - '0/0'                           AS lsn,
-           pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
-           pg_current_wal_lsn() - '0/0'                           AS write_lsn,
-           pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-           NULL::BIGINT                                           AS receive_lsn,
-           NULL::BIGINT                                           AS replay_lsn,
-           extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
-           NULL::FLOAT                                            AS last_replay_time,
-           0::FLOAT                                               AS lag,
-           pg_is_in_recovery()                                    AS is_in_recovery,
-           FALSE                                                  AS is_wal_replay_paused,
-           pg_is_in_backup()                                      AS is_in_backup,
-           extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-  tags:
-    - cluster
-    - primary
-  ttl: 1
-  # timeout: 0.1
-  min_version: 100000
-  # max_version: 0
-  fatal: true
-  skip: false
-  metrics:
-    - timestamp:
-        name: timestamp
-        description: current database timestamp in unix epoch
-        usage: GAUGE
-    - uptime:
-        name: uptime
-        description: seconds since postmaster start
-        usage: GAUGE
-    - boot_time:
-        name: boot_time
-        description: postmaster boot timestamp in unix epoch
-        usage: GAUGE
-    - lsn:
-        name: lsn
-        description: log sequence number, current write location
-        usage: COUNTER
-    - insert_lsn:
-        name: insert_lsn
-        description: primary only, location of current wal inserting
-        usage: COUNTER
-    - write_lsn:
-        name: write_lsn
-        description: primary only, location of current wal writing
-        usage: COUNTER
-    - flush_lsn:
-        name: flush_lsn
-        description: primary only, location of current wal syncing
-        usage: COUNTER
-    - receive_lsn:
-        name: receive_lsn
-        description: replica only, location of wal synced to disk
-        usage: COUNTER
-    - replay_lsn:
-        name: replay_lsn
-        description: replica only, location of wal applied
-        usage: COUNTER
-    - conf_reload_time:
-        name: conf_reload_time
-        description: seconds since last configuration reload
-        usage: GAUGE
-    - last_replay_time:
-        name: last_replay_time
-        description: time when last transaction been replayed
-        usage: GAUGE
-    - lag:
-        name: lag
-        description: replica only, replication lag in seconds
-        usage: GAUGE
-    - is_in_recovery:
-        name: is_in_recovery
-        description: 1 if in recovery mode
-        usage: GAUGE
-    - is_wal_replay_paused:
-        name: is_wal_replay_paused
-        description: 1 if wal play is paused
-        usage: GAUGE
-    - is_in_backup:
-        name: is_in_backup
-        description: 1 if backup is in progress
-        usage: GAUGE
-    - backup_time:
-        name: backup_time
-        description: seconds since current backup start
-        usage: GAUGE
+    name: pg
+    desc: PostgreSQL basic information (on primary)
+    query: |
+        SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
+               extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
+               extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
+               pg_current_wal_lsn() - '0/0'                           AS lsn,
+               pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
+               pg_current_wal_lsn() - '0/0'                           AS write_lsn,
+               pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
+               NULL::BIGINT                                           AS receive_lsn,
+               NULL::BIGINT                                           AS replay_lsn,
+               extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
+               NULL::FLOAT                                            AS last_replay_time,
+               0::FLOAT                                               AS lag,
+               pg_is_in_recovery()                                    AS is_in_recovery,
+               FALSE                                                  AS is_wal_replay_paused,
+               pg_is_in_backup()                                      AS is_in_backup,
+               extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
+    tags:
+        - cluster
+        - primary
+    ttl: 1
+    timeout: 0.1
+    min_version: 100000
+    max_version: 0
+    fatal: true
+    skip: false
+    metrics:
+        - timestamp:
+            name: timestamp
+            usage: GAUGE
+            description: current database timestamp in unix epoch
+        - uptime:
+            name: uptime
+            usage: GAUGE
+            description: seconds since postmaster start
+        - boot_time:
+            name: boot_time
+            usage: GAUGE
+            description: postmaster boot timestamp in unix epoch
+        - lsn:
+            name: lsn
+            usage: COUNTER
+            description: log sequence number, current write location
+        - insert_lsn:
+            name: insert_lsn
+            usage: COUNTER
+            description: primary only, location of current wal inserting
+        - write_lsn:
+            name: write_lsn
+            usage: COUNTER
+            description: primary only, location of current wal writing
+        - flush_lsn:
+            name: flush_lsn
+            usage: COUNTER
+            description: primary only, location of current wal syncing
+        - receive_lsn:
+            name: receive_lsn
+            usage: COUNTER
+            description: replica only, location of wal synced to disk
+        - replay_lsn:
+            name: replay_lsn
+            usage: COUNTER
+            description: replica only, location of wal applied
+        - conf_reload_time:
+            name: conf_reload_time
+            usage: GAUGE
+            description: seconds since last configuration reload
+        - last_replay_time:
+            name: last_replay_time
+            usage: GAUGE
+            description: time when last transaction been replayed
+        - lag:
+            name: lag
+            usage: GAUGE
+            description: replica only, replication lag in seconds
+        - is_in_recovery:
+            name: is_in_recovery
+            usage: GAUGE
+            description: 1 if in recovery mode
+        - is_wal_replay_paused:
+            name: is_wal_replay_paused
+            usage: GAUGE
+            description: 1 if wal play is paused
+        - is_in_backup:
+            name: is_in_backup
+            usage: GAUGE
+            description: 1 if backup is in progress
+        - backup_time:
+            name: backup_time
+            usage: GAUGE
+            description: seconds since current backup start
 
-
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pg.pg_replica_only
-#┃ PostgreSQL basic information (on replica)
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pg_timestamp{}             GAUGE    database current timestamp
-#┃ pg_uptime{}                GAUGE    seconds since postmaster start
-#┃ pg_boot_time{}             GAUGE    unix timestamp when postmaster boot
-#┃ pg_lsn{}                   COUNTER  log sequence number, current write location
-#┃ pg_insert_lsn{}            COUNTER  primary only, location of current wal inserting
-#┃ pg_write_lsn{}             COUNTER  primary only, location of current wal writing
-#┃ pg_flush_lsn{}             COUNTER  primary only, location of current wal syncing
-#┃ pg_receive_lsn{}           COUNTER  replica only, location of wal synced to disk
-#┃ pg_replay_lsn{}            COUNTER  replica only, location of wal applied
-#┃ pg_conf_reload_time{}      GAUGE    seconds since last configuration reload
-#┃ pg_last_replay_time{}      GAUGE    time when last transaction been replayed
-#┃ pg_lag{}                   GAUGE    replica only, replication lag in seconds
-#┃ pg_is_in_recovery{}        GAUGE    1 if in recovery mode
-#┃ pg_is_wal_replay_paused{}  GAUGE    1 if wal play paused
-#┃ pg_is_in_backup{}          GAUGE    1 if backup is in progress
-#┃ pg_backup_time{}           GAUGE    seconds since current backup start
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+##
+# SYNNOPSIS
+#       pg.pg_replica_only_*
+#
+# DESCRIPTION
+#       PostgreSQL basic information (on replica)
+#
+# OPTIONS
+#       Tags       [cluster, replica]
+#       TTL        1
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      true
+#       Version    100000 ~ higher
+#       Source     110-pg.yml
+#
+# METRICS
+#       timestamp (GAUGE)
+#           database current timestamp
+#       uptime (GAUGE)
+#           seconds since postmaster start
+#       boot_time (GAUGE)
+#           unix timestamp when postmaster boot
+#       lsn (COUNTER)
+#           log sequence number, current write location
+#       insert_lsn (COUNTER)
+#           primary only, location of current wal inserting
+#       write_lsn (COUNTER)
+#           primary only, location of current wal writing
+#       flush_lsn (COUNTER)
+#           primary only, location of current wal syncing
+#       receive_lsn (COUNTER)
+#           replica only, location of wal synced to disk
+#       replay_lsn (COUNTER)
+#           replica only, location of wal applied
+#       conf_reload_time (GAUGE)
+#           seconds since last configuration reload
+#       last_replay_time (GAUGE)
+#           time when last transaction been replayed
+#       lag (GAUGE)
+#           replica only, replication lag in seconds
+#       is_in_recovery (GAUGE)
+#           1 if in recovery mode
+#       is_wal_replay_paused (GAUGE)
+#           1 if wal play paused
+#       is_in_backup (GAUGE)
+#           1 if backup is in progress
+#       backup_time (GAUGE)
+#           seconds since current backup start
+#
 pg_replica_only:
-  name: pg
-  desc: PostgreSQL basic information (on replica)
-  query: |
-    SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                                    AS timestamp,
-           extract(EPOCH FROM now() - pg_postmaster_start_time())                   AS uptime,
-           extract(EPOCH FROM pg_postmaster_start_time())                           AS boot_time,
-           pg_last_wal_replay_lsn() - '0/0'                                         AS lsn,
-           NULL::BIGINT                                                             AS insert_lsn,
-           NULL::BIGINT                                                             AS write_lsn,
-           NULL::BIGINT                                                             AS flush_lsn,
-           pg_last_wal_receive_lsn() - '0/0'                                        AS receive_lsn,
-           pg_last_wal_replay_lsn() - '0/0'                                         AS replay_lsn,
-           extract(EPOCH FROM now() - pg_conf_load_time())                          AS conf_reload_time,
-           extract(EPOCH FROM pg_last_xact_replay_timestamp())                      AS last_replay_time,
-           CASE
-               WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
-               ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()) END AS lag,
-           pg_is_in_recovery()                                                      AS is_in_recovery,
-           pg_is_wal_replay_paused()                                                AS is_wal_replay_paused,
-           pg_is_in_backup()                                                        AS is_in_backup,
-           extract(EPOCH FROM now() - pg_backup_start_time())                       AS backup_time;
-  tags:
-    - cluster
-    - replica
-  ttl: 1
-  # timeout: 0.1
-  min_version: 100000
-  # max_version: 0
-  fatal: true
-  skip: false
-  metrics:
-    - timestamp:
-        name: timestamp
-        description: database current timestamp
-        usage: GAUGE
-    - uptime:
-        name: uptime
-        description: seconds since postmaster start
-        usage: GAUGE
-    - boot_time:
-        name: boot_time
-        description: unix timestamp when postmaster boot
-        usage: GAUGE
-    - lsn:
-        name: lsn
-        description: log sequence number, current write location
-        usage: COUNTER
-    - insert_lsn:
-        name: insert_lsn
-        description: primary only, location of current wal inserting
-        usage: COUNTER
-    - write_lsn:
-        name: write_lsn
-        description: primary only, location of current wal writing
-        usage: COUNTER
-    - flush_lsn:
-        name: flush_lsn
-        description: primary only, location of current wal syncing
-        usage: COUNTER
-    - receive_lsn:
-        name: receive_lsn
-        description: replica only, location of wal synced to disk
-        usage: COUNTER
-    - replay_lsn:
-        name: replay_lsn
-        description: replica only, location of wal applied
-        usage: COUNTER
-    - conf_reload_time:
-        name: conf_reload_time
-        description: seconds since last configuration reload
-        usage: GAUGE
-    - last_replay_time:
-        name: last_replay_time
-        description: time when last transaction been replayed
-        usage: GAUGE
-    - lag:
-        name: lag
-        description: replica only, replication lag in seconds
-        usage: GAUGE
-    - is_in_recovery:
-        name: is_in_recovery
-        description: 1 if in recovery mode
-        usage: GAUGE
-    - is_wal_replay_paused:
-        name: is_wal_replay_paused
-        description: 1 if wal play paused
-        usage: GAUGE
-    - is_in_backup:
-        name: is_in_backup
-        description: 1 if backup is in progress
-        usage: GAUGE
-    - backup_time:
-        name: backup_time
-        description: seconds since current backup start
-        usage: GAUGE
+    name: pg
+    desc: PostgreSQL basic information (on replica)
+    query: |
+        SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                                    AS timestamp,
+               extract(EPOCH FROM now() - pg_postmaster_start_time())                   AS uptime,
+               extract(EPOCH FROM pg_postmaster_start_time())                           AS boot_time,
+               pg_last_wal_replay_lsn() - '0/0'                                         AS lsn,
+               NULL::BIGINT                                                             AS insert_lsn,
+               NULL::BIGINT                                                             AS write_lsn,
+               NULL::BIGINT                                                             AS flush_lsn,
+               pg_last_wal_receive_lsn() - '0/0'                                        AS receive_lsn,
+               pg_last_wal_replay_lsn() - '0/0'                                         AS replay_lsn,
+               extract(EPOCH FROM now() - pg_conf_load_time())                          AS conf_reload_time,
+               extract(EPOCH FROM pg_last_xact_replay_timestamp())                      AS last_replay_time,
+               CASE
+                   WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
+                   ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()) END AS lag,
+               pg_is_in_recovery()                                                      AS is_in_recovery,
+               pg_is_wal_replay_paused()                                                AS is_wal_replay_paused,
+               pg_is_in_backup()                                                        AS is_in_backup,
+               extract(EPOCH FROM now() - pg_backup_start_time())                       AS backup_time;
+    tags:
+        - cluster
+        - replica
+    ttl: 1
+    timeout: 0.1
+    min_version: 100000
+    max_version: 0
+    fatal: true
+    skip: false
+    metrics:
+        - timestamp:
+            name: timestamp
+            usage: GAUGE
+            description: database current timestamp
+        - uptime:
+            name: uptime
+            usage: GAUGE
+            description: seconds since postmaster start
+        - boot_time:
+            name: boot_time
+            usage: GAUGE
+            description: unix timestamp when postmaster boot
+        - lsn:
+            name: lsn
+            usage: COUNTER
+            description: log sequence number, current write location
+        - insert_lsn:
+            name: insert_lsn
+            usage: COUNTER
+            description: primary only, location of current wal inserting
+        - write_lsn:
+            name: write_lsn
+            usage: COUNTER
+            description: primary only, location of current wal writing
+        - flush_lsn:
+            name: flush_lsn
+            usage: COUNTER
+            description: primary only, location of current wal syncing
+        - receive_lsn:
+            name: receive_lsn
+            usage: COUNTER
+            description: replica only, location of wal synced to disk
+        - replay_lsn:
+            name: replay_lsn
+            usage: COUNTER
+            description: replica only, location of wal applied
+        - conf_reload_time:
+            name: conf_reload_time
+            usage: GAUGE
+            description: seconds since last configuration reload
+        - last_replay_time:
+            name: last_replay_time
+            usage: GAUGE
+            description: time when last transaction been replayed
+        - lag:
+            name: lag
+            usage: GAUGE
+            description: replica only, replication lag in seconds
+        - is_in_recovery:
+            name: is_in_recovery
+            usage: GAUGE
+            description: 1 if in recovery mode
+        - is_wal_replay_paused:
+            name: is_wal_replay_paused
+            usage: GAUGE
+            description: 1 if wal play paused
+        - is_in_backup:
+            name: is_in_backup
+            usage: GAUGE
+            description: 1 if backup is in progress
+        - backup_time:
+            name: backup_time
+            usage: GAUGE
+            description: seconds since current backup start
+
 

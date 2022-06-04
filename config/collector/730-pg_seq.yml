@@ -1,25 +1,62 @@
-
+##
+# SYNNOPSIS
+#       pg_seq_*
+#
+# DESCRIPTION
+#       PostgreSQL sequence metrics
+#
+# OPTIONS
+#       Tags       []
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    100000 ~ higher
+#       Source     730-pg_seq.yml
+#
+# METRICS
+#       datname (LABEL)
+#           Database name of this sequence
+#       seqname (LABEL)
+#           Fully schema qualified sequence name
+#       last_value (COUNTER)
+#           The last sequence value written to disk
+#       blks_read (COUNTER)
+#           Number of disk blocks read from this sequence
+#       blks_hit (COUNTER)
+#           Number of buffer hits in this sequence
+#
 pg_seq:
-  desc: PostgreSQL sequence metrics
-  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname LIMIT 1) d LIMIT 128;
-  ttl: 10
-  min_version: 100000
-  metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this sequence
-    - seqname:
-        usage: LABEL
-        description: Fully schema qualified sequence name
-    - last_value:
-        usage: COUNTER
-        description: The last sequence value written to disk
-        # The last sequence value written to disk. If caching is used, this value can be greater than the last value handed out from the sequence.
-        # Null if the sequence has not been read from yet. Also, if the current user does not have USAGE or SELECT privilege on the sequence, the value is null.
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read from this sequence
-    - blks_hit:
-        usage: COUNTER
-        description: Number of buffer hits in this sequence
+    name: pg_seq
+    desc: PostgreSQL sequence metrics
+    query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname LIMIT 1) d LIMIT 128;
+    tags: []
+    ttl: 10
+    timeout: 0.1
+    min_version: 100000
+    max_version: 0
+    fatal: false
+    skip: false
+    metrics:
+        - datname:
+            name: datname
+            usage: LABEL
+            description: Database name of this sequence
+        - seqname:
+            name: seqname
+            usage: LABEL
+            description: Fully schema qualified sequence name
+        - last_value:
+            name: last_value
+            usage: COUNTER
+            description: The last sequence value written to disk
+        - blks_read:
+            name: blks_read
+            usage: COUNTER
+            description: Number of disk blocks read from this sequence
+        - blks_hit:
+            name: blks_hit
+            usage: COUNTER
+            description: Number of buffer hits in this sequence
+
 

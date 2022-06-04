@@ -1,25 +1,45 @@
-
-#┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#┃ pgbouncer_list
-#┃ pgbouncer entry list: http://www.pgbouncer.org/usage.html#show-lists
-#┣┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-#┃ pgbouncer_list_items{list}  GAUGE    count of corresponding pgbouncer object
-#┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+##
+# SYNNOPSIS
+#       pgbouncer_list_*
+#
+# DESCRIPTION
+#       Pgbouncer entry list
+#
+# OPTIONS
+#       Tags       [pgbouncer]
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      true
+#       Version    10800 ~ higher
+#       Source     910-pgbouncer_list.yml
+#
+# METRICS
+#       list (LABEL)
+#           Pgbouncer internal list name
+#       items (GAUGE)
+#           Number of corresponding pgbouncer object
+#
 pgbouncer_list:
-  name: pgbouncer_list
-  desc: Pgbouncer entry list # http://www.pgbouncer.org/usage.html#show-lists
-  query: SHOW LISTS;
-  ttl: 10
-  min_version: 10800
-  fatal: true
-  tags:
-    - pgbouncer
+    name: pgbouncer_list
+    desc: Pgbouncer entry list
+    query: SHOW LISTS;
+    tags:
+        - pgbouncer
+    ttl: 10
+    timeout: 0.1
+    min_version: 10800
+    max_version: 0
+    fatal: true
+    skip: false
+    metrics:
+        - list:
+            name: list
+            usage: LABEL
+            description: Pgbouncer internal list name
+        - items:
+            name: items
+            usage: GAUGE
+            description: Number of corresponding pgbouncer object
 
-  metrics:
-    - list:
-        usage: LABEL
-        description: Pgbouncer internal list name
-    - items:
-        usage: GAUGE
-        description: Number of corresponding pgbouncer object
 
