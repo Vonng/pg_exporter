@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_clustering_*
 #
 # DESCRIPTION
@@ -27,37 +27,28 @@
 #           Progress of heap been processed
 #
 pg_clustering:
-    name: pg_clustering
-    desc: PostgreSQL cluster or vacuum full progress (v12+)
-    query: SELECT datname, pid, relid::RegClass AS relname, param4 AS tup_scan, CASE WHEN param6 > 0 THEN 1.0 * param7 / param6 ELSE 0 END AS progress FROM pg_stat_get_progress_info('cluster') s LEFT JOIN pg_database d ON s.datid = d.oid;;
-    tags:
-        - cluster
-    ttl: 10
-    timeout: 0.1
-    min_version: 120000
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - datname:
-            name: datname
-            usage: LABEL
-            description: Name of databae been clustering
-        - pid:
-            name: pid
-            usage: LABEL
-            description: Process id of indexing table
-        - relname:
-            name: relname
-            usage: LABEL
-            description: Relation name of indexed table
-        - tup_scan:
-            name: tup_scan
-            usage: GAUGE
-            description: How much tuple been scanned
-        - progress:
-            name: progress
-            usage: GAUGE
-            description: Progress of heap been processed
+  name: pg_clustering
+  desc: PostgreSQL cluster or vacuum full progress (v12+)
+  query: SELECT datname, pid, relid::RegClass AS relname, param4 AS tup_scan, CASE WHEN param6 > 0 THEN 1.0 * param7 / param6 ELSE 0 END AS progress FROM pg_stat_get_progress_info('cluster') s LEFT JOIN pg_database d ON s.datid = d.oid;;
+  ttl: 10
+  min_version: 120000
+  tags:
+    - cluster
 
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Name of databae been clustering
+    - pid:
+        usage: LABEL
+        description: Process id of indexing table
+    - relname:
+        usage: LABEL
+        description: Relation name of indexed table
+    - tup_scan:
+        usage: GAUGE
+        description: How much tuple been scanned
+    - progress:
+        usage: GAUGE
+        description: Progress of heap been processed
 

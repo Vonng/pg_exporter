@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_indexing_*
 #
 # DESCRIPTION
@@ -31,51 +31,42 @@
 #           Percent of lockers been proceeded
 #
 pg_indexing:
-    name: pg_indexing
-    desc: PostgreSQL index creating progress (v12+)
-    query: |
-        SELECT datname, pid, relid::RegClass AS relname,
-          (CASE WHEN blocks_total > 0 THEN 1.0 * blocks_done / blocks_total ELSE NULL END) AS blocks,
-          (CASE WHEN tuples_total > 0 THEN 1.0 * tuples_done / tuples_total ELSE NULL END) AS tuples,
-          (CASE WHEN partitions_total > 0 THEN 1.0 * partitions_done / partitions_total ELSE NULL END) AS partitions,
-          (CASE WHEN lockers_total > 0 THEN 1.0 * lockers_done / lockers_total ELSE NULL END) AS lockers
-        FROM pg_stat_progress_create_index pspci;
-    tags:
-        - cluster
-    ttl: 10
-    timeout: 0.1
-    min_version: 120000
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - datname:
-            name: datname
-            usage: LABEL
-            description: Name of the database
-        - pid:
-            name: pid
-            usage: LABEL
-            description: Process id of indexing table
-        - relname:
-            name: relname
-            usage: LABEL
-            description: Relation name of indexed table
-        - blocks:
-            name: blocks
-            usage: GAUGE
-            description: Percent of blocks been proceeded
-        - tuples:
-            name: tuples
-            usage: GAUGE
-            description: Percent of tuples been proceeded
-        - partitions:
-            name: partitions
-            usage: GAUGE
-            description: Percent of partitions been proceeded
-        - lockers:
-            name: lockers
-            usage: GAUGE
-            description: Percent of lockers been proceeded
+  name: pg_indexing
+  desc: PostgreSQL index creating progress (v12+)
+
+  query: |
+    SELECT datname, pid, relid::RegClass AS relname,
+      (CASE WHEN blocks_total > 0 THEN 1.0 * blocks_done / blocks_total ELSE NULL END) AS blocks,
+      (CASE WHEN tuples_total > 0 THEN 1.0 * tuples_done / tuples_total ELSE NULL END) AS tuples,
+      (CASE WHEN partitions_total > 0 THEN 1.0 * partitions_done / partitions_total ELSE NULL END) AS partitions,
+      (CASE WHEN lockers_total > 0 THEN 1.0 * lockers_done / lockers_total ELSE NULL END) AS lockers
+    FROM pg_stat_progress_create_index pspci;
+  ttl: 10
+  min_version: 120000
+  tags:
+    - cluster
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Name of the database
+    - pid:
+        usage: LABEL
+        description: Process id of indexing table
+    - relname:
+        usage: LABEL
+        description: Relation name of indexed table
+    - blocks:
+        usage: GAUGE
+        description: Percent of blocks been proceeded
+    - tuples:
+        usage: GAUGE
+        description: Percent of tuples been proceeded
+    - partitions:
+        usage: GAUGE
+        description: Percent of partitions been proceeded
+    - lockers:
+        usage: GAUGE
+        description: Percent of lockers been proceeded
 
 

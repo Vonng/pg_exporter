@@ -41,7 +41,7 @@ type Query struct {
 }
 
 var queryTemplate, _ = template.New("Query").Parse(`##
-# SYNNOPSIS
+# SYNOPSIS
 #       {{ .Name }}{{ if ne .Name .Branch }}.{{ .Branch }}{{ end }}_*
 #
 # DESCRIPTION

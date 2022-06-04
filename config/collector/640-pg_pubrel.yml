@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_pubrel_*
 #
 # DESCRIPTION
@@ -23,28 +23,21 @@
 #           Count of relation in the publication
 #
 pg_pubrel:
-    name: pg_pubrel
-    desc: PostgreSQL publication and relation count
-    query: SELECT CURRENT_CATALOG AS datname, pubname, count(*) AS count FROM pg_publication p, LATERAL pg_get_publication_tables(pubname) GROUP BY pubname;
-    tags: []
-    ttl: 10
-    timeout: 0.1
-    min_version: 100000
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - datname:
-            name: datname
-            usage: LABEL
-            description: Name of the database which publication belonged
-        - pubname:
-            name: pubname
-            usage: LABEL
-            description: Name of the publication
-        - count:
-            name: count
-            usage: GAUGE
-            description: Count of relation in the publication
+  name: pg_pubrel
+  desc: PostgreSQL publication and relation count
+  query: SELECT CURRENT_CATALOG AS datname, pubname, count(*) AS count FROM pg_publication p, LATERAL pg_get_publication_tables(pubname) GROUP BY pubname;
+  ttl: 10
+  min_version: 100000
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Name of the database which publication belonged
+    - pubname:
+        usage: LABEL
+        description: Name of the publication
+    - count:
+        usage: GAUGE
+        description: Count of relation in the publication
 
 

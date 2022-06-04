@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_xact_*
 #
 # DESCRIPTION
@@ -23,29 +23,24 @@
 #           Current active transaction count
 #
 pg_xact:
-    name: pg_xact
-    desc: PostgreSQL transaction identifier metrics
-    query: WITH snap(v) AS (SELECT txid_current_snapshot()), xset(v) AS  (SELECT txid_snapshot_xip(v) FROM snap), xnum(v) AS (SELECT count(*) from xset), xmin(v) AS (SELECT txid_snapshot_xmin(v) FROM snap), xmax(v) AS (SELECT txid_snapshot_xmin(v) FROM snap) SELECT xmin.v AS xmin, xmax.v AS xmax, xnum.v AS xnum FROM xmin, xmax, xnum;
-    tags:
-        - cluster
-    ttl: 10
-    timeout: 0.1
-    min_version: 90400
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - xmin:
-            name: xmin
-            usage: COUNTER
-            description: Earliest txid that is still active
-        - xmax:
-            name: xmax
-            usage: COUNTER
-            description: First as-yet-unassigned txid. txid >= this are invisible.
-        - xnum:
-            name: xnum
-            usage: GAUGE
-            description: Current active transaction count
+  name: pg_xact
+  desc: PostgreSQL transaction identifier metrics
+  query: WITH snap(v) AS (SELECT txid_current_snapshot()), xset(v) AS  (SELECT txid_snapshot_xip(v) FROM snap), xnum(v) AS (SELECT count(*) from xset), xmin(v) AS (SELECT txid_snapshot_xmin(v) FROM snap), xmax(v) AS (SELECT txid_snapshot_xmin(v) FROM snap) SELECT xmin.v AS xmin, xmax.v AS xmax, xnum.v AS xnum FROM xmin, xmax, xnum;
+
+  ttl: 10
+  min_version: 090400
+  tags:
+    - cluster
+
+  metrics:
+    - xmin:
+        usage: COUNTER
+        description: Earliest txid that is still active
+    - xmax:
+        usage: COUNTER
+        description: First as-yet-unassigned txid. txid >= this are invisible.
+    - xnum:
+        usage: GAUGE
+        description: Current active transaction count
 
 

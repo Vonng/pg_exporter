@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_repl.pg_repl_12_*
 #
 # DESCRIPTION
@@ -64,127 +64,109 @@
 #       reply_time (GAUGE)
 #           Send time of last reply message received from standby server
 #
+
 pg_repl_12:
-    name: pg_repl
-    desc: PostgreSQL replication stat metrics 12+
-    query: |
-        SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid::TEXT, client_port,
-               CASE state WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
-               CASE sync_state WHEN 'async' THEN 0 WHEN 'potential' THEN 1 WHEN 'sync' THEN 2 WHEN 'quorum' THEN 3 ELSE -1 END AS sync_state,
-               sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn - '0/0' AS lsn,
-               current.lsn - sent_lsn AS sent_diff, current.lsn - write_lsn AS write_diff, current.lsn - flush_lsn AS flush_diff, current.lsn - replay_lsn AS replay_diff,
-               sent_lsn - '0/0' AS sent_lsn, write_lsn - '0/0' AS write_lsn, flush_lsn - '0/0' AS flush_lsn, replay_lsn - '0/0' AS replay_lsn,
-               coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag, coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag, coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
-               extract(EPOCH FROM current_timestamp) AS "time", extract(EPOCH FROM backend_start) AS launch_time, extract(EPOCH FROM reply_time) AS reply_time
-        FROM pg_stat_replication, (SELECT CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END AS lsn) current;
-    tags:
-        - cluster
-    ttl: 10
-    timeout: 0.1
-    min_version: 120000
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - appname:
-            name: appname
-            usage: LABEL
-            description: Name of the application that is connected to this WAL sender
-        - usename:
-            name: usename
-            usage: LABEL
-            description: Name of the user logged into this WAL sender process
-        - address:
-            name: address
-            usage: LABEL
-            description: IP address of the client connected to this WAL sender, localhost for unix socket
-        - pid:
-            name: pid
-            usage: LABEL
-            description: Process ID of the WAL sender process
-        - client_port:
-            name: client_port
-            usage: GAUGE
-            description: TCP port number that the client is using for communication with this WAL sender, or -1 if a Unix socket is used
-        - state:
-            name: state
-            usage: GAUGE
-            description: Current WAL sender encoded state 0-4 for streaming|startup|catchup|backup|stopping
-        - sync_state:
-            name: sync_state
-            usage: GAUGE
-            description: Encoded synchronous state of this standby server, 0-3 for async|potential|sync|quorum
-        - sync_priority:
-            name: sync_priority
-            usage: GAUGE
-            description: Priority of this standby server for being chosen as the synchronous standby
-        - backend_xmin:
-            name: backend_xmin
-            usage: COUNTER
-            description: This standby's xmin horizon reported by hot_standby_feedback.
-        - lsn:
-            name: lsn
-            usage: COUNTER
-            description: Current log position on this server
-        - sent_diff:
-            name: sent_diff
-            usage: GAUGE
-            description: Last log position sent to this standby server diff with current lsn
-        - write_diff:
-            name: write_diff
-            usage: GAUGE
-            description: Last log position written to disk by this standby server diff with current lsn
-        - flush_diff:
-            name: flush_diff
-            usage: GAUGE
-            description: Last log position flushed to disk by this standby server diff with current lsn
-        - replay_diff:
-            name: replay_diff
-            usage: GAUGE
-            description: Last log position replayed into the database on this standby server diff with current lsn
-        - sent_lsn:
-            name: sent_lsn
-            usage: COUNTER
-            description: Last write-ahead log location sent on this connection
-        - write_lsn:
-            name: write_lsn
-            usage: COUNTER
-            description: Last write-ahead log location written to disk by this standby server
-        - flush_lsn:
-            name: flush_lsn
-            usage: COUNTER
-            description: Last write-ahead log location flushed to disk by this standby server
-        - replay_lsn:
-            name: replay_lsn
-            usage: COUNTER
-            description: Last write-ahead log location replayed into the database on this standby server
-        - write_lag:
-            name: write_lag
-            usage: GAUGE
-            description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written it
-        - flush_lag:
-            name: flush_lag
-            usage: GAUGE
-            description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written and flushed it
-        - replay_lag:
-            name: replay_lag
-            usage: GAUGE
-            description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it
-        - time:
-            name: time
-            usage: COUNTER
-            description: Current timestamp in unix epoch
-        - launch_time:
-            name: launch_time
-            usage: COUNTER
-            description: Time when this process was started, i.e., when the client connected to this WAL sender
-        - reply_time:
-            name: reply_time
-            usage: GAUGE
-            description: Send time of last reply message received from standby server
+  name: pg_repl
+  desc: PostgreSQL replication stat metrics 12+
+  query: |
+    SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid::TEXT, client_port,
+           CASE state WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
+           CASE sync_state WHEN 'async' THEN 0 WHEN 'potential' THEN 1 WHEN 'sync' THEN 2 WHEN 'quorum' THEN 3 ELSE -1 END AS sync_state,
+           sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn - '0/0' AS lsn,
+           current.lsn - sent_lsn AS sent_diff, current.lsn - write_lsn AS write_diff, current.lsn - flush_lsn AS flush_diff, current.lsn - replay_lsn AS replay_diff,
+           sent_lsn - '0/0' AS sent_lsn, write_lsn - '0/0' AS write_lsn, flush_lsn - '0/0' AS flush_lsn, replay_lsn - '0/0' AS replay_lsn,
+           coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag, coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag, coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
+           extract(EPOCH FROM current_timestamp) AS "time", extract(EPOCH FROM backend_start) AS launch_time, extract(EPOCH FROM reply_time) AS reply_time
+    FROM pg_stat_replication, (SELECT CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END AS lsn) current;
+  ttl: 10
+  min_version: 120000
+  tags:
+    - cluster
+
+  metrics:
+    - appname:
+        usage: LABEL
+        description: Name of the application that is connected to this WAL sender
+    - usename:
+        usage: LABEL
+        description: Name of the user logged into this WAL sender process
+    - address:
+        usage: LABEL
+        description: IP address of the client connected to this WAL sender, localhost for unix socket
+        # IP address of the client connected to this WAL sender. If this field is null, it indicates that the client is connected via a Unix socket on the server machine.
+    - pid:
+        usage: LABEL
+        description: Process ID of the WAL sender process
+    - client_port:
+        usage: GAUGE
+        description: TCP port number that the client is using for communication with this WAL sender, or -1 if a Unix socket is used
+    - state:
+        usage: GAUGE
+        description: Current WAL sender encoded state 0-4 for streaming|startup|catchup|backup|stopping
+        # Current WAL sender state. Possible values are: streaming|startup|catchup|backup|stopping
+    - sync_state:
+        usage: GAUGE
+        description: Encoded synchronous state of this standby server, 0-3 for async|potential|sync|quorum
+        # Synchronous state of this standby server. Possible values are: async|potential|sync|quorum
+    - sync_priority:
+        usage: GAUGE
+        description: Priority of this standby server for being chosen as the synchronous standby
+        # Priority of this standby server for being chosen as the synchronous standby in a priority-based synchronous replication. This has no effect in a quorum-based synchronous replication.
+    - backend_xmin:
+        usage: COUNTER
+        description: This standby's xmin horizon reported by hot_standby_feedback.
+    - lsn:
+        usage: COUNTER
+        description: Current log position on this server
+    - sent_diff:
+        usage: GAUGE
+        description: Last log position sent to this standby server diff with current lsn
+    - write_diff:
+        usage: GAUGE
+        description: Last log position written to disk by this standby server diff with current lsn
+    - flush_diff:
+        usage: GAUGE
+        description: Last log position flushed to disk by this standby server diff with current lsn
+    - replay_diff:
+        usage: GAUGE
+        description: Last log position replayed into the database on this standby server diff with current lsn
+    - sent_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location sent on this connection
+    - write_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location written to disk by this standby server
+    - flush_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location flushed to disk by this standby server
+    - replay_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location replayed into the database on this standby server
+    - write_lag:
+        usage: GAUGE
+        description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written it
+        # Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written it (but not yet flushed it or applied it). This can be used to gauge the delay that synchronous_commit level remote_write incurred while committing if this server was configured as a synchronous standby.
+    - flush_lag:
+        usage: GAUGE
+        description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written and flushed it
+        # Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written and flushed it (but not yet applied it). This can be used to gauge the delay that synchronous_commit level on incurred while committing if this server was configured as a synchronous standby.
+    - replay_lag:
+        usage: GAUGE
+        description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it
+        # Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it. This can be used to gauge the delay that synchronous_commit level remote_apply incurred while committing if this server was configured as a synchronous standby.
+    - time:
+        usage: COUNTER
+        description: Current timestamp in unix epoch
+    - launch_time:
+        usage: COUNTER
+        description: Time when this process was started, i.e., when the client connected to this WAL sender
+    - reply_time:
+        usage: GAUGE
+        description: Send time of last reply message received from standby server
+        # Time when this process was started, i.e., when the client connected to this WAL sender
 
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_repl.pg_repl_10_11_*
 #
 # DESCRIPTION
@@ -248,118 +230,98 @@ pg_repl_12:
 #           Time when this process was started, i.e., when the client connected to this WAL sender
 #
 pg_repl_10_11:
-    name: pg_repl
-    desc: PostgreSQL replication stat metrics v10 v11
-    query: |
-        SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid::TEXT, client_port,
-               CASE state WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
-               CASE sync_state WHEN 'async' THEN 0 WHEN 'potential' THEN 1 WHEN 'sync' THEN 2 WHEN 'quorum' THEN 3 ELSE -1 END AS sync_state,
-               sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn - '0/0' AS lsn,
-               current.lsn - sent_lsn AS sent_diff, current.lsn - write_lsn AS write_diff, current.lsn - flush_lsn AS flush_diff, current.lsn - replay_lsn AS replay_diff,
-               sent_lsn - '0/0' AS sent_lsn, write_lsn - '0/0' AS write_lsn, flush_lsn - '0/0' AS flush_lsn, replay_lsn - '0/0' AS replay_lsn,
-               coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag, coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag, coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
-               extract(EPOCH FROM current_timestamp) AS "time", extract(EPOCH FROM backend_start) AS launch_time
-        FROM pg_stat_replication, (SELECT CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END AS lsn) current;
-    tags:
-        - cluster
-    ttl: 10
-    timeout: 0.1
-    min_version: 100000
-    max_version: 120000
-    fatal: false
-    skip: false
-    metrics:
-        - appname:
-            name: appname
-            usage: LABEL
-            description: Name of the application that is connected to this WAL sender
-        - usename:
-            name: usename
-            usage: LABEL
-            description: Name of the user logged into this WAL sender process
-        - address:
-            name: address
-            usage: LABEL
-            description: IP address of the client connected to this WAL sender, localhost for unix socket
-        - pid:
-            name: pid
-            usage: LABEL
-            description: Process ID of the WAL sender process
-        - client_port:
-            name: client_port
-            usage: GAUGE
-            description: TCP port number that the client is using for communication with this WAL sender, or -1 if a Unix socket is used
-        - state:
-            name: state
-            usage: GAUGE
-            description: Current WAL sender encoded state 0-4 for streaming|startup|catchup|backup|stopping
-        - sync_state:
-            name: sync_state
-            usage: GAUGE
-            description: Encoded synchronous state of this standby server, 0-3 for async|potential|sync|quorum
-        - sync_priority:
-            name: sync_priority
-            usage: GAUGE
-            description: Priority of this standby server for being chosen as the synchronous standby
-        - backend_xmin:
-            name: backend_xmin
-            usage: COUNTER
-            description: This standby's xmin horizon reported by hot_standby_feedback.
-        - lsn:
-            name: lsn
-            usage: COUNTER
-            description: Current log position on this server
-        - sent_diff:
-            name: sent_diff
-            usage: GAUGE
-            description: Last log position sent to this standby server diff with current lsn
-        - write_diff:
-            name: write_diff
-            usage: GAUGE
-            description: Last log position written to disk by this standby server diff with current lsn
-        - flush_diff:
-            name: flush_diff
-            usage: GAUGE
-            description: Last log position flushed to disk by this standby server diff with current lsn
-        - replay_diff:
-            name: replay_diff
-            usage: GAUGE
-            description: Last log position replayed into the database on this standby server diff with current lsn
-        - sent_lsn:
-            name: sent_lsn
-            usage: COUNTER
-            description: Last write-ahead log location sent on this connection
-        - write_lsn:
-            name: write_lsn
-            usage: COUNTER
-            description: Last write-ahead log location written to disk by this standby server
-        - flush_lsn:
-            name: flush_lsn
-            usage: COUNTER
-            description: Last write-ahead log location flushed to disk by this standby server
-        - replay_lsn:
-            name: replay_lsn
-            usage: COUNTER
-            description: Last write-ahead log location replayed into the database on this standby server
-        - write_lag:
-            name: write_lag
-            usage: GAUGE
-            description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written it
-        - flush_lag:
-            name: flush_lag
-            usage: GAUGE
-            description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written and flushed it
-        - replay_lag:
-            name: replay_lag
-            usage: GAUGE
-            description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it
-        - time:
-            name: time
-            usage: COUNTER
-            description: Current timestamp in unix epoch
-        - launch_time:
-            name: launch_time
-            usage: COUNTER
-            description: Time when this process was started, i.e., when the client connected to this WAL sender
+  name: pg_repl
+  desc: PostgreSQL replication stat metrics v10 v11
+  query: |
+    SELECT application_name AS appname, usename, coalesce(client_addr::TEXT,'localhost') AS address, pid::TEXT, client_port,
+           CASE state WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
+           CASE sync_state WHEN 'async' THEN 0 WHEN 'potential' THEN 1 WHEN 'sync' THEN 2 WHEN 'quorum' THEN 3 ELSE -1 END AS sync_state,
+           sync_priority, backend_xmin::TEXT::BIGINT AS backend_xmin, current.lsn - '0/0' AS lsn,
+           current.lsn - sent_lsn AS sent_diff, current.lsn - write_lsn AS write_diff, current.lsn - flush_lsn AS flush_diff, current.lsn - replay_lsn AS replay_diff,
+           sent_lsn - '0/0' AS sent_lsn, write_lsn - '0/0' AS write_lsn, flush_lsn - '0/0' AS flush_lsn, replay_lsn - '0/0' AS replay_lsn,
+           coalesce(extract(EPOCH FROM write_lag), 0)  AS write_lag, coalesce(extract(EPOCH FROM flush_lag), 0)  AS flush_lag, coalesce(extract(EPOCH FROM replay_lag), 0) AS replay_lag,
+           extract(EPOCH FROM current_timestamp) AS "time", extract(EPOCH FROM backend_start) AS launch_time
+    FROM pg_stat_replication, (SELECT CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END AS lsn) current;
+  ttl: 10
+  min_version: 100000
+  max_version: 120000
+  tags:
+    - cluster
 
-
+  metrics:
+    - appname:
+        usage: LABEL
+        description: Name of the application that is connected to this WAL sender
+    - usename:
+        usage: LABEL
+        description: Name of the user logged into this WAL sender process
+    - address:
+        usage: LABEL
+        description: IP address of the client connected to this WAL sender, localhost for unix socket
+        # IP address of the client connected to this WAL sender. If this field is null, it indicates that the client is connected via a Unix socket on the server machine.
+    - pid:
+        usage: LABEL
+        description: Process ID of the WAL sender process
+    - client_port:
+        usage: GAUGE
+        description: TCP port number that the client is using for communication with this WAL sender, or -1 if a Unix socket is used
+    - state:
+        usage: GAUGE
+        description: Current WAL sender encoded state 0-4 for streaming|startup|catchup|backup|stopping
+        # Current WAL sender state. Possible values are: streaming|startup|catchup|backup|stopping
+    - sync_state:
+        usage: GAUGE
+        description: Encoded synchronous state of this standby server, 0-3 for async|potential|sync|quorum
+        # Synchronous state of this standby server. Possible values are: async|potential|sync|quorum
+    - sync_priority:
+        usage: GAUGE
+        description: Priority of this standby server for being chosen as the synchronous standby
+        # Priority of this standby server for being chosen as the synchronous standby in a priority-based synchronous replication. This has no effect in a quorum-based synchronous replication.
+    - backend_xmin:
+        usage: COUNTER
+        description: This standby's xmin horizon reported by hot_standby_feedback.
+    - lsn:
+        usage: COUNTER
+        description: Current log position on this server
+    - sent_diff:
+        usage: GAUGE
+        description: Last log position sent to this standby server diff with current lsn
+    - write_diff:
+        usage: GAUGE
+        description: Last log position written to disk by this standby server diff with current lsn
+    - flush_diff:
+        usage: GAUGE
+        description: Last log position flushed to disk by this standby server diff with current lsn
+    - replay_diff:
+        usage: GAUGE
+        description: Last log position replayed into the database on this standby server diff with current lsn
+    - sent_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location sent on this connection
+    - write_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location written to disk by this standby server
+    - flush_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location flushed to disk by this standby server
+    - replay_lsn:
+        usage: COUNTER
+        description: Last write-ahead log location replayed into the database on this standby server
+    - write_lag:
+        usage: GAUGE
+        description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written it
+        # Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written it (but not yet flushed it or applied it). This can be used to gauge the delay that synchronous_commit level remote_write incurred while committing if this server was configured as a synchronous standby.
+    - flush_lag:
+        usage: GAUGE
+        description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written and flushed it
+        # Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written and flushed it (but not yet applied it). This can be used to gauge the delay that synchronous_commit level on incurred while committing if this server was configured as a synchronous standby.
+    - replay_lag:
+        usage: GAUGE
+        description: Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it
+        # Time elapsed between flushing recent WAL locally and receiving notification that this standby server has written, flushed and applied it. This can be used to gauge the delay that synchronous_commit level remote_apply incurred while committing if this server was configured as a synchronous standby.
+    - time:
+        usage: COUNTER
+        description: Current timestamp in unix epoch
+    - launch_time:
+        usage: COUNTER
+        description: Time when this process was started, i.e., when the client connected to this WAL sender

@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_lock_*
 #
 # DESCRIPTION
@@ -23,32 +23,27 @@
 #           Number of locks of corresponding mode and database
 #
 pg_lock:
-    name: pg_lock
-    desc: PostgreSQL lock distribution by mode and database
-    query: |
-        SELECT datname, mode, coalesce(count, 0) AS count
-          FROM (SELECT d.oid AS database, d.datname, l.mode FROM pg_database d, unnest(ARRAY ['AccessShareLock','RowShareLock','RowExclusiveLock','ShareUpdateExclusiveLock', 'ShareLock','ShareRowExclusiveLock','ExclusiveLock','AccessExclusiveLock']) l(mode) WHERE d.datallowconn AND NOT d.datistemplate) base
-          LEFT JOIN (SELECT database, mode, count(*) AS count FROM pg_locks WHERE database IS NOT NULL GROUP BY 1, 2) cnt USING (database, mode);
-    tags:
-        - cluster
-    ttl: 10
-    timeout: 0.1
-    min_version: 90400
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - datname:
-            name: datname
-            usage: LABEL
-            description: Name of the database this backend is connected to
-        - mode:
-            name: mode
-            usage: LABEL
-            description: Name of the lock mode held or desired by this process
-        - count:
-            name: count
-            usage: GAUGE
-            description: Number of locks of corresponding mode and database
+  name: pg_lock
+  desc: PostgreSQL lock distribution by mode and database
+
+  query: |
+    SELECT datname, mode, coalesce(count, 0) AS count
+      FROM (SELECT d.oid AS database, d.datname, l.mode FROM pg_database d, unnest(ARRAY ['AccessShareLock','RowShareLock','RowExclusiveLock','ShareUpdateExclusiveLock', 'ShareLock','ShareRowExclusiveLock','ExclusiveLock','AccessExclusiveLock']) l(mode) WHERE d.datallowconn AND NOT d.datistemplate) base
+      LEFT JOIN (SELECT database, mode, count(*) AS count FROM pg_locks WHERE database IS NOT NULL GROUP BY 1, 2) cnt USING (database, mode);
+  ttl: 10
+  min_version: 090400
+  tags:
+    - cluster
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Name of the database this backend is connected to
+    - mode:
+        usage: LABEL
+        description: Name of the lock mode held or desired by this process
+    - count:
+        usage: GAUGE
+        description: Number of locks of corresponding mode and database
 
 

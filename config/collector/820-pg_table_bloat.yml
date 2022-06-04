@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_table_bloat_*
 #
 # DESCRIPTION
@@ -25,33 +25,29 @@
 #           Estimated bloat ratio of this table from 0 to 1
 #
 pg_table_bloat:
-    name: pg_table_bloat
-    desc: PostgreSQL table bloat metrics, require auxiliary view monitor.pg_table_bloat to work
-    query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_table_bloat ORDER BY size DESC LIMIT 64;
-    tags:
-        - schema:monitor
-    ttl: 300
-    timeout: 2
-    min_version: 90400
-    max_version: 0
-    fatal: false
-    skip: true
-    metrics:
-        - datname:
-            name: datname
-            usage: LABEL
-            description: Database name of this table
-        - relname:
-            name: relname
-            usage: LABEL
-            description: Schema qualified name of this table
-        - size:
-            name: size
-            usage: GAUGE
-            description: Total bytes of this table
-        - ratio:
-            name: ratio
-            usage: GAUGE
-            description: Estimated bloat ratio of this table from 0 to 1
+  name: pg_table_bloat
+  desc: PostgreSQL table bloat metrics, require auxiliary view monitor.pg_table_bloat to work
+  query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM monitor.pg_table_bloat ORDER BY size DESC LIMIT 64;
+
+  ttl: 300
+  timeout: 2
+  min_version: 090400
+  skip: true
+  tags:
+    - schema:monitor
+
+  metrics:
+    - datname:
+        usage: LABEL
+        description: Database name of this table
+    - relname:
+        usage: LABEL
+        description: Schema qualified name of this table
+    - size:
+        usage: GAUGE
+        description: Total bytes of this table
+    - ratio:
+        usage: GAUGE
+        description: Estimated bloat ratio of this table from 0 to 1
 
 

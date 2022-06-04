@@ -143,9 +143,9 @@
 # Collectors can be configured with an optional Timeout. If the collector`s query executes more than that
 # timeout, it will be canceled immediately. Setting the `timeout` to 0 or leaving blank will reset it to
 # default timeout 0.1 (100ms). Setting it to any negative number will disable the query timeout feature.
-# All queries have a default timeout of 100ms, if exceed, the query will be canceled immediately to avoid
+# All queries have a default timeout of 100ms, if exceeded, the query will be canceled immediately to avoid
 # avalanche. You can explicitly overwrite that option. but beware: in some extreme cases, if all your
-# timeout sum up greater your scrape/cache interval (usually 15s), the query may still be jammed.
+# timeout sum up greater your scrape/cache interval (usually 15s), the queries may still be jammed.
 # or, you can just disable potential slow queries.
 
 ##
@@ -198,3 +198,5 @@
 #  pg_exporter will trigger the Planning procedure after connecting to the target. It will gather database facts
 #  and match them with tags and other metadata (such as supported version range). Collector will only
 #  be installed if and only if it is compatible with the target server.
+
+

@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pgbouncer_database.pgbouncer_database_116_*
 #
 # DESCRIPTION
@@ -43,73 +43,57 @@
 #           True(1) if this database is currently disabled, else 0
 #
 pgbouncer_database_116:
-    name: pgbouncer_database
-    desc: Pgbouncer database stats (since 1.16)
-    query: SHOW DATABASES;
-    tags:
-        - pgbouncer
-    ttl: 10
-    timeout: 0.1
-    min_version: 11600
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - name:
-            name: name
-            usage: LABEL
-            rename: datname
-            description: Name of configured database entry
-        - host:
-            name: host
-            usage: LABEL
-            description: Host that pgbouncer will connects to
-        - port:
-            name: port
-            usage: LABEL
-            description: Port that pgbouncer will connects to
-        - database:
-            name: database
-            usage: LABEL
-            rename: real_datname
-            description: The real database name pgbouncer connects to
-        - force_user:
-            name: force_user
-            usage: DISCARD
-        - pool_size:
-            name: pool_size
-            usage: GAUGE
-            description: Maximum number of server connections
-        - min_pool_size:
-            name: min_pool_size
-            usage: GAUGE
-            description: Minimum number of server connections
-        - reserve_pool:
-            name: reserve_pool
-            usage: GAUGE
-            description: Maximum number of additional connections for this database
-        - pool_mode:
-            name: pool_mode
-            usage: DISCARD
-        - max_connections:
-            name: max_connections
-            usage: GAUGE
-            description: Maximum number of allowed connections for this database
-        - current_connections:
-            name: current_connections
-            usage: GAUGE
-            description: Current number of connections for this database
-        - paused:
-            name: paused
-            usage: GAUGE
-            description: True(1) if this database is currently paused, else 0
-        - disabled:
-            name: disabled
-            usage: GAUGE
-            description: True(1) if this database is currently disabled, else 0
+  name: pgbouncer_database
+  desc: Pgbouncer database stats (since 1.16) # http://www.pgbouncer.org/usage.html#show-databases
+  query: SHOW DATABASES;
+  ttl: 10
+  min_version: 11600
+  tags:
+    - pgbouncer
+
+  metrics:
+    - name:
+        usage: LABEL
+        rename: datname
+        description: Name of configured database entry
+    - host:
+        usage: LABEL
+        description: Host that pgbouncer will connects to
+    - port:
+        usage: LABEL
+        description: Port that pgbouncer will connects to
+    - database:
+        usage: LABEL
+        rename: real_datname
+        description: The real database name pgbouncer connects to
+    - force_user:
+        usage: DISCARD
+    - pool_size:
+        usage: GAUGE
+        description: Maximum number of server connections
+    - min_pool_size:
+        usage: GAUGE
+        description: Minimum number of server connections
+    - reserve_pool:
+        usage: GAUGE
+        description: Maximum number of additional connections for this database
+    - pool_mode:
+        usage: DISCARD
+    - max_connections:
+        usage: GAUGE
+        description: Maximum number of allowed connections for this database
+    - current_connections:
+        usage: GAUGE
+        description: Current number of connections for this database
+    - paused:
+        usage: GAUGE
+        description: True(1) if this database is currently paused, else 0
+    - disabled:
+        usage: GAUGE
+        description: True(1) if this database is currently disabled, else 0
 
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pgbouncer_database.pgbouncer_database_108_115_*
 #
 # DESCRIPTION
@@ -151,65 +135,51 @@ pgbouncer_database_116:
 #           True(1) if this database is currently disabled, else 0
 #
 pgbouncer_database_108_115:
-    name: pgbouncer_database
-    desc: Pgbouncer database stats (1.08-1.15)
-    query: SHOW DATABASES;
-    tags:
-        - pgbouncer
-    ttl: 10
-    timeout: 0.1
-    min_version: 10800
-    max_version: 11600
-    fatal: false
-    skip: false
-    metrics:
-        - name:
-            name: name
-            usage: LABEL
-            rename: datname
-            description: Name of configured database entry
-        - host:
-            name: host
-            usage: LABEL
-            description: Host that pgbouncer will connects to
-        - port:
-            name: port
-            usage: LABEL
-            description: Port that pgbouncer will connects to
-        - database:
-            name: database
-            usage: LABEL
-            rename: real_datname
-            description: The real database name pgbouncer connects to
-        - force_user:
-            name: force_user
-            usage: DISCARD
-        - pool_size:
-            name: pool_size
-            usage: COUNTER
-            description: Maximum number of server connections
-        - reserve_pool:
-            name: reserve_pool
-            usage: GAUGE
-            description: Maximum number of additional connections for this database
-        - pool_mode:
-            name: pool_mode
-            usage: DISCARD
-        - max_connections:
-            name: max_connections
-            usage: GAUGE
-            description: Maximum number of allowed connections for this database
-        - current_connections:
-            name: current_connections
-            usage: GAUGE
-            description: Current number of connections for this database
-        - paused:
-            name: paused
-            usage: GAUGE
-            description: True(1) if this database is currently paused, else 0
-        - disabled:
-            name: disabled
-            usage: GAUGE
-            description: True(1) if this database is currently disabled, else 0
+  name: pgbouncer_database
+  desc: Pgbouncer database stats (1.08-1.15) # http://www.pgbouncer.org/usage.html#show-databases
+  query: SHOW DATABASES;
+  ttl: 10
+  min_version: 10800
+  max_version: 11600
+  tags:
+    - pgbouncer
+
+  metrics:
+    - name:
+        usage: LABEL
+        rename: datname
+        description: Name of configured database entry
+    - host:
+        usage: LABEL
+        description: Host that pgbouncer will connects to
+    - port:
+        usage: LABEL
+        description: Port that pgbouncer will connects to
+    - database:
+        usage: LABEL
+        rename: real_datname
+        description: The real database name pgbouncer connects to
+    - force_user:
+        usage: DISCARD
+    - pool_size:
+        usage: COUNTER
+        description: Maximum number of server connections
+    - reserve_pool:
+        usage: GAUGE
+        description: Maximum number of additional connections for this database
+    - pool_mode:
+        usage: DISCARD
+    - max_connections:
+        usage: GAUGE
+        description: Maximum number of allowed connections for this database
+    - current_connections:
+        usage: GAUGE
+        description: Current number of connections for this database
+    - paused:
+        usage: GAUGE
+        description: True(1) if this database is currently paused, else 0
+    - disabled:
+        usage: GAUGE
+        description: True(1) if this database is currently disabled, else 0
 
 

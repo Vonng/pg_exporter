@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_ssl_*
 #
 # DESCRIPTION
@@ -21,26 +21,21 @@
 #           Number of client connection that does not use ssl
 #
 pg_ssl:
-    name: pg_ssl
-    desc: PostgreSQL SSL client conenction count
-    query: |
-        SELECT count(*) FILTER (WHERE ssl) AS enabled, count(*) FILTER ( WHERE NOT ssl) AS disabled FROM pg_stat_ssl;
-    tags:
-        - cluster
-    ttl: 10
-    timeout: 0.1
-    min_version: 90500
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - enabled:
-            name: enabled
-            usage: GAUGE
-            description: Number of client connection that use ssl
-        - disabled:
-            name: disabled
-            usage: GAUGE
-            description: Number of client connection that does not use ssl
+  name: pg_ssl
+  desc: PostgreSQL SSL client conenction count
+  query: |
+    SELECT count(*) FILTER (WHERE ssl) AS enabled, count(*) FILTER ( WHERE NOT ssl) AS disabled FROM pg_stat_ssl;
+  ttl: 10
+  min_version: 090500
+  tags:
+    - cluster
+
+  metrics:
+    - enabled:
+        usage: GAUGE
+        description: Number of client connection that use ssl
+    - disabled:
+        usage: GAUGE
+        description: Number of client connection that does not use ssl
 
 

@@ -1,5 +1,5 @@
 ##
-# SYNNOPSIS
+# SYNOPSIS
 #       pg_slru.pg_slru_13_*
 #
 # DESCRIPTION
@@ -35,53 +35,42 @@
 #           Time at which these statistics were last reset
 #
 pg_slru_13:
-    name: pg_slru
-    desc: PostgreSQL simple-least-recently-used (SLRU) cache statistics v13
-    query: SELECT name, blks_zeroed, blks_hit, blks_read, blks_written, blks_exists, flushes, truncates, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_slru;
-    tags:
-        - cluster
-    ttl: 60
-    timeout: 0.1
-    min_version: 130000
-    max_version: 0
-    fatal: false
-    skip: false
-    metrics:
-        - name:
-            name: name
-            usage: LABEL
-            description: Name of the SLRU
-        - blks_zeroed:
-            name: blks_zeroed
-            usage: COUNTER
-            description: Number of blocks zeroed during initializations
-        - blks_hit:
-            name: blks_hit
-            usage: COUNTER
-            description: Number of times disk blocks were found already in the SLRU, so that a read was not necessary
-        - blks_read:
-            name: blks_read
-            usage: COUNTER
-            description: Number of disk blocks read for this SLRU
-        - blks_written:
-            name: blks_written
-            usage: COUNTER
-            description: Number of disk blocks written for this SLRU
-        - blks_exists:
-            name: blks_exists
-            usage: COUNTER
-            description: Number of blocks checked for existence for this SLRU
-        - flushes:
-            name: flushes
-            usage: COUNTER
-            description: Number of flushes of dirty data for this SLRU
-        - truncates:
-            name: truncates
-            usage: COUNTER
-            description: Number of truncates for this SLRU
-        - reset_time:
-            name: reset_time
-            usage: COUNTER
-            description: Time at which these statistics were last reset
+  name: pg_slru
+  desc: PostgreSQL simple-least-recently-used (SLRU) cache statistics v13
+  query: SELECT name, blks_zeroed, blks_hit, blks_read, blks_written, blks_exists, flushes, truncates, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_slru;
+
+  ttl: 60
+  min_version: 130000
+  tags:
+    - cluster
+
+  metrics:
+    - name:
+        usage: LABEL
+        description: Name of the SLRU
+    - blks_zeroed:
+        usage: COUNTER
+        description: Number of blocks zeroed during initializations
+    - blks_hit:
+        usage: COUNTER
+        description: Number of times disk blocks were found already in the SLRU, so that a read was not necessary
+    - blks_read:
+        usage: COUNTER
+        description: Number of disk blocks read for this SLRU
+    - blks_written:
+        usage: COUNTER
+        description: Number of disk blocks written for this SLRU
+    - blks_exists:
+        usage: COUNTER
+        description: Number of blocks checked for existence for this SLRU
+    - flushes:
+        usage: COUNTER
+        description: Number of flushes of dirty data for this SLRU
+    - truncates:
+        usage: COUNTER
+        description: Number of truncates for this SLRU
+    - reset_time:
+        usage: COUNTER
+        description: Time at which these statistics were last reset
 
 
