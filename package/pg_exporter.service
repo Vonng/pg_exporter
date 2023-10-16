@@ -11,8 +11,5 @@ User=prometheus
 ExecStart=/usr/bin/pg_exporter $PG_EXPORTER_OPTS
 Restart=on-failure
 
-CPUQuota=25%
-MemoryMax=256M
-
 [Install]
 WantedBy=multi-user.target

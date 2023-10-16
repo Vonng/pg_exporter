@@ -5,34 +5,69 @@
 #==============================================================#
 
 # Get Current Version
-VERSION=v0.5.1
+VERSION=v0.6.0
 # VERSION=`cat exporter/global.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
 
 # Release Dir
-LINUX_DIR:=dist/$(VERSION)/pg_exporter_$(VERSION)_linux-amd64
-DARWIN_DIR:=dist/$(VERSION)/pg_exporter_$(VERSION)_darwin-amd64
-WINDOWS_DIR:=dist/$(VERSION)/pg_exporter_$(VERSION)_windows-amd64
+LINUX_AMD_DIR:=dist/$(VERSION)/pg_exporter-$(VERSION).linux-amd64
+LINUX_ARM_DIR:=dist/$(VERSION)/pg_exporter-$(VERSION).linux-arm64
+DARWIN_AMD_DIR:=dist/$(VERSION)/pg_exporter-$(VERSION).darwin-amd64
+DARWIN_ARM_DIR:=dist/$(VERSION)/pg_exporter-$(VERSION).darwin-arm64
+WINDOWS_DIR:=dist/$(VERSION)/pg_exporter-$(VERSION).windows-amd64
 
 
 ###############################################################
 #                        Shortcuts                            #
 ###############################################################
-# build on current platform
 build:
 	go build -o pg_exporter
-
-# build darwin release
-build-darwin:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
-	upx -9 pg_exporter
-
-# build linux release
-build-linux:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
-	upx -9 pg_exporter
-
 clean:
 	rm -rf pg_exporter
+build-darwin-amd64:
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
+build-darwin-arm64:
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
+build-linux-amd64:
+	CGO_ENABLED=0 GOOS=linux  GOARCH=amd64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
+build-linux-arm64:
+	CGO_ENABLED=0 GOOS=linux  GOARCH=arm64 go build -a -ldflags '-extldflags "-static"' -o pg_exporter
+
+release: release-linux release-darwin
+
+release-linux: linux-amd64 linux-arm64
+linux-amd64: clean build-linux-amd64
+	rm -rf $(LINUX_AMD_DIR) && mkdir -p $(LINUX_AMD_DIR)
+	nfpm package --packager rpm --config nfpm-amd64.yaml     --target dist/$(VERSION)
+	nfpm package --packager deb --config nfpm-amd64-deb.yaml --target dist/$(VERSION)
+	cp -r pg_exporter $(LINUX_AMD_DIR)/pg_exporter
+	cp -f package/pg_exporter.yml $(LINUX_AMD_DIR)/pg_exporter.yml
+	tar -czf dist/$(VERSION)/pg_exporter-$(VERSION).linux-amd64.tar.gz -C dist/$(VERSION) pg_exporter-$(VERSION).linux-amd64
+	rm -rf $(LINUX_AMD_DIR)
+
+linux-arm64: clean build-linux-arm64
+	rm -rf $(LINUX_ARM_DIR) && mkdir -p $(LINUX_ARM_DIR)
+	nfpm package --packager rpm --config nfpm-arm64.yaml     --target dist/$(VERSION)
+	nfpm package --packager deb --config nfpm-arm64-deb.yaml --target dist/$(VERSION)
+	cp -r pg_exporter $(LINUX_ARM_DIR)/pg_exporter
+	cp -f package/pg_exporter.yml $(LINUX_ARM_DIR)/pg_exporter.yml
+	tar -czf dist/$(VERSION)/pg_exporter-$(VERSION).linux-arm64.tar.gz -C dist/$(VERSION) pg_exporter-$(VERSION).linux-arm64
+	rm -rf $(LINUX_ARM_DIR)
+
+release-darwin: darwin-amd64 darwin-arm64
+darwin-amd64: clean build-darwin-amd64
+	rm -rf $(DARWIN_AMD_DIR) && mkdir -p $(DARWIN_AMD_DIR)
+	cp -r pg_exporter $(DARWIN_AMD_DIR)/pg_exporter
+	cp -f package/pg_exporter.yml $(DARWIN_AMD_DIR)/pg_exporter.yml
+	tar -czf dist/$(VERSION)/pg_exporter-$(VERSION).darwin-amd64.tar.gz -C dist/$(VERSION) pg_exporter-$(VERSION).darwin-amd64
+	rm -rf $(DARWIN_AMD_DIR)
+
+darwin-arm64: clean build-darwin-arm64
+	rm -rf $(DARWIN_ARM_DIR) && mkdir -p $(DARWIN_ARM_DIR)
+	cp -r pg_exporter $(DARWIN_ARM_DIR)/pg_exporter
+	cp -f package/pg_exporter.yml $(DARWIN_ARM_DIR)/pg_exporter.yml
+	tar -czf dist/$(VERSION)/pg_exporter-$(VERSION).darwin-arm64.tar.gz -C dist/$(VERSION) pg_exporter-$(VERSION).darwin-arm64
+	rm -rf $(DARWIN_ARM_DIR)
+
 
 
 ###############################################################
@@ -47,32 +82,11 @@ conf:
 ###############################################################
 #                         Release                             #
 ###############################################################
-release: conf release-dir release-darwin release-linux rpm # release-windows
-
 release-dir:
 	mkdir -p dist/$(VERSION)
 
 release-clean:
 	rm -rf dist/$(VERSION)
-
-release-darwin: clean build-darwin
-	rm -rf $(DARWIN_DIR) && mkdir -p $(DARWIN_DIR)
-	cp -r pg_exporter $(DARWIN_DIR)/pg_exporter
-	cp -f pg_exporter.yml $(DARWIN_DIR)/pg_exporter.yml
-	tar -czf dist/$(VERSION)/pg_exporter_$(VERSION)_darwin-amd64.tar.gz -C dist/$(VERSION) pg_exporter_$(VERSION)_darwin-amd64
-	rm -rf $(DARWIN_DIR)
-
-release-linux: clean build-linux
-	rm -rf $(LINUX_DIR) && mkdir -p $(LINUX_DIR)
-	cp -r pg_exporter $(LINUX_DIR)/pg_exporter
-	cp -f pg_exporter.yml $(LINUX_DIR)/pg_exporter.yml
-	tar -czf dist/$(VERSION)/pg_exporter_$(VERSION)_linux-amd64.tar.gz -C dist/$(VERSION) pg_exporter_$(VERSION)_linux-amd64
-	rm -rf $(LINUX_DIR)
-
-rpm:
-	nfpm package --packager rpm
-	nfpm package --packager deb
-	mv *.rpm *.deb dist/$(VERSION)
 
 # build docker image
 docker: build-linux docker-build

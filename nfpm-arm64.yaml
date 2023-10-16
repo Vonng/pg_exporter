@@ -1,0 +1,49 @@
+name: "pg_exporter"
+arch: "arm64"
+platform: "linux"
+version: "v1.0.0"
+version_schema: semver
+maintainer: Ruohang Feng <rh@vonng.com>
+description: |
+  Prometheus exporter for PostgreSQL / Pgbouncer server metrics.
+  Supported version: Postgres9.4 - 16+ & Pgbouncer 1.8 - 1.21+
+  Part of Project Pigsty -- Battery Included PostgreSQL Distriubtion
+  with ultimate observability support: https://pigsty.cc
+
+vendor: "Vonng"
+homepage: "https://github.com/Vonng/pg_exporter"
+license: "Apache-2.0 License"
+
+rpm:
+  compression: gzip
+  prefixes:
+    - /usr/bin
+
+contents:
+  - src: pg_exporter
+    dst: /usr/bin/pg_exporter
+    file_info:
+      mode: 0755
+
+  - src: package/pg_exporter.yml
+    dst: /etc/pg_exporter.yml
+    type: config|noreplace
+    file_info:
+      mode: 0700
+      owner: prometheus
+      group: prometheus
+
+  - src: package/pg_exporter.default
+    dst: /etc/default/pg_exporter
+    type: config|noreplace
+    file_info:
+      mode: 0700
+      owner: prometheus
+      group: prometheus
+
+  - src: package/pg_exporter.service
+    dst: /usr/lib/systemd/system/pg_exporter.service
+    type: config
+
+scripts:
+  preinstall: package/preinstall.sh
