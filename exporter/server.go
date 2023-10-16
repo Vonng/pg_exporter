@@ -17,9 +17,11 @@ import (
 	"time"
 )
 
-/**********************************************************************************************\
+/*
+*********************************************************************************************\
 *                                       Const                                                  *
-\**********************************************************************************************/
+\*********************************************************************************************
+*/
 const connMaxLifeTime = 1 * time.Minute // close connection after 1 minute to avoid conn leak
 
 /**********************************************************************************************\
@@ -127,7 +129,7 @@ func PgbouncerPrecheck(s *Server) (err error) {
 	} else {
 		s.Version = ParseSemver(version)
 		if s.Version != 0 {
-			log.Infof("server [%s] parse pgbouncer version from %s to %v", s.Name(), version, s.Version)
+			log.Debugf("server [%s] parse pgbouncer version from %s to %v", s.Name(), version, s.Version)
 		} else {
 			log.Warnf("server [%s] fail to parse pgbouncer version from %v", s.Name(), version)
 		}
