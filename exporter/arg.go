@@ -2,9 +2,10 @@ package exporter
 
 import (
 	"fmt"
-	"github.com/prometheus/common/log"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"runtime"
+
+	"github.com/alecthomas/kingpin/v2"
+	"github.com/prometheus/common/log"
 )
 
 var (
@@ -33,11 +34,10 @@ var (
 // ParseArgs will parse cli args with kingpin. url and config have special treatment
 func ParseArgs() {
 	kingpin.Version(fmt.Sprintf("pg_exporter %s (built with %s)\n", Version, runtime.Version()))
-	log.AddFlags(kingpin.CommandLine)
+	// log.AddFlags(kingpin.CommandLine)
 	kingpin.Parse()
 	log.Debugf("init pg_exporter, configPath=%v constLabels=%v disableCache=%v autoDiscovery=%v excludeDatabase=%v includeDatabase=%v connectTimeout=%vms listenAdress=%v metricPath=%v",
 		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *includeDatabase, *connectTimeout, *listenAddress, *metricPath)
 	*pgURL = GetPGURL()
 	*configPath = GetConfig()
 }
-
