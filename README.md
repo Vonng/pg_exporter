@@ -6,9 +6,7 @@ PG Exporter is the core component for [Pigsty](https://pigsty.cc), Which is the 
 
 Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10,11,12,13,14. 
 
-The latest stable `pg_exporter` version is [`0.5.0`](https://github.com/Vonng/pg_exporter/releases/tag/v0.5.0).
-
-> Note that default metrics are overhauled on 0.4 You can still use an old version of `pg_exporter.yml` to keep metrics consistency.
+The latest stable `pg_exporter` version is [`0.6.0`](https://github.com/Vonng/pg_exporter/releases/tag/v0.6.0).
 
 
 
