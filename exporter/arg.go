@@ -2,10 +2,8 @@ package exporter
 
 import (
 	"fmt"
-	"runtime"
-
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/prometheus/common/log"
+	"runtime"
 )
 
 var (
@@ -29,14 +27,18 @@ var (
 	// action
 	dryRun      = kingpin.Flag("dry-run", "dry run and print raw configs").Default("false").Short('D').Bool()
 	explainOnly = kingpin.Flag("explain", "explain server planned queries").Default("false").Short('E').Bool()
+
+	// logger setting
+	logLevel  = kingpin.Flag("log.level", "log level: debug|info|warn|error]").Default("info").String()
+	logFormat = kingpin.Flag("log.format", "log format: logfmt|json").Default("logfmt").String()
 )
 
 // ParseArgs will parse cli args with kingpin. url and config have special treatment
 func ParseArgs() {
 	kingpin.Version(fmt.Sprintf("pg_exporter %s (built with %s)\n", Version, runtime.Version()))
-	// log.AddFlags(kingpin.CommandLine)
 	kingpin.Parse()
-	log.Debugf("init pg_exporter, configPath=%v constLabels=%v disableCache=%v autoDiscovery=%v excludeDatabase=%v includeDatabase=%v connectTimeout=%vms listenAdress=%v metricPath=%v",
+	Logger = configureLogger(*logLevel, *logFormat)
+	logDebugf("init pg_exporter, configPath=%v constLabels=%v disableCache=%v autoDiscovery=%v excludeDatabase=%v includeDatabase=%v connectTimeout=%vms listenAdress=%v metricPath=%v",
 		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *includeDatabase, *connectTimeout, *listenAddress, *metricPath)
 	*pgURL = GetPGURL()
 	*configPath = GetConfig()

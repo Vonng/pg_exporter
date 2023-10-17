@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 	"html/template"
 	"regexp"
 	"sort"
@@ -124,14 +123,14 @@ func PgbouncerPrecheck(s *Server) (err error) {
 	defer cancel()
 	if err = s.DB.QueryRowContext(ctx, `SHOW VERSION;`).Scan(&version); err != nil {
 		// TODO: since pgbouncer 1.12- using NOTICE to tell version, we just leave it blank here
-		log.Warnf("server [%s] fail to get pgbouncer version", s.Name())
+		logWarnf("server [%s] fail to get pgbouncer version", s.Name())
 		// return fmt.Errorf("fail fetching pgbouncer server version: %w", err)
 	} else {
 		s.Version = ParseSemver(version)
 		if s.Version != 0 {
-			log.Debugf("server [%s] parse pgbouncer version from %s to %v", s.Name(), version, s.Version)
+			logDebugf("server [%s] parse pgbouncer version from %s to %v", s.Name(), version, s.Version)
 		} else {
-			log.Warnf("server [%s] fail to parse pgbouncer version from %v", s.Name(), version)
+			logWarnf("server [%s] fail to parse pgbouncer version from %v", s.Name(), version)
 		}
 	}
 	return nil
@@ -141,7 +140,7 @@ func PgbouncerPrecheck(s *Server) (err error) {
 func ParseSemver(semverStr string) int {
 	semverRe := regexp.MustCompile(`(\d+)\.(\d+)\.(\d+)`)
 	semver := semverRe.FindStringSubmatch(semverStr)
-	log.Debugf("parse pgbouncer semver string %s", semverStr)
+	logDebugf("parse pgbouncer semver string %s", semverStr)
 	if len(semver) != 4 {
 		return 0
 	}
@@ -188,7 +187,7 @@ func PostgresPrecheck(s *Server) (err error) {
 	s.UP = true
 	// fact change triggers a new planning
 	if s.Version != version {
-		log.Infof("server [%s] version changed: from [%d] to [%d]", s.Name(), s.Version, version)
+		logInfof("server [%s] version changed: from [%d] to [%d]", s.Name(), s.Version, version)
 		s.Planned = false
 	}
 	s.Version = version
@@ -215,13 +214,13 @@ func PostgresPrecheck(s *Server) (err error) {
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
 	if s.Recovery != recovery {
-		log.Infof("server [%s] recovery status changed: from [%v] to [%v]", s.Name(), s.Recovery, recovery)
+		logInfof("server [%s] recovery status changed: from [%v] to [%v]", s.Name(), s.Recovery, recovery)
 		s.Planned = false
 	}
 	s.Recovery = recovery
 	s.Username = username
 	if s.Database != datname {
-		log.Infof("server [%s] datname changed: from [%s] to [%s]", s.Name(), s.Database, datname)
+		logInfof("server [%s] datname changed: from [%s] to [%s]", s.Name(), s.Database, datname)
 		s.Planned = false
 	}
 	s.Database = datname
@@ -246,20 +245,20 @@ func PostgresPrecheck(s *Server) (err error) {
 	for _, dbname := range databases {
 		newDBList[dbname] = true
 		if _, found := s.Databases[dbname]; !found {
-			log.Debugf("server [%s] found new database %s", s.Name(), dbname)
+			logDebugf("server [%s] found new database %s", s.Name(), dbname)
 			changes[dbname] = true
 		}
 	}
 	// if old db is not found in new db list, add a change entry [OldDBName:false]
 	for dbname := range s.Databases {
 		if _, found := newDBList[dbname]; !found {
-			log.Debugf("server [%s] found vanished database %s", s.Name(), dbname)
+			logDebugf("server [%s] found vanished database %s", s.Name(), dbname)
 			changes[dbname] = false
 		}
 	}
 	// invoke hook if there are changes on database list
 	if len(changes) > 0 && s.onDatabaseChange != nil {
-		log.Debugf("server [%s] auto discovery database list change : %v", s.Name(), changes)
+		logDebugf("server [%s] auto discovery database list change : %v", s.Name(), changes)
 		s.onDatabaseChange(changes) // if doing something long, launch another goroutine
 	}
 	s.Databases = newDBList
@@ -286,7 +285,7 @@ func (s *Server) Plan(queries ...*Query) {
 			installedNames = append(installedNames, query.Branch)
 		} else {
 			discardedNames = append(discardedNames, query.Branch)
-			log.Debugf("query [%s].%s discarded because of %s", query.Name, name, reason)
+			logDebugf("query [%s].%s discarded because of %s", query.Name, name, reason)
 		}
 	}
 
@@ -299,7 +298,7 @@ func (s *Server) Plan(queries ...*Query) {
 	// reset statistics after planning
 	s.ResetStats()
 	s.Planned = true
-	log.Infof("server [%s] planned with %d queries, %d installed, %d discarded, installed: %s , discarded: %s",
+	logInfof("server [%s] planned with %d queries, %d installed, %d discarded, installed: %s , discarded: %s",
 		s.Name(), len(s.queries), len(installedNames), len(discardedNames), strings.Join(installedNames, ", "), strings.Join(discardedNames, ", "))
 }
 
@@ -438,7 +437,7 @@ func (s *Server) Stat() string {
 	buf := new(bytes.Buffer)
 	//err := statsTemplate.Execute(buf, s)
 	//if err != nil {
-	//	log.Errorf("fail to generate server stats html")
+	//	logErrorf("fail to generate server stats html")
 	//	return fmt.Sprintf("fail to generate server stat html, %s", err.Error())
 	//}
 	buf.WriteString(fmt.Sprintf("%-24s %-10s %-10s %-10s %-10s %-6s %-10s\n", "name", "total", "hit", "error", "metric", "ttl/s", "duration/ms"))
@@ -480,7 +479,7 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 
 	// check server conn, gathering fact
 	if s.err = s.Check(); s.err != nil {
-		log.Debugf("fail establishing connection to %s: %s", s.Name(), s.err.Error())
+		logDebugf("fail establishing connection to %s: %s", s.Name(), s.err.Error())
 		goto final
 	}
 
@@ -498,11 +497,11 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 		if query.Error() != nil {
 			s.queryScrapeErrorCount[query.Name]++
 			if query.Fatal { // treat as fatal error
-				log.Errorf("query [%s] error: %s", query.Name, query.Error())
+				logErrorf("query [%s] error: %s", query.Name, query.Error())
 				s.err = query.Error()
 				goto final
 			} else { // skip this error according to config
-				log.Warnf("query [%s] error skipped: %s", query.Name, query.Error())
+				logWarnf("query [%s] error skipped: %s", query.Name, query.Error())
 				continue
 			}
 		} else {
@@ -519,10 +518,10 @@ final:
 	if s.err != nil {
 		s.UP = false
 		s.errorCount++
-		log.Errorf("fail scrapping server [%s]: %s", s.Name(), s.err.Error())
+		logErrorf("fail scrapping server [%s]: %s", s.Name(), s.err.Error())
 	} else {
 		s.UP = true
-		log.Debugf("server [%s] scrapped in %v",
+		logDebugf("server [%s] scrapped in %v",
 			s.Name(), s.scrapeDone.Sub(s.scrapeBegin).Seconds())
 	}
 }
@@ -564,7 +563,7 @@ func NewServer(dsn string, opts ...ServerOpt) *Server {
 		s.PgbouncerMode = false
 		s.beforeScrape = PostgresPrecheck
 	} else {
-		log.Infof("datname pgbouncer detected, enabling pgbouncer mode")
+		logInfof("datname pgbouncer detected, enabling pgbouncer mode")
 		s.PgbouncerMode = true
 		s.beforeScrape = PgbouncerPrecheck
 	}

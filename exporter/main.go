@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,7 +16,7 @@ import (
 func DryRun() {
 	configs, err := LoadConfig(*configPath)
 	if err != nil {
-		log.Errorf("fail loading config %s, %v", *configPath, err)
+		logErrorf("fail loading config %s, %v", *configPath, err)
 		os.Exit(1)
 	}
 
@@ -40,7 +39,7 @@ func DryRun() {
 func Reload() error {
 	ReloadLock.Lock()
 	defer ReloadLock.Unlock()
-	log.Debugf("reload request received, launch new exporter instance")
+	logDebugf("reload request received, launch new exporter instance")
 
 	// create a new exporter
 	newExporter, err := NewExporter(
@@ -59,11 +58,11 @@ func Reload() error {
 	)
 	// if launch new exporter failed, do nothing
 	if err != nil {
-		log.Errorf("fail to reload exporter: %s", err.Error())
+		logErrorf("fail to reload exporter: %s", err.Error())
 		return err
 	}
 
-	log.Debugf("shutdown old exporter instance")
+	logDebugf("shutdown old exporter instance")
 	// if older one exists, close and unregister it
 	if PgExporter != nil {
 		// DO NOT MANUALLY CLOSE OLD EXPORTER INSTANCE because the stupid implementation of sql.DB
@@ -73,7 +72,7 @@ func Reload() error {
 	}
 	PgExporter = newExporter
 	runtime.GC()
-	log.Infof("server reloaded")
+	logInfof("server reloaded")
 	return nil
 }
 
@@ -95,14 +94,14 @@ func DummyServer() (s *http.Server, exit <-chan bool) {
 	exitChan := make(chan bool, 1)
 	go func() {
 		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
-			log.Debugf("shutdown dummy server")
+			logDebugf("shutdown dummy server")
 		}
 		exitChan <- true
 	}()
 	return httpServer, exitChan
 }
 
-// Run pg exporter
+// Run pg_exporter
 func Run() {
 	ParseArgs()
 
@@ -112,7 +111,7 @@ func Run() {
 	}
 
 	if *configPath == "" {
-		log.Errorf("no valid config path, exit")
+		logErrorf("no valid config path, exit")
 		os.Exit(1)
 	}
 
@@ -137,7 +136,7 @@ func Run() {
 		WithTags(*serverTags),
 	)
 	if err != nil {
-		log.Fatalf("fail creating pg_exporter: %s", err.Error())
+		logFatalf("fail creating pg_exporter: %s", err.Error())
 		os.Exit(2)
 	}
 
@@ -158,7 +157,7 @@ func Run() {
 		for sig := range sigs {
 			switch sig {
 			case syscall.SIGHUP:
-				log.Infof("%v received, reloading", sig)
+				logInfof("%v received, reloading", sig)
 				_ = Reload()
 			}
 		}
@@ -197,6 +196,9 @@ func Run() {
 	<-closeChan
 	http.Handle(*metricPath, promhttp.Handler())
 
-	log.Infof("pg_exporter for %s start, listen on http://%s%s", ShadowPGURL(*pgURL), *listenAddress, *metricPath)
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+	logInfof("pg_exporter for %s start, listen on http://%s%s", ShadowPGURL(*pgURL), *listenAddress, *metricPath)
+	err = http.ListenAndServe(*listenAddress, nil)
+	if err != nil {
+		logFatalf("http server failed: %s", err.Error())
+	}
 }

@@ -3,7 +3,6 @@ package exporter
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 	"net/http"
 	"sync"
 	"time"
@@ -184,16 +183,16 @@ func (e *Exporter) Explain() string {
 
 // Stat is just yet another wrapper of server.Stat
 func (e *Exporter) Stat() string {
-	log.Debugf("stats invoked")
+	logDebugf("stats invoked")
 	return e.server.Stat()
 }
 
 // Check will perform an immediate server health check
 func (e *Exporter) Check() {
 	if err := e.server.Check(); err != nil {
-		log.Errorf("exporter check failure: %s", err.Error())
+		logErrorf("exporter check failure: %s", err.Error())
 	} else {
-		log.Debugf("exporter check ok")
+		logDebugf("exporter check ok")
 	}
 }
 
@@ -202,17 +201,17 @@ func (e *Exporter) Close() {
 	if e.server != nil {
 		err := e.server.Close()
 		if err != nil {
-			log.Errorf("fail closing server %s: %s", e.server.Name(), err.Error())
+			logErrorf("fail closing server %s: %s", e.server.Name(), err.Error())
 		}
 	}
 	// close peripheral servers (we may skip acquire lock here)
 	for _, srv := range e.IterateServer() {
 		err := srv.Close()
 		if err != nil {
-			log.Errorf("fail closing server %s: %s", e.server.Name(), err.Error())
+			logErrorf("fail closing server %s: %s", e.server.Name(), err.Error())
 		}
 	}
-	log.Infof("pg exporter closed")
+	logInfof("pg exporter closed")
 }
 
 // setupInternalMetrics will init internal metrics
@@ -352,7 +351,7 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 	if e.queries, err = LoadConfig(e.configPath); err != nil {
 		return nil, fmt.Errorf("fail loading config file %s: %w", e.configPath, err)
 	}
-	log.Debugf("exporter init with %d queries", len(e.queries))
+	logDebugf("exporter init with %d queries", len(e.queries))
 
 	// note here the server is still not connected. it will trigger connecting when being scrapped
 	e.server = NewServer(
@@ -366,23 +365,23 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 
 	// register db change callback
 	if e.autoDiscovery {
-		log.Infof("auto discovery is enabled, excludeDatabase=%v, includeDatabase=%v", e.excludeDatabase, e.includeDatabase)
+		logInfof("auto discovery is enabled, excludeDatabase=%v, includeDatabase=%v", e.excludeDatabase, e.includeDatabase)
 		e.server.onDatabaseChange = e.OnDatabaseChange
 	}
 
-	log.Debugf("check primary server connectivity")
+	logDebugf("check primary server connectivity")
 	// check server immediately, will hang/exit according to failFast
 	if err = e.server.Check(); err != nil {
 		if !e.failFast {
-			log.Errorf("fail connecting to primary server: %s, retrying in 10s", err.Error())
+			logErrorf("fail connecting to primary server: %s, retrying in 10s", err.Error())
 			for err != nil {
 				time.Sleep(10 * time.Second)
 				if err = e.server.Check(); err != nil {
-					log.Errorf("fail connecting to primary server: %s, retrying in 10s", err.Error())
+					logErrorf("fail connecting to primary server: %s, retrying in 10s", err.Error())
 				}
 			}
 		} else {
-			log.Errorf("fail connecting to primary server: %s, exit", err.Error())
+			logErrorf("fail connecting to primary server: %s, exit", err.Error())
 		}
 	}
 	if err != nil {
@@ -408,12 +407,12 @@ func (e *Exporter) OnDatabaseChange(change map[string]bool) {
 			continue // skip primary database change
 		}
 		if _, found := e.excludeDatabase[dbname]; found {
-			log.Infof("skip database change: %v %v according to in excluded database list", verb, dbname)
+			logInfof("skip database change: %v %v according to in excluded database list", verb, dbname)
 			continue // skip exclude databases changes
 		}
 		if len(e.includeDatabase) > 0 {
 			if _, found := e.includeDatabase[dbname]; !found {
-				log.Infof("skip database change: %v %v according to not in include database list", verb, dbname)
+				logInfof("skip database change: %v %v according to not in include database list", verb, dbname)
 				continue // skip non-include databases changes
 			}
 		}
@@ -431,7 +430,7 @@ func (e *Exporter) OnDatabaseChange(change map[string]bool) {
 // This happens when a database is newly created
 func (e *Exporter) CreateServer(dbname string) {
 	newDSN := ReplaceDatname(e.dsn, dbname)
-	log.Infof("spawn new server for database %s : %s", dbname, ShadowPGURL(newDSN))
+	logInfof("spawn new server for database %s : %s", dbname, ShadowPGURL(newDSN))
 	newServer := NewServer(
 		newDSN,
 		WithQueries(e.queries),
@@ -444,7 +443,7 @@ func (e *Exporter) CreateServer(dbname string) {
 
 	e.sLock.Lock()
 	e.servers[dbname] = newServer
-	log.Infof("database %s is installed due to auto-discovery", dbname)
+	logInfof("database %s is installed due to auto-discovery", dbname)
 	defer e.sLock.Unlock()
 }
 
@@ -453,7 +452,7 @@ func (e *Exporter) CreateServer(dbname string) {
 func (e *Exporter) RemoveServer(dbname string) {
 	e.sLock.Lock()
 	delete(e.servers, dbname)
-	log.Warnf("database %s is removed due to auto-discovery", dbname)
+	logWarnf("database %s is removed due to auto-discovery", dbname)
 	e.sLock.Unlock()
 }
 

@@ -3,7 +3,6 @@ package exporter
 import (
 	"bytes"
 	"fmt"
-	"github.com/prometheus/common/log"
 	"gopkg.in/yaml.v3"
 	"text/template"
 	"time"
@@ -105,7 +104,7 @@ func (q *Query) MarshalYAML() string {
 	buf, err := yaml.Marshal(v)
 	if err != nil {
 		msg := fmt.Sprintf("fail to marshall query yaml: %s", err.Error())
-		log.Error(msg)
+		logError(msg)
 		return msg
 	}
 	return string(buf)
@@ -117,7 +116,7 @@ func (q *Query) Explain() string {
 	err := queryTemplate.Execute(buf, q)
 	if err != nil {
 		msg := fmt.Sprintf("fail to explain query: %s", err.Error())
-		log.Error(msg)
+		logError(msg)
 		return msg
 	}
 	return buf.String()
@@ -129,7 +128,7 @@ func (q *Query) HTML() string {
 	err := htmlTemplate.Execute(buf, q)
 	if err != nil {
 		msg := fmt.Sprintf("fail to generate query html: %s", err.Error())
-		log.Error(msg)
+		logError(msg)
 		return msg
 	}
 	return buf.String()

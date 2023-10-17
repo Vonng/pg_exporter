@@ -2,24 +2,88 @@ package exporter
 
 import (
 	"fmt"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
-/**********************************************************************************************\
-*                                     Auxiliaries                                              *
-\**********************************************************************************************/
+/* ================ Logger ================ */
+
+func configureLogger(levelStr, formatStr string) log.Logger {
+	var logger log.Logger
+
+	switch formatStr {
+	case "json":
+		logger = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
+	case "logfmt", "":
+		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	default:
+		panic("unknown log format: " + formatStr)
+	}
+
+	var lvl level.Option
+	switch levelStr {
+	case "debug":
+		lvl = level.AllowDebug()
+	case "info":
+		lvl = level.AllowInfo()
+	case "warn":
+		lvl = level.AllowWarn()
+	case "error":
+		lvl = level.AllowError()
+	default:
+		panic("unknown log level: " + levelStr)
+	}
+
+	logger = level.NewFilter(logger, lvl)
+	logger = log.With(logger, "timestamp", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
+
+	return logger
+}
+
+// logDebugf will log debug message
+func logDebugf(format string, v ...interface{}) {
+	level.Debug(Logger).Log("msg", fmt.Sprintf(format, v...))
+}
+
+// Infof will log info message
+func logInfof(format string, v ...interface{}) {
+	level.Info(Logger).Log("msg", fmt.Sprintf(format, v...))
+}
+
+// logWarnf will log warning message
+func logWarnf(format string, v ...interface{}) {
+	level.Warn(Logger).Log("msg", fmt.Sprintf(format, v...))
+}
+
+// logErrorf will log error message
+func logErrorf(format string, v ...interface{}) {
+	level.Error(Logger).Log("msg", fmt.Sprintf(format, v...))
+}
+
+// logError will print error message directly
+func logError(msg string) {
+	level.Error(Logger).Log("msg", msg)
+}
+
+// logFatalf will log error message
+func logFatalf(format string, v ...interface{}) {
+	level.Error(Logger).Log("msg", fmt.Sprintf(format, v...))
+}
+
+/* ================ Auxiliaries ================ */
 
 // castFloat64 will cast datum into float64 with scale & default value
 func castFloat64(t interface{}, s string, d string) float64 {
 	var scale = 1.0
 	if s != "" {
 		if scaleFactor, err := strconv.ParseFloat(s, 64); err != nil {
-			log.Warnf("invalid column scale: %v ", s)
+			logWarnf("invalid column scale: %v ", s)
 		} else {
 			scale = scaleFactor
 		}
@@ -36,14 +100,14 @@ func castFloat64(t interface{}, s string, d string) float64 {
 		strV := string(v)
 		result, err := strconv.ParseFloat(strV, 64)
 		if err != nil {
-			log.Warnf("fail casting []byte to float64: %v", t)
+			logWarnf("fail casting []byte to float64: %v", t)
 			return math.NaN()
 		}
 		return result * scale
 	case string:
 		result, err := strconv.ParseFloat(v, 64)
 		if err != nil {
-			log.Warnf("fail casting string to float64: %v", t)
+			logWarnf("fail casting string to float64: %v", t)
 			return math.NaN()
 		}
 		return result * scale
@@ -56,14 +120,14 @@ func castFloat64(t interface{}, s string, d string) float64 {
 		if d != "" {
 			result, err := strconv.ParseFloat(d, 64)
 			if err != nil {
-				log.Warnf("invalid column default: %v", d)
+				logWarnf("invalid column default: %v", d)
 				return math.NaN()
 			}
 			return result
 		}
 		return math.NaN()
 	default:
-		log.Warnf("fail casting unknown to float64: %v", t)
+		logWarnf("fail casting unknown to float64: %v", t)
 		return math.NaN()
 	}
 }
@@ -90,7 +154,7 @@ func castString(t interface{}) string {
 		}
 		return "false"
 	default:
-		log.Warnf("fail casting unknown to string: %v", t)
+		logWarnf("fail casting unknown to string: %v", t)
 		return ""
 	}
 }
@@ -107,7 +171,7 @@ func parseConstLabels(s string) prometheus.Labels {
 	for _, p := range parts {
 		keyValue := strings.Split(strings.TrimSpace(p), "=")
 		if len(keyValue) != 2 {
-			log.Errorf(`malformed labels format %q, should be "key=value"`, p)
+			logErrorf(`malformed labels format %q, should be "key=value"`, p)
 			continue
 		}
 		key := strings.TrimSpace(keyValue[0])

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 	"sync"
 	"time"
 )
@@ -98,12 +97,12 @@ func (q *Collector) execute() {
 
 	// execution
 	if q.Timeout != 0 { // if timeout is provided, use context
-		log.Debugf("query [%s] @ server [%s] executing begin with time limit: %v", q.Name, q.Server.Database, q.TimeoutDuration())
+		logDebugf("query [%s] @ server [%s] executing begin with time limit: %v", q.Name, q.Server.Database, q.TimeoutDuration())
 		ctx, cancel := context.WithTimeout(context.Background(), q.TimeoutDuration())
 		defer cancel()
 		rows, err = q.Server.QueryContext(ctx, q.SQL)
 	} else {
-		log.Debugf("query [%s] executing begin", q.Name)
+		logDebugf("query [%s] executing begin", q.Name)
 		rows, err = q.Server.Query(q.SQL)
 	}
 
@@ -136,7 +135,7 @@ func (q *Collector) execute() {
 		colArgs[i] = &colData[i]
 	}
 	if len(columnNames) != len(q.Columns) { // warn if column count not match
-		log.Warnf("query [%s] column count not match, result %d ≠ config %d", q.Name, len(columnNames), len(q.Columns))
+		logWarnf("query [%s] column count not match, result %d ≠ config %d", q.Name, len(columnNames), len(q.Columns))
 	}
 
 	// scan loop: for each row, extract labels from all label columns, then generate a new metric for each metric column
@@ -154,7 +153,7 @@ func (q *Collector) execute() {
 				labels[i] = castString(colData[dataIndex])
 			} else {
 				//if label column is not found in result, we just warn and send a empty string
-				log.Warnf("missing label %s.%s", q.Name, labelName)
+				logWarnf("missing label %s.%s", q.Name, labelName)
 				labels[i] = ""
 			}
 		}
@@ -170,12 +169,12 @@ func (q *Collector) execute() {
 						labels...,
 					))
 			} else {
-				log.Warnf("missing metric column %s.%s in result", q.Name, metricName)
+				logWarnf("missing metric column %s.%s in result", q.Name, metricName)
 			}
 		}
 	}
 	q.err = nil
-	log.Debugf("query [%s] executing complete in %v, metrics count: %d",
+	logDebugf("query [%s] executing complete in %v, metrics count: %d",
 		q.Name, time.Now().Sub(q.scrapeBegin), len(q.result))
 	return
 }

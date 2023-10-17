@@ -2,7 +2,6 @@ package exporter
 
 import (
 	"fmt"
-	"github.com/prometheus/common/log"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
@@ -14,18 +13,18 @@ import (
 func GetConfig() (res string) {
 	// priority: cli-args > env  > default settings (check exist)
 	if res = *configPath; res != "" {
-		log.Infof("retrieve config path %s from command line", res)
+		logInfof("retrieve config path %s from command line", res)
 		return res
 	}
 	if res = os.Getenv("PG_EXPORTER_CONFIG"); res != "" {
-		log.Infof("retrieve config path %s from PG_EXPORTER_CONFIG", res)
+		logInfof("retrieve config path %s from PG_EXPORTER_CONFIG", res)
 		return res
 	}
 
 	candidate := []string{"pg_exporter.yml", "/etc/pg_exporter.yml", "/etc/pg_exporter"}
 	for _, res = range candidate {
 		if _, err := os.Stat(res); err == nil { // default1 exist
-			log.Infof("fallback on default config path: %s", res)
+			logInfof("fallback on default config path: %s", res)
 			return res
 		}
 	}
@@ -102,7 +101,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 			return nil, fmt.Errorf("fail reading config dir: %s: %w", configPath, err)
 		}
 
-		log.Debugf("load config from dir: %s", configPath)
+		logDebugf("load config from dir: %s", configPath)
 		confFiles := make([]string, 0)
 		for _, conf := range files {
 			if !(strings.HasSuffix(conf.Name(), ".yaml") || strings.HasSuffix(conf.Name(), ".yml")) && !conf.IsDir() { // depth = 1
@@ -117,7 +116,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 		var queryCount, configCount int
 		for _, confPath := range confFiles {
 			if singleQueries, err := LoadConfig(confPath); err != nil {
-				log.Warnf("skip config %s due to error: %s", confPath, err.Error())
+				logWarnf("skip config %s due to error: %s", confPath, err.Error())
 			} else {
 				configCount++
 				for name, query := range singleQueries {
@@ -129,7 +128,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 				}
 			}
 		}
-		log.Debugf("load %d of %d queries from %d config files", len(queries), queryCount, configCount)
+		logDebugf("load %d of %d queries from %d config files", len(queries), queryCount, configCount)
 		return queries, nil
 	}
 
@@ -154,7 +153,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 			q.Timeout = 0
 		}
 	}
-	log.Debugf("load %d queries from %s, ", len(queries), configPath)
+	logDebugf("load %d queries from %s, ", len(queries), configPath)
 	return queries, nil
 
 }
