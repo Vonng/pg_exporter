@@ -4,7 +4,7 @@
 
 PG Exporter is the core component for [Pigsty](https://pigsty.cc), Which is the battery-included open-source distribution for PostgreSQL with HA deployment & ultimate observability.  Check [Demo](http://demo.pigsty.cc) for details.
 
-Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10,11,12,13,14. 
+Latest binaries & rpms can be found on [release](https://github.com/Vonng/pg_exporter/releases) page. Supported pg version: PostgreSQL 9.4+ & Pgbouncer 1.8+. Default collectors definition is compatible with PostgreSQL 10 ~ 16+ and Pgbouncer 1.8 ~ 1.21+
 
 The latest stable `pg_exporter` version is [`0.5.0`](https://github.com/Vonng/pg_exporter/releases/tag/v0.5.0).
 
