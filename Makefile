@@ -37,8 +37,8 @@ release: release-linux release-darwin
 release-linux: linux-amd64 linux-arm64
 linux-amd64: clean build-linux-amd64
 	rm -rf $(LINUX_AMD_DIR) && mkdir -p $(LINUX_AMD_DIR)
-	nfpm package --packager rpm --config nfpm-amd64.yaml     --target dist/$(VERSION)
-	nfpm package --packager deb --config nfpm-amd64-deb.yaml --target dist/$(VERSION)
+	nfpm package --packager rpm --config package/nfpm-amd64-rpm.yaml     --target dist/$(VERSION)
+	nfpm package --packager deb --config package/nfpm-amd64-deb.yaml --target dist/$(VERSION)
 	cp -r pg_exporter $(LINUX_AMD_DIR)/pg_exporter
 	cp -f package/pg_exporter.yml $(LINUX_AMD_DIR)/pg_exporter.yml
 	tar -czf dist/$(VERSION)/pg_exporter-$(VERSION).linux-amd64.tar.gz -C dist/$(VERSION) pg_exporter-$(VERSION).linux-amd64
@@ -46,8 +46,8 @@ linux-amd64: clean build-linux-amd64
 
 linux-arm64: clean build-linux-arm64
 	rm -rf $(LINUX_ARM_DIR) && mkdir -p $(LINUX_ARM_DIR)
-	nfpm package --packager rpm --config nfpm-arm64.yaml     --target dist/$(VERSION)
-	nfpm package --packager deb --config nfpm-arm64-deb.yaml --target dist/$(VERSION)
+	nfpm package --packager rpm --config package/nfpm-arm64-rpm.yaml     --target dist/$(VERSION)
+	nfpm package --packager deb --config package/nfpm-arm64-deb.yaml --target dist/$(VERSION)
 	cp -r pg_exporter $(LINUX_ARM_DIR)/pg_exporter
 	cp -f package/pg_exporter.yml $(LINUX_ARM_DIR)/pg_exporter.yml
 	tar -czf dist/$(VERSION)/pg_exporter-$(VERSION).linux-arm64.tar.gz -C dist/$(VERSION) pg_exporter-$(VERSION).linux-arm64
