@@ -105,7 +105,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 		log.Debugf("load config from dir: %s", configPath)
 		confFiles := make([]string, 0)
 		for _, conf := range files {
-			if !strings.HasSuffix(conf.Name(), ".yaml") && !conf.IsDir() { // depth = 1
+			if !(strings.HasSuffix(conf.Name(), ".yaml") || strings.HasSuffix(conf.Name(), ".yml")) && !conf.IsDir() { // depth = 1
 				continue // skip non yaml files
 			}
 			confFiles = append(confFiles, path.Join(configPath, conf.Name()))
