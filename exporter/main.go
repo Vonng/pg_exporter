@@ -2,7 +2,6 @@ package exporter
 
 import (
 	"fmt"
-	"github.com/prometheus/exporter-toolkit/web"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/exporter-toolkit/web"
 )
 
 // DryRun will explain all query fetched from configs
