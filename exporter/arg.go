@@ -2,14 +2,17 @@ package exporter
 
 import (
 	"fmt"
-	"github.com/alecthomas/kingpin/v2"
 	"runtime"
+
+	"github.com/alecthomas/kingpin/v2"
+	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 )
 
 var (
 	// exporter settings
 	pgURL             = kingpin.Flag("url", "postgres target url").Short('d').Short('u').String()
 	configPath        = kingpin.Flag("config", "path to config dir or file").Short('c').String()
+	webConfig         = kingpinflag.AddFlags(kingpin.CommandLine, ":9630")
 	constLabels       = kingpin.Flag("label", "constant lables:comma separated list of label=value pair").Short('l').Default("").Envar("PG_EXPORTER_LABEL").String()
 	serverTags        = kingpin.Flag("tag", "tags,comma separated list of server tag").Default("").Short('t').Envar("PG_EXPORTER_TAG").String()
 	disableCache      = kingpin.Flag("disable-cache", "force not using cache").Default("false").Short('C').Envar("PG_EXPORTER_DISABLE_CACHE").Bool()
@@ -22,8 +25,9 @@ var (
 	connectTimeout    = kingpin.Flag("connect-timeout", "connect timeout in ms, 100 by default").Short('T').Envar("PG_EXPORTER_CONNECT_TIMEOUT").Default("100").Int()
 
 	// prometheus http
-	listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Short('L').Default(":9630").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
-	metricPath    = kingpin.Flag("web.telemetry-path", "URL path under which to expose metrics.").Short('P').Default("/metrics").Envar("PG_EXPORTER_TELEMETRY_PATH").String()
+	// listenAddress = kingpin.Flag("web.listen-address", "prometheus web server listen address").Short('L').Default(":9630").Envar("PG_EXPORTER_LISTEN_ADDRESS").String()
+	metricPath = kingpin.Flag("web.telemetry-path", "URL path under which to expose metrics.").Short('P').Default("/metrics").Envar("PG_EXPORTER_TELEMETRY_PATH").String()
+
 	// action
 	dryRun      = kingpin.Flag("dry-run", "dry run and print raw configs").Default("false").Short('D').Bool()
 	explainOnly = kingpin.Flag("explain", "explain server planned queries").Default("false").Short('E').Bool()
@@ -36,10 +40,11 @@ var (
 // ParseArgs will parse cli args with kingpin. url and config have special treatment
 func ParseArgs() {
 	kingpin.Version(fmt.Sprintf("pg_exporter %s (built with %s)\n", Version, runtime.Version()))
+	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 	Logger = configureLogger(*logLevel, *logFormat)
-	logDebugf("init pg_exporter, configPath=%v constLabels=%v disableCache=%v autoDiscovery=%v excludeDatabase=%v includeDatabase=%v connectTimeout=%vms listenAdress=%v metricPath=%v",
-		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *includeDatabase, *connectTimeout, *listenAddress, *metricPath)
+	logDebugf("init pg_exporter, configPath=%v constLabels=%v disableCache=%v autoDiscovery=%v excludeDatabase=%v includeDatabase=%v connectTimeout=%vms webConfig=%v metricPath=%v",
+		*configPath, *constLabels, *disableCache, *autoDiscovery, *excludeDatabase, *includeDatabase, *connectTimeout, *webConfig.WebListenAddresses, *metricPath)
 	*pgURL = GetPGURL()
 	*configPath = GetConfig()
 }

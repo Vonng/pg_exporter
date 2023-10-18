@@ -2,14 +2,16 @@ package exporter
 
 import (
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/exporter-toolkit/web"
 	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
 	"sort"
 	"syscall"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // DryRun will explain all query fetched from configs
@@ -87,8 +89,9 @@ func DummyServer() (s *http.Server, exit <-chan bool) {
 		fmt.Fprintf(w, "# HELP %s last scrape was able to connect to the server: 1 for yes, 0 for no\n# TYPE %s gauge\n%s 0", dummyMetricName, dummyMetricName, dummyMetricName)
 	})
 
+	listenAddr := (*webConfig.WebListenAddresses)[0]
 	httpServer := &http.Server{
-		Addr:    *listenAddress,
+		Addr:    listenAddr,
 		Handler: mux,
 	}
 	exitChan := make(chan bool, 1)
@@ -114,6 +117,12 @@ func Run() {
 		logErrorf("no valid config path, exit")
 		os.Exit(1)
 	}
+
+	if len(*webConfig.WebListenAddresses) == 0 {
+		logFatalf("invalid listen address: %v", *webConfig.WebListenAddresses)
+		os.Exit(1)
+	}
+	listenAddr := (*webConfig.WebListenAddresses)[0]
 
 	// DummyServer will server a constant pg_up
 	// launch a dummy server to check listen address availability
@@ -196,9 +205,14 @@ func Run() {
 	<-closeChan
 	http.Handle(*metricPath, promhttp.Handler())
 
-	logInfof("pg_exporter for %s start, listen on http://%s%s", ShadowPGURL(*pgURL), *listenAddress, *metricPath)
-	err = http.ListenAndServe(*listenAddress, nil)
-	if err != nil {
+	logInfof("pg_exporter for %s start, listen on http://%s%s", ShadowPGURL(*pgURL), listenAddr, *metricPath)
+
+	srv := &http.Server{}
+	if err := web.ListenAndServe(srv, webConfig, Logger); err != nil {
 		logFatalf("http server failed: %s", err.Error())
 	}
+
+	//if err = http.ListenAndServe(*listenAddress, nil); err != nil {
+	//	logFatalf("http server failed: %s", err.Error())
+	//}
 }
