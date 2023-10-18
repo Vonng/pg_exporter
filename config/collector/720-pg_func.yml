@@ -44,11 +44,8 @@ pg_func:
         description: Number of times this function has been called
     - total_time:
         usage: COUNTER
-        scale: 1e-3
-        description: Total time spent in this function and all other functions called by it, in seconds
+        description: Total time spent in this function and all other functions called by it, in ms
     - self_time:
         usage: COUNTER
-        scale: 1e-3
-        description: Total time spent in this function itself, not including other functions called by it, in seconds
-
+        description: Total time spent in this function itself, not including other functions called by it, in ms
 

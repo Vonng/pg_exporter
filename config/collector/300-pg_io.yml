@@ -1,0 +1,50 @@
+##
+# SYNOPSIS
+#       pg_io_*
+#
+# DESCRIPTION
+#       PostgreSQL I/O stats since pg 16
+#
+# OPTIONS
+#       Tags       [cluster]
+#       TTL        60
+#       Priority   0
+#       Timeout    1s
+#       Fatal      false
+#       Version    160000 ~ higher
+#       Source     310-pg_size.yml
+#
+# METRICS
+
+pg_io:
+  name: pg_io
+  desc: PostgreSQL I/O stats
+  query: |
+    SELECT backend_type AS "type", object, context,extract(EPOCH FROM stats_reset) AS reset_time,
+      reads, read_time,writes,write_time,writebacks,writeback_time,extends,extend_time,op_bytes,hits,evictions,reuses,fsyncs,fsync_time
+    FROM pg_stat_io;
+
+  ttl: 1
+  timeout: 1
+  min_version: 160000
+  tags:
+    - cluster
+  metrics:
+    - type           : { usage: LABEL   ,description: 'Type of backend' }
+    - object         : { usage: LABEL   ,description: 'Target object of an I/O operation, relation or temp' }
+    - context        : { usage: LABEL   ,description: 'The context of an I/O operation: normal,vacuum,bulkread,bulkwrite' }
+    - reset_time     : { usage: GAUGE   ,description: 'Timestamp at which these statistics were last reset' }
+    - reads          : { usage: COUNTER ,default: 0                , description: 'Number of read operations, each of the size specified in op_bytes.' }
+    - read_time      : { usage: COUNTER ,default: 0  ,scale: 1e-3  , description: 'Time spent in read operations in seconds' }
+    - writes         : { usage: COUNTER ,default: 0                , description: 'Number of write operations, each of the size specified in op_bytes.' }
+    - write_time     : { usage: COUNTER ,default: 0  ,scale: 1e-3  , description: 'Time spent in write operations in seconds' }
+    - writebacks     : { usage: COUNTER ,default: 0                , description: 'Number of units of size op_bytes which the process requested the kernel write out to permanent storage.' }
+    - writeback_time : { usage: COUNTER ,default: 0  ,scale: 1e-3  , description: 'Time spent in writeback operations in seconds' }
+    - extends        : { usage: COUNTER ,default: 0                , description: 'Number of relation extend operations, each of the size specified in op_bytes.' }
+    - extend_time    : { usage: COUNTER ,default: 0  ,scale: 1e-3  , description: 'Time spent in extend operations in seconds' }
+    - op_bytes       : { usage: GAUGE   ,default: 8192             , description: 'The number of bytes per unit of I/O read, written, or extended. 8192 by default' }
+    - hits           : { usage: COUNTER ,default: 0                , description: 'The number of times a desired block was found in a shared buffer.' }
+    - evictions      : { usage: COUNTER ,default: 0                , description: 'Number of times a block has been written out from a shared or local buffer' }
+    - reuses         : { usage: COUNTER ,default: 0                , description: 'The number of times an existing buffer in reused' }
+    - fsyncs         : { usage: COUNTER ,default: 0                , description: 'Number of fsync calls. These are only tracked in context normal' }
+    - fsync_time     : { usage: COUNTER ,default: 0  ,scale: 1e-3  , description: 'Time spent in fsync operations in seconds' }

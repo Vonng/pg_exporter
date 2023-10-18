@@ -65,10 +65,7 @@ pg_primary_only:
            NULL::FLOAT                                            AS last_replay_time,
            0::FLOAT                                               AS lag,
            pg_is_in_recovery()                                    AS is_in_recovery,
-           FALSE                                                  AS is_wal_replay_paused,
-           pg_is_in_backup()                                      AS is_in_backup,
-           extract(EPOCH FROM now() - pg_backup_start_time())     AS backup_time;
-
+           FALSE                                                  AS is_wal_replay_paused;
   tags:
     - cluster
     - primary
@@ -77,8 +74,7 @@ pg_primary_only:
   min_version: 100000
   # max_version: 0
   fatal: true
-  # skip: false
-
+  skip: false
   metrics:
     - timestamp:
         name: timestamp
@@ -136,14 +132,7 @@ pg_primary_only:
         name: is_wal_replay_paused
         description: 1 if wal play is paused
         usage: GAUGE
-    - is_in_backup:
-        name: is_in_backup
-        description: 1 if backup is in progress
-        usage: GAUGE
-    - backup_time:
-        name: backup_time
-        description: seconds since current backup start
-        usage: GAUGE
+
 
 ##
 # SYNOPSIS
@@ -214,9 +203,7 @@ pg_replica_only:
                WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
                ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()) END AS lag,
            pg_is_in_recovery()                                                      AS is_in_recovery,
-           pg_is_wal_replay_paused()                                                AS is_wal_replay_paused,
-           pg_is_in_backup()                                                        AS is_in_backup,
-           extract(EPOCH FROM now() - pg_backup_start_time())                       AS backup_time;
+           pg_is_wal_replay_paused()                                                AS is_wal_replay_paused;
   tags:
     - cluster
     - replica
@@ -282,14 +269,6 @@ pg_replica_only:
     - is_wal_replay_paused:
         name: is_wal_replay_paused
         description: 1 if wal play paused
-        usage: GAUGE
-    - is_in_backup:
-        name: is_in_backup
-        description: 1 if backup is in progress
-        usage: GAUGE
-    - backup_time:
-        name: backup_time
-        description: seconds since current backup start
         usage: GAUGE
 
 

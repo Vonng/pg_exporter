@@ -61,3 +61,45 @@ pg_recovery:
         description: End-of-backup record required
 
 
+pg_recovery_prefetch:
+  name: pg_recovery_prefetch
+  desc: PostgreSQL recovery prefetch metrics (15+)
+  query: SELECT prefetch,hit,skip_init,skip_new,skip_fpw,skip_rep,wal_distance,block_distance,io_depth,extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_recovery_prefetch;
+  ttl: 10
+  min_version: 150000
+  tags:
+    - cluster
+    - replica
+
+  metrics:
+    - prefetch:
+        usage: COUNTER
+        description: Number of blocks prefetched because they were not in the buffer pool
+    - hit:
+        usage: COUNTER
+        description:  Number of blocks not prefetched because they were already in the buffer pool
+    - skip_init:
+        usage: COUNTER
+        description: Number of blocks not prefetched because they would be zero-initialized
+    - skip_new:
+        usage: COUNTER
+        description: Number of blocks not prefetched because they didn't exist yet
+    - skip_fpw:
+        usage: GAUGE
+        description: Number of blocks not prefetched because a full page image was included in the WAL
+    - skip_rep:
+        usage: COUNTER
+        description: Number of blocks not prefetched because they were already recently prefetched
+    - wal_distance:
+        usage: GAUGE
+        description: How many bytes ahead the prefetcher is looking
+    - block_distance:
+        usage: GAUGE
+        description: How many blocks ahead the prefetcher is looking
+    - io_depth:
+        usage: GAUGE
+        description: How many prefetches have been initiated but are not yet known to have completed
+    - reset_time:
+        usage: COUNTER
+        description: Time at which these recovery prefetch statistics were last reset
+
