@@ -1,7 +1,7 @@
 name: "pg_exporter"
 arch: "arm64"
 platform: "linux"
-version: "v1.0.0"
+version: "v0.6.0"
 version_schema: semver
 maintainer: Ruohang Feng <rh@vonng.com>
 description: |
