@@ -7,7 +7,7 @@ maintainer: Ruohang Feng <rh@vonng.com>
 description: |
   Prometheus exporter for PostgreSQL / Pgbouncer server metrics.
   Supported version: Postgres9.4 - 16+ & Pgbouncer 1.8 - 1.21+
-  Part of Project Pigsty -- Battery Included PostgreSQL Distriubtion
+  Part of Project Pigsty -- Battery Included PostgreSQL Distribution
   with ultimate observability support: https://pigsty.cc
 
 vendor: "Vonng"
