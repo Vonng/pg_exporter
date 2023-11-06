@@ -143,6 +143,7 @@ func Run() {
 		WithExcludeDatabase(*excludeDatabase),
 		WithIncludeDatabase(*includeDatabase),
 		WithTags(*serverTags),
+		WithConnectTimeout(*connectTimeout),
 	)
 	if err != nil {
 		logFatalf("fail creating pg_exporter: %s", err.Error())
