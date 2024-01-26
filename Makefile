@@ -1,11 +1,11 @@
 #==============================================================#
 # File      :   Makefile
-# Mtime     :   2022-05-13
+# Mtime     :   2024-01-26
 # Copyright (C) 2018-2022 Ruohang Feng
 #==============================================================#
 
 # Get Current Version
-VERSION=v0.6.0
+VERSION=v0.6.1
 # VERSION=`cat exporter/global.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
 
 # Release Dir
