@@ -6,7 +6,7 @@ PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty
 
 PG Exporter is fully customizable, flexible, and extensible. It defines almost all metrics with declarative YAML configuration files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
 
-The latest stable version is [`0.6.0`](https://github.com/Vonng/pg_exporter/releases/tag/v0.6.0), which support PostgreSQL 10 ~ 16+ and Pgbouncer 1.8 ~ 1.21+.
+The latest stable version is [`0.6.1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.6.1), which support PostgreSQL 10 ~ 16+ and Pgbouncer 1.8 ~ 1.21+.
 
 [![pigsty-v2-3](https://github.com/Vonng/pigsty/assets/8587410/ec2b8acb-d564-49ab-b7f0-214da176a7c8)](https://demo.pigsty.cc)
 
@@ -69,7 +69,7 @@ Parameters could be given via command-line args or environment variables.
 * `--dry-run` will print configuration files
 * `--explain` will actually connect to the target server and plan queries for it. Then explain which queries are installed.
 * `--log.level` will set logging level: one of `debug`, `info`, `warn`, `error`.
-* `--log.format` will set the log format: one of `logfmt`, `json`.
+
 
 
 ```bash
@@ -98,7 +98,6 @@ Flags:
   -D, --[no-]dry-run         dry run and print raw configs
   -E, --[no-]explain         explain server planned queries
       --log.level="info"     log level: debug|info|warn|error]
-      --log.format="logfmt"  log format: logfmt|json
       --[no-]version         Show application version.
 ```
 
