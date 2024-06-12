@@ -203,7 +203,7 @@ func PostgresPrecheck(s *Server) (err error) {
 	var datname, username string
 	var databases, namespaces, extensions []string
 	precheckSQL := `SELECT current_catalog, current_user, pg_catalog.pg_is_in_recovery(),
-	(SELECT pg_catalog.array_agg(d.datname) AS databases FROM pg_catalog.pg_database d),
+	(SELECT pg_catalog.array_agg(d.datname) AS databases FROM pg_catalog.pg_database d WHERE d.datallowconn AND NOT d.datistemplate),
 	(SELECT pg_catalog.array_agg(n.nspname) AS namespaces FROM pg_catalog.pg_namespace n),
 	(SELECT pg_catalog.array_agg(e.extname) AS extensions FROM pg_catalog.pg_extension e);`
 	ctx, cancel2 := context.WithTimeout(context.Background(), s.GetConnectTimeout())
