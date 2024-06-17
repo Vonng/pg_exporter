@@ -18,7 +18,7 @@ type Exporter struct {
 	// config params provided from ExporterOpt
 	dsn             string            // primary dsn
 	configPath      string            // config file path /directory
-	disableCache    bool              // always execute query when been scrapped
+	disableCache    bool              // always execute query when been scraped
 	disableIntro    bool              // disable query level introspection metrics
 	autoDiscovery   bool              // discovery other database on primary server
 	pgbouncerMode   bool              // is primary server a pgbouncer ?
@@ -54,8 +54,8 @@ type Exporter struct {
 
 	serverScrapeDuration     *prometheus.GaugeVec // {datname} database level: how much time spend on server scrape?
 	serverScrapeTotalSeconds *prometheus.GaugeVec // {datname} database level: how much time spend on server scrape?
-	serverScrapeTotalCount   *prometheus.GaugeVec // {datname} database level how many metrics scrapped from server
-	serverScrapeErrorCount   *prometheus.GaugeVec // {datname} database level: how many error occurs when scrapping server
+	serverScrapeTotalCount   *prometheus.GaugeVec // {datname} database level how many metrics scraped from server
+	serverScrapeErrorCount   *prometheus.GaugeVec // {datname} database level: how many error occurs when scraping server
 
 	queryCacheTTL          *prometheus.GaugeVec // {datname,query} query cache ttl
 	queryScrapeTotalCount  *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
@@ -257,7 +257,7 @@ func (e *Exporter) setupInternalMetrics() {
 	})
 	e.scrapeDuration = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
-		Subsystem: "exporter", Name: "scrape_duration", Help: "seconds exporter spending on scrapping",
+		Subsystem: "exporter", Name: "scrape_duration", Help: "seconds exporter spending on scraping",
 	})
 	e.lastScrapeTime = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
@@ -297,15 +297,15 @@ func (e *Exporter) setupInternalMetrics() {
 	}, []string{"datname", "query"})
 	e.queryScrapeDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
-		Subsystem: "exporter_query", Name: "scrape_duration", Help: "seconds query spending on scrapping",
+		Subsystem: "exporter_query", Name: "scrape_duration", Help: "seconds query spending on scraping",
 	}, []string{"datname", "query"})
 	e.queryScrapeMetricCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
-		Subsystem: "exporter_query", Name: "scrape_metric_count", Help: "numbers of metrics been scrapped from this query",
+		Subsystem: "exporter_query", Name: "scrape_metric_count", Help: "numbers of metrics been scraped from this query",
 	}, []string{"datname", "query"})
 	e.queryScrapeHitCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
-		Subsystem: "exporter_query", Name: "scrape_hit_count", Help: "numbers been scrapped from this query",
+		Subsystem: "exporter_query", Name: "scrape_hit_count", Help: "numbers been scraped from this query",
 	}, []string{"datname", "query"})
 
 	e.exporterUp.Set(1) // always be true
@@ -353,7 +353,7 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 	}
 	logDebugf("exporter init with %d queries", len(e.queries))
 
-	// note here the server is still not connected. it will trigger connecting when being scrapped
+	// note here the server is still not connected. it will trigger connecting when being scraped
 	e.server = NewServer(
 		dsn,
 		WithQueries(e.queries),
