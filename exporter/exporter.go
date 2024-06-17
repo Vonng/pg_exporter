@@ -261,17 +261,17 @@ func (e *Exporter) setupInternalMetrics() {
 	})
 	e.lastScrapeTime = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
-		Subsystem: "exporter", Name: "last_scrape_time", Help: "seconds exporter spending on scrapping",
+		Subsystem: "exporter", Name: "last_scrape_time", Help: "last scrape timestamp",
 	})
 
 	// exporter level metrics
 	e.serverScrapeDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
-		Subsystem: "exporter_server", Name: "scrape_duration", Help: "seconds exporter server spending on scrapping",
+		Subsystem: "exporter_server", Name: "scrape_duration", Help: "seconds exporter server spending on scraping last scrape",
 	}, []string{"datname"})
 	e.serverScrapeTotalSeconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
-		Subsystem: "exporter_server", Name: "scrape_total_seconds", Help: "seconds exporter server spending on scrapping",
+		Subsystem: "exporter_server", Name: "scrape_total_seconds", Help: "cumulative total seconds exporter server spending on scraping",
 	}, []string{"datname"})
 	e.serverScrapeTotalCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
