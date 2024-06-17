@@ -206,9 +206,11 @@ func (e *Exporter) Close() {
 	}
 	// close peripheral servers (we may skip acquire lock here)
 	for _, srv := range e.IterateServer() {
-		err := srv.Close()
-		if err != nil {
-			logErrorf("fail closing server %s: %s", e.server.Name(), err.Error())
+		if srv == nil {
+			err := srv.Close()
+			if err != nil {
+				logErrorf("fail closing server %s: %s", e.server.Name(), err.Error())
+			}
 		}
 	}
 	logInfof("pg exporter closed")
