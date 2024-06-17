@@ -77,6 +77,7 @@ type Server struct {
 	queryScrapeTotalCount  map[string]float64 // internal query metrics: total executed
 	queryScrapeHitCount    map[string]float64 // internal query metrics: times serving from hit cache
 	queryScrapeErrorCount  map[string]float64 // internal query metrics: times failed
+	queryScrapePredicateSkipCount  map[string]float64 // internal query metrics: times skipped due to predicate
 	queryScrapeMetricCount map[string]float64 // internal query metrics: number of metrics scrapped
 	queryScrapeDuration    map[string]float64 // internal query metrics: time spend on executing
 }
@@ -308,6 +309,7 @@ func (s *Server) ResetStats() {
 	s.queryScrapeTotalCount = make(map[string]float64, 0)
 	s.queryScrapeHitCount = make(map[string]float64, 0)
 	s.queryScrapeErrorCount = make(map[string]float64, 0)
+	s.queryScrapePredicateSkipCount = make(map[string]float64, 0)
 	s.queryScrapeMetricCount = make(map[string]float64, 0)
 	s.queryScrapeDuration = make(map[string]float64, 0)
 
@@ -316,6 +318,9 @@ func (s *Server) ResetStats() {
 		s.queryScrapeTotalCount[query.Name] = 0
 		s.queryScrapeHitCount[query.Name] = 0
 		s.queryScrapeErrorCount[query.Name] = 0
+		if len(query.PredicateQueries) > 0 {
+			s.queryScrapePredicateSkipCount[query.Name] = 0
+		}
 		s.queryScrapeMetricCount[query.Name] = 0
 		s.queryScrapeDuration[query.Name] = 0
 	}
@@ -440,13 +445,14 @@ func (s *Server) Stat() string {
 	//	logErrorf("fail to generate server stats html")
 	//	return fmt.Sprintf("fail to generate server stat html, %s", err.Error())
 	//}
-	buf.WriteString(fmt.Sprintf("%-24s %-10s %-10s %-10s %-10s %-6s %-10s\n", "name", "total", "hit", "error", "metric", "ttl/s", "duration/ms"))
+	buf.WriteString(fmt.Sprintf("%-24s %-10s %-10s %-10s %-10s %-10s %-6s %-10s\n", "name", "total", "hit", "error", "skip", "metric", "ttl/s", "duration/ms"))
 	for _, query := range s.Collectors {
-		buf.WriteString(fmt.Sprintf("%-24s %-10d %-10d %-10d %-10d %-6d %-10f\n",
+		buf.WriteString(fmt.Sprintf("%-24s %-10d %-10d %-10d %-10d %-10d %-6d %-10f\n",
 			query.Name,
 			int(s.queryScrapeTotalCount[query.Name]),
 			int(s.queryScrapeHitCount[query.Name]),
 			int(s.queryScrapeErrorCount[query.Name]),
+			int(s.queryScrapePredicateSkipCount[query.Name]),
 			int(s.queryScrapeMetricCount[query.Name]),
 			int(s.queryCacheTTL[query.Name]),
 			s.queryScrapeDuration[query.Name]*1000,
@@ -507,6 +513,15 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 		} else {
 			if query.CacheHit() {
 				s.queryScrapeHitCount[query.Name]++
+			}
+		}
+		// TODO add label for which predicate caused skip?
+		if len(query.PredicateQueries) > 0 {
+			skipped, _ := query.PredicateSkip()
+			if skipped {
+				s.queryScrapePredicateSkipCount[query.Name]++
+			} else {
+				s.queryScrapePredicateSkipCount[query.Name] = 0
 			}
 		}
 	}

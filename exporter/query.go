@@ -17,6 +17,7 @@ type Query struct {
 	Name   string `yaml:"name"`  // actual query name, used as metric prefix
 	Desc   string `yaml:"desc"`  // description of this metric query
 	SQL    string `yaml:"query"` // SQL command to fetch metrics
+	PredicateQueries []PredicateQuery `yaml:"predicate_queries,omitempty"` // SQL command to filter metrics
 	Branch string `yaml:"-"`     // branch name, top layer key of config file
 
 	// control query behaviour
@@ -37,6 +38,14 @@ type Query struct {
 	ColumnNames []string           `yaml:"-"` // column names in origin orders
 	LabelNames  []string           `yaml:"-"` // column (name) that used as label, sequences matters
 	MetricNames []string           `yaml:"-"` // column (name) that used as metric
+}
+
+// A PredicateQuery is a query that returns a 1-column resultset that's used to decide whether
+// to run the main query.
+type PredicateQuery struct {
+	Name        string             `yaml:"name,omitempty"`   // predicate query name, only used for logging
+	SQL         string             `yaml:"predicate_query"`  // SQL command to return a predicate
+	TTL         float64            `yaml:"ttl,omitempty"`    // How long to cache results for
 }
 
 var queryTemplate, _ = template.New("Query").Parse(`##
@@ -68,12 +77,21 @@ var htmlTemplate, _ = template.New("Query").Parse(`
 
 <h2>{{ .Name }}</h2>
 <p>{{ .Desc }}</p>
-
+{{ if len(.PredicateQueries) > 0 }}
+<h4>Predicate queries</h4>
+<table style="border-style: dotted;">
+<thhead><th>Name</th> <th>SQL</th> <th>Cache TTL</th></thead>
+<tbody>
+{{ range .PredicateQueries }}
+<tr><td>{{ .Name }}</td><td><code>{{ html .SQL }}</code></td><td>{{if ne .TTL 0}}{{ .TTL }}s{{else}}<i>not cached</i>{{end}}</td></tr>
+{{ end }}
+</tbody></table>
+{{ end }}
 <h4>Query</h4>
 <code><pre>{{ .SQL }}</pre></code>
 
 <h4>Attribution</h4>
-<code><table style="border-style: dotted;"><tbdoy>
+<code><table style="border-style: dotted;"><tbody>
 <tr><td>Branch   </td> <td> {{ .Branch }} </td></tr>
 <tr><td>TTL      </td> <td> {{ .TTL }} </td></tr>
 <tr><td>Priority </td> <td> {{ .Priority }} </td></tr>
@@ -82,17 +100,17 @@ var htmlTemplate, _ = template.New("Query").Parse(`
 <tr><td>Version  </td> <td> {{if ne .MinVersion 0}}{{ .MinVersion }}{{else}}lower{{end}} ~ {{if ne .MaxVersion 0}}{{ .MaxVersion }}{{else}}higher{{end}} </td></tr>
 <tr><td>Tags     </td> <td> {{ .Tags }} </td></tr>
 <tr><td>Source   </td> <td> {{ .Path }} </td></tr>
-<tbdoy></table></code>
+<tbody></table></code>
 
 <h4>Columns</h4>
 <code><table "align="left"  style="border-style: dotted;"><thead><th>Name</th> <th>Usage</th> <th>Rename</th> <th>Bucket</th> <th>Scale</th> <th>Default</th> <th>Description</th></thead>
-<tbdoy>{{ range .ColumnList }}<tr><td>{{ .Name }}</td><td>{{ .Usage }}</td><td>{{ .Rename }}</td><td>{{ .Bucket }}</td><td>{{ .Scale }}</td><td>{{ .Default }}</td><td>{{ .Desc }}</td></tr>{{ end }}
-<tbdoy></table></code>
+<tbody>{{ range .ColumnList }}<tr><td>{{ .Name }}</td><td>{{ .Usage }}</td><td>{{ .Rename }}</td><td>{{ .Bucket }}</td><td>{{ .Scale }}</td><td>{{ .Default }}</td><td>{{ .Desc }}</td></tr>{{ end }}
+<tbody></table></code>
 
 <h4>Metrics</h4>
-<code><table "align="left"  style="border-style: dotted;"><thead><th>Name</th> <th>Usage</th> <th>Desc</th></th></thead><tbdoy>
+<code><table "align="left"  style="border-style: dotted;"><thead><th>Name</th> <th>Usage</th> <th>Desc</th></th></thead><tbody>
 {{ range .MetricList }}<tr><td>{{ .Name }}</td><td>{{ .Column.Usage }}</td><td>{{ .Column.Desc }}</td></tr>{{ end }}
-<tbdoy></table></code>
+<tbody></table></code>
 </div>
 `)
 

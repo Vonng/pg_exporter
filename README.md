@@ -335,6 +335,20 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #┃                               * '<tag>' means this query WILL be executed when exporter is tagged with '<tag>'
 #┃                               ( <tag> could not be cluster,primary,standby,master,replica,etc...)
 #┃
+#┃    # One or more "predicate queries" may be defined for a metric query. These
+#┃    # are run before the main metric query (after any cache hit check). If all
+#┃    # of them, when run sequentially, return a single row with a single column
+#┃    # boolean true result, the main metric query is executed. If any of them
+#┃    # return false or return zero rows, the main query is skipped. If any
+#┃    # predicate query returns more than one row, a non-boolean result, or fails
+#┃    # with an error the whole query is marked failed. Predicate queries can be
+#┃    # used to check for the presence of specific functions, tables, extensions,
+#┃    # settings, vendor-specific postgres features etc before running the main
+#┃    # query.
+#┃    predicate_queries:
+#┃      - name: predicate query name
+#┃        predicate_query: |
+#┃          SELECT EXISTS (SELECT 1 FROM information_schema.routines WHERE routine_schema = 'pg_catalog' AND routine_name = 'pg_backup_start_time');
 #┃
 #┃    metrics:                 <---- List of returned columns, each column must have a `name` and `usage`, `rename` and `description` are optional
 #┃      - timestamp:           <---- Column name, should be exactly the same as returned column name

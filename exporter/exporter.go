@@ -60,6 +60,7 @@ type Exporter struct {
 	queryCacheTTL          *prometheus.GaugeVec // {datname,query} query cache ttl
 	queryScrapeTotalCount  *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
 	queryScrapeErrorCount  *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
+	queryScrapePredicateSkipCount *prometheus.GaugeVec // {datname,query} query level: how many times was the query skipped due to predicate
 	queryScrapeDuration    *prometheus.GaugeVec // {datname,query} query level: how many seconds the query spends?
 	queryScrapeMetricCount *prometheus.GaugeVec // {datname,query} query level: how many metrics the query returns?
 	queryScrapeHitCount    *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
@@ -141,6 +142,7 @@ func (e *Exporter) collectServerMetrics(s *Server) {
 	e.queryCacheTTL.Reset()
 	e.queryScrapeTotalCount.Reset()
 	e.queryScrapeErrorCount.Reset()
+	e.queryScrapePredicateSkipCount.Reset()
 	e.queryScrapeDuration.Reset()
 	e.queryScrapeMetricCount.Reset()
 	e.queryScrapeHitCount.Reset()
@@ -166,6 +168,9 @@ func (e *Exporter) collectServerMetrics(s *Server) {
 		}
 		for queryName, counter := range s.queryScrapeErrorCount {
 			e.queryScrapeErrorCount.WithLabelValues(s.Database, queryName).Set(counter)
+		}
+		for queryName, counter := range s.queryScrapePredicateSkipCount {
+			e.queryScrapePredicateSkipCount.WithLabelValues(s.Database, queryName).Set(counter)
 		}
 		for queryName, counter := range s.queryScrapeMetricCount {
 			e.queryScrapeMetricCount.WithLabelValues(s.Database, queryName).Set(counter)
@@ -295,6 +300,10 @@ func (e *Exporter) setupInternalMetrics() {
 		Namespace: e.namespace, ConstLabels: e.constLabels,
 		Subsystem: "exporter_query", Name: "scrape_error_count", Help: "times the query failed",
 	}, []string{"datname", "query"})
+	e.queryScrapePredicateSkipCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: e.namespace, ConstLabels: e.constLabels,
+		Subsystem: "exporter_query", Name: "scrape_predicate_skip_count", Help: "times the query was skipped due to a predicate returning false",
+	}, []string{"datname", "query"})
 	e.queryScrapeDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
 		Subsystem: "exporter_query", Name: "scrape_duration", Help: "seconds query spending on scrapping",
@@ -331,6 +340,7 @@ func (e *Exporter) collectInternalMetrics(ch chan<- prometheus.Metric) {
 	e.queryCacheTTL.Collect(ch)
 	e.queryScrapeTotalCount.Collect(ch)
 	e.queryScrapeErrorCount.Collect(ch)
+	e.queryScrapePredicateSkipCount.Collect(ch)
 	e.queryScrapeDuration.Collect(ch)
 	e.queryScrapeMetricCount.Collect(ch)
 	e.queryScrapeHitCount.Collect(ch)

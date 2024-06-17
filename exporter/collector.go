@@ -24,6 +24,7 @@ type Collector struct {
 	result      []prometheus.Metric         // cached metrics
 	descriptors map[string]*prometheus.Desc // maps column index to descriptor, build on init
 	cacheHit    bool                        // indicate last scrape was served from cache or real execution
+	predicateSkip string                    // if nonempty, predicate query caused skip of this scrape
 	err         error
 
 	// stats
@@ -74,9 +75,15 @@ func (q *Collector) ResultSize() int {
 	return len(q.result)
 }
 
-// Error wraps query error
+// Error wraps query error (including error in predicate query)
 func (q *Collector) Error() error {
 	return q.err
+}
+
+// Did the last scrape skip due to predicate query and if so which predicate
+// query caused the skip?
+func (q *Collector) PredicateSkip() (bool, string) {
+	return q.predicateSkip != "", q.predicateSkip
 }
 
 // Duration returns last scrape duration in float64 seconds
@@ -89,22 +96,97 @@ func (q *Collector) CacheHit() bool {
 	return q.cacheHit
 }
 
+// Run any predicate queries for this query. Return true only if all predicate queries pass.
+// As a side effect sets predicateSkip to the first predicate query that failed, using
+// the predicate query name if specified otherwise the index.
+func (q *Collector) executePredicateQueries(ctx context.Context) bool {
+	for i, predicateQuery := range q.PredicateQueries {
+		predicateQueryName := predicateQuery.Name
+		if predicateQueryName == "" {
+			predicateQueryName = fmt.Sprintf("%d", i)
+		}
+		q.predicateSkip = predicateQueryName
+
+		msgPrefix := fmt.Sprintf("predicate query [%s] for query [%s] @ server [%s]", predicateQueryName, q.Name, q.Server.Database)
+
+		// Execute the predicate query.
+		logDebugf("%s executing predicate query", msgPrefix)
+		rows, err := q.Server.QueryContext(ctx, predicateQuery.SQL)
+		if err != nil {
+			// If a predicate query fails that's treated as a skip, and the err
+			// flag is set so Fatal will be respected if set.
+			if err == context.DeadlineExceeded { // timeout
+				q.err = fmt.Errorf("%s timeout because duration %v exceed limit %v",
+					msgPrefix, time.Now().Sub(q.scrapeBegin), q.TimeoutDuration())
+			} else {
+				q.err = fmt.Errorf("%s failed: %w", msgPrefix, err)
+			}
+			return false
+		}
+		defer rows.Close()
+
+		// The predicate passes if it returns exactly one row with one column
+		// that is a boolean true.
+		colTypes, err := rows.ColumnTypes()
+		if err != nil {
+			q.err = fmt.Errorf("%s failed to get column types: %w", msgPrefix, err)
+		}
+		if len(colTypes) != 1 {
+			q.err = fmt.Errorf("%s failed because it returned %d columns, expected 1", msgPrefix, len(colTypes))
+		}
+		if colTypes[0].DatabaseTypeName() != "BOOL" {
+			q.err = fmt.Errorf("%s failed because it returned a column of type %s, expected BOOL. Consider a CAST(colname AS boolean) or colname::boolean in the query.", msgPrefix, colTypes[0].DatabaseTypeName())
+		}
+		firstRow := true
+		predicatePass := sql.NullBool{}
+		for rows.Next() {
+			if ! firstRow {
+				q.err = fmt.Errorf("%s failed because it returned more than one row", msgPrefix)
+				return false
+			}
+			firstRow = false
+			err = rows.Scan(&predicatePass)
+			if err != nil {
+				q.err = fmt.Errorf("%s failed scanning in expected 1-row 1-column nullable boolean result: %w", msgPrefix, err)
+				return false
+			}
+		}
+		if ! (predicatePass.Valid && predicatePass.Bool) {
+			// succesfully executed predicate query requested a skip
+			logDebugf("%s returned false, null or zero rows, skipping query", msgPrefix)
+			return false
+		}
+		logDebugf("%s returned true", msgPrefix)
+	}
+	// If we get here, all predicate queries passed.
+	q.predicateSkip = ""
+	return true
+}
+
 // execute will run this query to registered server, result and err are registered
 func (q *Collector) execute() {
 	q.result = q.result[:0] // reset cache
 	var rows *sql.Rows
 	var err error
 
-	// execution
+	ctx := context.Background()
 	if q.Timeout != 0 { // if timeout is provided, use context
 		logDebugf("query [%s] @ server [%s] executing begin with time limit: %v", q.Name, q.Server.Database, q.TimeoutDuration())
-		ctx, cancel := context.WithTimeout(context.Background(), q.TimeoutDuration())
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), q.TimeoutDuration())
 		defer cancel()
-		rows, err = q.Server.QueryContext(ctx, q.SQL)
 	} else {
-		logDebugf("query [%s] executing begin", q.Name)
-		rows, err = q.Server.Query(q.SQL)
+		logDebugf("query [%s] @ server [%s] executing begin", q.Server.Database, q.Name)
 	}
+
+	// Check predicate queries if any
+	if predicatePass := q.executePredicateQueries(ctx); !predicatePass {
+		// predicateSkip and err if appropriate were set as side-effects
+		return
+	}
+
+	// main query execution
+	rows, err = q.Server.QueryContext(ctx, q.SQL)
 
 	// error handling: if query failed because of timeout or error, record and return
 	if err != nil {
