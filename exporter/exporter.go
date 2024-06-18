@@ -572,7 +572,7 @@ func (e *Exporter) ExplainFunc(w http.ResponseWriter, r *http.Request) {
 
 // StatFunc expose html statistics
 func (e *Exporter) StatFunc(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
 	_, _ = w.Write([]byte(e.Stat()))
 }
 
