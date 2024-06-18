@@ -77,7 +77,7 @@ type Server struct {
 	queryScrapeTotalCount  map[string]float64 // internal query metrics: total executed
 	queryScrapeHitCount    map[string]float64 // internal query metrics: times serving from hit cache
 	queryScrapeErrorCount  map[string]float64 // internal query metrics: times failed
-	queryScrapeMetricCount map[string]float64 // internal query metrics: number of metrics scrapped
+	queryScrapeMetricCount map[string]float64 // internal query metrics: number of metrics scraped
 	queryScrapeDuration    map[string]float64 // internal query metrics: time spend on executing
 }
 
@@ -518,10 +518,10 @@ final:
 	if s.err != nil {
 		s.UP = false
 		s.errorCount++
-		logErrorf("fail scrapping server [%s]: %s", s.Name(), s.err.Error())
+		logErrorf("fail scraping server [%s]: %s", s.Name(), s.err.Error())
 	} else {
 		s.UP = true
-		logDebugf("server [%s] scrapped in %v",
+		logDebugf("server [%s] scraped in %v",
 			s.Name(), s.scrapeDone.Sub(s.scrapeBegin).Seconds())
 	}
 }
