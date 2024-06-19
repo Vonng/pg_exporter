@@ -1,12 +1,12 @@
 # PG Exporter
 
-[Prometheus](https://prometheus.io/) [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) Server & [Pgbouncer](https://www.pgbouncer.org/) metrics.
+[Prometheus](https://prometheus.io/) [Exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) Server & [Pgbouncer](https://www.pgbouncer.org/) metrics.
 
-PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty.cc) x PostgreSQL, which is a Free RDS PG Alternative and battery-included open-source PostgreSQL distribution: [Demo](https://demo.pigsty.cc) & [Gallery](https://github.com/Vonng/pigsty/wiki/Gallery)
+PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty.io) x PostgreSQL, which is a Free RDS PG Alternative and battery-included open-source PostgreSQL distribution: [Demo](https://demo.pigsty.cc) & [Gallery](https://github.com/Vonng/pigsty/wiki/Gallery)
 
-PG Exporter is fully customizable, flexible, and extensible. It defines almost all metrics with declarative YAML configuration files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
+PG Exporter is fully customizable and extensible. It defines almost all metrics with declarative YAML [configuration](pg_exporter.yml) files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
 
-The latest stable version is [`0.6.1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.6.1), which support PostgreSQL 10 ~ 16+ and Pgbouncer 1.8 ~ 1.21+.
+The latest stable version is [`0.6.1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.6.1), which support PostgreSQL 10 ~ 16+ and Pgbouncer 1.8 ~ 1.21+. The master branch is under active development with PG 17 support.
 
 [![pigsty-v2-3](https://github.com/Vonng/pigsty/assets/8587410/ec2b8acb-d564-49ab-b7f0-214da176a7c8)](https://demo.pigsty.cc)
 
@@ -97,7 +97,7 @@ Flags:
                              URL path under which to expose metrics. ($PG_EXPORTER_TELEMETRY_PATH)
   -D, --[no-]dry-run         dry run and print raw configs
   -E, --[no-]explain         explain server planned queries
-      --log.level="info"     log level: debug|info|warn|error]
+      --log.level="info"     log level: debug|info|warn|error
       --[no-]version         Show application version.
 ```
 
@@ -203,7 +203,7 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 
 > #### Note
 >
-> Supported version: PostgreSQL 10, 11, 12, 13, 14, 15, 16+
+> Supported version: PostgreSQL 10, 11, 12, 13, 14, 15, 16, 17+
 >
 > But you can still get PostgreSQL 9.4, 9.5, 9.6 support by switching to the older version collector definition
 
@@ -212,7 +212,7 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 - [`pg_setting`](config/collector/130-pg_setting.yml)
 - [`pg_repl`](config/collector/210-pg_repl.yml)
 - [`pg_sync_standby`](config/collector/220-pg_sync_standby.yml)
-- [`pg_downstrem`](config/collector/230-pg_downstrem.yml)
+- [`pg_downstrem`](config/collector/230-pg_downstream.yml)
 - [`pg_slot`](config/collector/240-pg_slot.yml)
 - [`pg_recv`](config/collector/250-pg_recv.yml)
 - [`pg_sub`](config/collector/260-pg_sub.yml)
@@ -221,6 +221,7 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 - [`pg_size`](config/collector/310-pg_size.yml)
 - [`pg_archiver`](config/collector/320-pg_archiver.yml)
 - [`pg_bgwriter`](config/collector/330-pg_bgwriter.yml)
+- [`pg_checkpointer`](config/collector/331-pg_checkpointer.yml)
 - [`pg_ssl`](config/collector/340-pg_ssl.yml)
 - [`pg_checkpoint`](config/collector/350-pg_checkpoint.yml)
 - [`pg_recovery`](config/collector/360-pg_recovery.yml)
@@ -241,12 +242,12 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 - [`pg_db_conf`](config/collector/620-pg_db_conf.yml)
 - [`pg_pubrel`](config/collector/640-pg_pubrel.yml)
 - [`pg_subrel`](config/collector/650-pg_subrel.yml)
-- [`pg_relkind`](config/collector/720-pg_relkind.yml)
-- [`pg_table`](config/collector/730-pg_table.yml)
-- [`pg_index`](config/collector/740-pg_index.yml)
-- [`pg_func`](config/collector/750-pg_func.yml)
-- [`pg_seq`](config/collector/760-pg_seq.yml)
-- [`pg_defpart`](config/collector/770-pg_defpart.yml)
+- [`pg_table`](config/collector/700-pg_table.yml)
+- [`pg_index`](config/collector/710-pg_index.yml)
+- [`pg_func`](config/collector/720-pg_func.yml)
+- [`pg_seq`](config/collector/730-pg_seq.yml)
+- [`pg_relkind`](config/collector/740-pg_relkind.yml)
+- [`pg_defpart`](config/collector/750-pg_defpart.yml)
 - [`pg_table_size`](config/collector/810-pg_table_size.yml)
 - [`pg_table_bloat`](config/collector/820-pg_table_bloat.yml)
 - [`pg_index_bloat`](config/collector/830-pg_index_bloat.yml)
@@ -257,7 +258,7 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 
 `pg_exporter` will generate approximately 200~300 metrics for a completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate several 1k ~ 10k metrics. You may need to modify or disable some database-level metrics on a database with several thousand or more tables in order to complete the scrape in time.
 
-Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/conf) dir. and here is a [sample](conf/100-doc.txt) config.
+Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/config) dir. and here is a [sample](config/collector/000-doc.txt) config.
 
 ```yaml
 #################################################################
@@ -471,6 +472,8 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 
 Author: [Vonng](https://vonng.com/en) ([rh@vonng.com](mailto:rh@vonng.com))
 
+Contributors: https://github.com/Vonng/pg_exporter/graphs/contributors
+
 License: [Apache Apache License Version 2.0](LICENSE)
 
-Copyright: 2018-2023 rh@vonng.com
+Copyright: 2018-2024 rh@vonng.com
