@@ -1,14 +1,14 @@
 # PG Exporter
 
-[Prometheus](https://prometheus.io/) [Exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) Server & [Pgbouncer](https://www.pgbouncer.org/) metrics.
+[Prometheus](https://prometheus.io/) [Exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics.
 
-PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty.io) x PostgreSQL, which is a **Battery-Included, Local-First PostgreSQL Distribution as an Open-Source RDS Alternative**: [Demo](https://demo.pigsty.cc) & [Gallery](https://github.com/Vonng/pigsty/wiki/Gallery)
+PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty.io), which is a **Battery-Included, Local-First PostgreSQL Distribution as an Open-Source RDS Alternative**: [Demo](https://demo.pigsty.cc) & [Gallery](https://github.com/Vonng/pigsty/wiki/Gallery)
 
-PG Exporter is fully customizable and extensible. It defines almost all metrics with declarative YAML [configuration](pg_exporter.yml) files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
+PG Exporter is fully **customizable**: it defines almost all metrics with declarative YAML [configuration](pg_exporter.yml) files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
 
 The latest stable version is [`0.6.1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.6.1), which support PostgreSQL 10 ~ 16+ and Pgbouncer 1.8 ~ 1.22+. 
 
-> The `master` branch is under active development with PG 17 support on [`0.7.0-a1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0-a1). Check the [Releasenote](RELEASENOTE.md) for details
+> The `master` branch is under active development with PG 17 support on [`0.7.0-a1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0-a1). Check the [Releasenote](RELEASENOTE.md)
 
 [![pigsty-v2-3](https://github.com/Vonng/pigsty/assets/8587410/ec2b8acb-d564-49ab-b7f0-214da176a7c8)](https://demo.pigsty.cc)
 
@@ -18,14 +18,14 @@ The latest stable version is [`0.6.1`](https://github.com/Vonng/pg_exporter/rele
 
 ## Features
 
-* Support [Pigsty](https://pigsty.cc), the battery-include PostgreSQL distribution with **ultimate observability**.
+* Support [Pigsty](https://pigsty.io), the PostgreSQL distribution with **ultimate observability**.
 * Support both Postgres & Pgbouncer (Pgbouncer is detected when target dbname is `pgbouncer`)
 * Flexible: Almost all metrics are defined in customizable conf files with SQL collector.
 * Schedule: Fine-grained execution control: Timeout, Cache, Skip, Fatality, etc...
 * Dynamic Planning: Define multiple branches for a collector. Install specific branch when server & exporter meet certain conditions.
-* Rich self-monitoring metrics about `pg_exporter` itself.
+* Rich [self-monitoring](https://demo.pigsty.cc/d/pgsql-exporter) metrics about `pg_exporter` itself.
 * Auto-discovery multiple databases, and run database level collectors
-* Tested and verified in a real-world production environment for several years (10K+ cores)
+* Tested and verified in a real-world production environment: 12K+ cores for 5+ years.
 
 
 
@@ -54,7 +54,6 @@ You could use the pre-defined configuration file: [`pg_exporter.yml`](pg_exporte
 ## Usage
 
 Parameters could be given via command-line args or environment variables. 
-
 
 * `--web.listen-address` is the web endpoint listen address, `:9630` by default, this parameter can not be changed via environment variable.
 * `--web.telemetry-path or `PG_EXPORTER_TELEMETRY_PATH` is the URL path under which to expose metrics.
@@ -158,7 +157,7 @@ curl localhost:9630/read
 
 Build on your local machine:
 
-```
+```bash
 go build
 ```
 
@@ -170,11 +169,11 @@ CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o pg_expo
 
 To build a docker image, use:
 
-```
+```bash
 make docker
 ```
 
-Or [download](https://github.com/Vonng/pg_exporter/releases) the latest prebuilt binaries from release pages.
+Or [download](https://github.com/Vonng/pg_exporter/releases) the latest prebuilt binaries, rpms, debs from release pages.
 
 
 
@@ -189,6 +188,7 @@ Redhat rpm and Debian/Ubuntu deb packages is made with `nfpm`.
 * [`/etc/default/pg_exporter`](package/pg_exporter.default): the envs & options
 * [`/etc/pg_exporter.yml`](package/pg_exporter.default): the config file
 
+Which is also available on Pigsty's PGSQL repo.
 
 
 --------------------
@@ -262,16 +262,7 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 
 Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/config/collector) dir. and here is a [sample](config/collector/000-doc.yml) config.
 
-```yaml
-#==============================================================#
-# Author:   Vonng (rh@vonng.com)
-# Desc  :   pg_exporter metrics collector definition
-# Ver   :   PostgreSQL 10~14 pgbouncer 1.9+
-# Ctime :   2019-12-09
-# Mtime :   2024-06-19
-# Copyright (C) 2019-2024 Ruohang Feng
-#==============================================================#
-
+```
 #==============================================================#
 # 1. Config File
 #==============================================================#

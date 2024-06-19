@@ -226,3 +226,13 @@ https://github.com/Vonng/pg_exporter/releases/tag/v0.0.3
 It's ok to try now
 
 https://github.com/Vonng/pg_exporter/releases/tag/v0.0.2
+
+
+
+------
+
+## 0.0.1
+
+Add pgbouncer mode
+
+https://github.com/Vonng/pg_exporter/releases/tag/v0.0.1
