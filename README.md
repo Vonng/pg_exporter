@@ -2,11 +2,13 @@
 
 [Prometheus](https://prometheus.io/) [Exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) Server & [Pgbouncer](https://www.pgbouncer.org/) metrics.
 
-PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty.io) x PostgreSQL, which is a Free RDS PG Alternative and battery-included open-source PostgreSQL distribution: [Demo](https://demo.pigsty.cc) & [Gallery](https://github.com/Vonng/pigsty/wiki/Gallery)
+PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty.io) x PostgreSQL, which is a **Battery-Included, Local-First PostgreSQL Distribution as an Open-Source RDS Alternative**: [Demo](https://demo.pigsty.cc) & [Gallery](https://github.com/Vonng/pigsty/wiki/Gallery)
 
 PG Exporter is fully customizable and extensible. It defines almost all metrics with declarative YAML [configuration](pg_exporter.yml) files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
 
-The latest stable version is [`0.6.1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.6.1), which support PostgreSQL 10 ~ 16+ and Pgbouncer 1.8 ~ 1.22+. The `master` branch is under active development with PG 17 support on [`0.7.0-a1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0-a1). Check the [Releasenote](RELEASENOTE.md)
+The latest stable version is [`0.6.1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.6.1), which support PostgreSQL 10 ~ 16+ and Pgbouncer 1.8 ~ 1.22+. 
+
+> The `master` branch is under active development with PG 17 support on [`0.7.0-a1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0-a1). Check the [Releasenote](RELEASENOTE.md) for details
 
 [![pigsty-v2-3](https://github.com/Vonng/pigsty/assets/8587410/ec2b8acb-d564-49ab-b7f0-214da176a7c8)](https://demo.pigsty.cc)
 
