@@ -1,16 +1,15 @@
-# PostgreSQL/Pgbouncer Metric Collector Definition
-
-##
-# Author:   Vonng (fengruohang@outlook.com)
+#==============================================================#
+# Author:   Vonng (rh@vonng.com)
 # Desc  :   pg_exporter metrics collector definition
 # Ver   :   PostgreSQL 10~14 pgbouncer 1.9+
 # Ctime :   2019-12-09
 # Mtime :   2024-06-19
 # Copyright (C) 2019-2024 Ruohang Feng
+#==============================================================#
 
-##
-# 1. Configuration File
-#
+#==============================================================#
+# 1. Config File
+#==============================================================#
 # The configuration file for pg_exporter is a YAML file.
 # Default configuration are retrieved via following precedence:
 #     1. command line args:      --config=<config path>
@@ -19,25 +18,25 @@
 #     4. /etc/pg_exporter.yml   (config file)
 #     5. /etc/pg_exporter       (config dir)
 
-##
+#==============================================================#
 # 2. Config Format
-#
+#==============================================================#
 # pg_exporter config could be a single YAML file, or a directory containing a series of separated YAML files.
 # each YAML config file is consist of one or more metrics Collector definition. Which are top-level objects
 # If a directory is provided, all YAML in that directory will be merged in alphabetic order.
 # Collector definition examples are shown below.
 
-##
+#==============================================================#
 # 3. Collector Example
-#
+#==============================================================#
 #  # Here is an example of a metrics collector definition
 #  pg_primary_only:       # Collector branch name. Must be UNIQUE among the entire configuration
 #    name: pg             # Collector namespace, used as METRIC PREFIX, set to branch name by default, can be override
-#                               the Same namespace may contain multiple collector branches. It`s the user`s responsibility
-#                               to make sure that AT MOST ONE collector is picked for each namespace.
+#                         # the same namespace may contain multiple collector branches. It`s the user`s responsibility
+#                         # to make sure that AT MOST ONE collector is picked for each namespace.
 #
 #    desc: PostgreSQL basic information (on primary)                 # Collector description
-#    query: |                                                        # SQL string
+#    query: |                                                        # Metrics Query SQL
 #
 #      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
 #             pg_current_wal_lsn() - `0/0`                           AS lsn,
@@ -57,18 +56,20 @@
 #    fatal: false             # Collector marked `fatal` fails, the entire scrape will abort immediately and marked as failed
 #    skip: false              # Collector marked `skip` will not be installed during the planning procedure
 #
-#    tags: [cluster, primary] # list of strings, which could be:
-#                               * `cluster` marks this query as cluster level, so it will only execute once for the same PostgreSQL Server
-#                               * `primary` or `master`  mark this query can only run on a primary instance (WILL NOT execute if pg_is_in_recovery())
-#                               * `standby` or `replica` mark this query can only run on a replica instance (WILL execute if pg_is_in_recovery())
-#                             some special tag prefix have special interpretation:
-#                               * `dbname:<dbname>` means this query will ONLY be executed on database with name `<dbname>`
-#                               * `username:<user>` means this query will only be executed when connect with user `<user>`
-#                               * `extension:<extname>` means this query will only be executed when extension `<extname>` is installed
-#                               * `schema:<nspname>` means this query will only by executed when schema `<nspname>` exist
-#                               * `not:<negtag>` means this query WILL NOT be executed when exporter is tagged with `<negtag>`
-#                               * `<tag>` means this query WILL be executed when exporter is tagged with `<tag>`
-#                               ( <tag> could not be cluster,primary,standby,master,replica,etc...)
+#    tags: [cluster, primary] # Collector tags, used for planning and scheduling
+#
+#    # tags are list of strings, which could be:
+#    #   * `cluster` marks this query as cluster level, so it will only execute once for the same PostgreSQL Server
+#    #   * `primary` or `master`  mark this query can only run on a primary instance (WILL NOT execute if pg_is_in_recovery())
+#    #   * `standby` or `replica` mark this query can only run on a replica instance (WILL execute if pg_is_in_recovery())
+#    # some special tag prefix have special interpretation:
+#    #   * `dbname:<dbname>` means this query will ONLY be executed on database with name `<dbname>`
+#    #   * `username:<user>` means this query will only be executed when connect with user `<user>`
+#    #   * `extension:<extname>` means this query will only be executed when extension `<extname>` is installed
+#    #   * `schema:<nspname>` means this query will only by executed when schema `<nspname>` exist
+#    #   * `not:<negtag>` means this query WILL NOT be executed when exporter is tagged with `<negtag>`
+#    #   * `<tag>` means this query WILL be executed when exporter is tagged with `<tag>`
+#    #   ( <tag> could not be cluster,primary,standby,master,replica,etc...)
 #
 #    # One or more "predicate queries" may be defined for a metric query. These
 #    # are run before the main metric query (after any cache hit check). If all
@@ -78,8 +79,8 @@
 #    # predicate query returns more than one row, a non-boolean result, or fails
 #    # with an error the whole query is marked failed. Predicate queries can be
 #    # used to check for the presence of specific functions, tables, extensions,
-#    # settings, vendor-specific postgres features etc before running the main
-#    # query.
+#    # settings, vendor-specific postgres features etc before running the main query.
+#
 #    predicate_queries:
 #      - name: predicate query name
 #        predicate_query: |
@@ -88,10 +89,10 @@
 #    metrics:                 # List of returned columns, each column must have a `name` and `usage`, `rename` and `description` are optional
 #      - timestamp:           # Column name, should be exactly the same as returned column name
 #          usage: GAUGE       # Metric type, `usage` could be
-#                                    * DISCARD: completely ignoring this field
-#                                    * LABEL:   use columnName=columnValue as a label in metric
-#                                    * GAUGE:   Mark column as a gauge metric, full name will be `<query.name>_<column.name>`
-#                                    * COUNTER: Same as above, except it is a counter rather than a gauge.
+#                                  * DISCARD: completely ignoring this field
+#                                  * LABEL:   use columnName=columnValue as a label in metric
+#                                  * GAUGE:   Mark column as a gauge metric, full name will be `<query.name>_<column.name>`
+#                                  * COUNTER: Same as above, except it is a counter rather than a gauge.
 #          rename: ts         # [OPTIONAL] Alias, optional, the alias will be used instead of the column name
 #          description: xxxx  # [OPTIONAL] Description of the column, will be used as a metric description
 #          default: 0         # [OPTIONAL] Default value, will be used when column is NULL
@@ -120,15 +121,22 @@
 #      - backup_time:
 #          usage: GAUGE
 #          description: seconds since the current backup start. null if don`t have one
-
-##
-# 4. Collector Presets
 #
+#      .... # you can also use rename & scale to customize the metric name and value:
+#      - checkpoint_write_time:
+#          rename: write_time
+#          usage: COUNTER
+#          scale: 1e-3
+#          description: Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk, in seconds
+
+#==============================================================#
+# 4. Collector Presets
+#==============================================================#
 # pg_exporter is shipped with a series of preset collectors (already numbered and ordered by filename)
 #
 # 1xx  Basic metrics:        basic info, metadata, settings
 # 2xx  Replication metrics:  replication, walreceiver, downstream, sync standby, slots, subscription
-# 3xx  Persist metrics:      size, wal, background writer, checkpoint, recovery, cache, shmem usage
+# 3xx  Persist metrics:      size, wal, background writer, checkpointer, ssl, checkpoint, recovery, slru cache, shmem usage
 # 4xx  Activity metrics:     backend count group by state, wait event, locks, xacts, queries
 # 5xx  Progress metrics:     clustering, vacuuming, indexing, basebackup, copy
 # 6xx  Database metrics:     pg_database, publication, subscription
@@ -139,9 +147,9 @@
 # 100-599 Metrics for entire database cluster  (scrape once)
 # 600-899 Metrics for single database instance (scrape for each database ,except for pg_db itself)
 
-##
+#==============================================================#
 # 5. Cache TTL
-#
+#==============================================================#
 # Cache can be used for reducing query overhead, it can be enabled by setting a non-zero value for `ttl`
 # It is highly recommended to use cache to avoid duplicate scrapes. Especially when you got multiple Prometheus
 # scraping the same instance with slow monitoring queries. Setting `ttl` to zero or leaving blank will disable
@@ -151,9 +159,9 @@
 # production environment. Some expensive monitoring queries (such as size/bloat check) will have longer `ttl`
 # which can also be used as a mechanism to achieve `different scrape frequency`
 
-##
+#==============================================================#
 # 6. Query Timeout
-#
+#==============================================================#
 # Collectors can be configured with an optional Timeout. If the collector`s query executes more than that
 # timeout, it will be canceled immediately. Setting the `timeout` to 0 or leaving blank will reset it to
 # default timeout 0.1 (100ms). Setting it to any negative number will disable the query timeout feature.
@@ -162,9 +170,9 @@
 # timeout sum up greater your scrape/cache interval (usually 15s), the queries may still be jammed.
 # or, you can just disable potential slow queries.
 
-##
+#==============================================================#
 # 7. Version Compatibility
-#
+#==============================================================#
 # Each collector has two optional version compatibility parameters: `min_version` and `max_version`.
 # These two parameters specify the version compatibility of the collector. If target postgres/pgbouncer
 # version is less than `min_version`, or higher than `max_version`, the collector will not be installed.
@@ -174,9 +182,9 @@
 # And beware that version compatibility range is left-inclusive right exclusive: [min, max), set to zero or
 # leaving blank will affect as -inf or +inf
 
-##
+#==============================================================#
 # 8. Fatality
-#
+#==============================================================#
 # If a collector is marked with `fatal` falls, the entire scrape operation will be marked as fail and key metrics
 # `pg_up` / `pgbouncer_up` will be reset to 0. It is always a good practice to set up AT LEAST ONE fatal
 # collector for pg_exporter. `pg.pg_primary_only` and `pgbouncer_list` are the default fatal collector.
@@ -184,14 +192,15 @@
 # If a collector without `fatal` flag fails, it will increase global fail counters. But the scrape operation
 # will carry on. The entire scrape result will not be marked as faile, thus will not affect the `<xx>_up` metric.
 
-##
+#==============================================================#
 # 9. Skip
-#
+#==============================================================#
 # Collector with `skip` flag set to true will NOT be installed.
 # This could be a handy option to disable collectors
-#
+
+#==============================================================#
 # 10. Tags and Planning
-#
+#==============================================================#
 # Tags are designed for collector planning & schedule. It can be handy to customize which queries run
 # on which instances. And thus you can use one-single monolith config for multiple environments
 #
