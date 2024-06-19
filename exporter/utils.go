@@ -37,9 +37,7 @@ func configureLogger(levelStr, formatStr string) log.Logger {
 	case "error":
 		lvl = level.AllowError()
 	default:
-		// fallback to default info level
-		// panic("unknown log level: " + levelStr)
-		lvl = level.AllowInfo()
+		lvl = level.AllowInfo() // fallback to default info level
 	}
 
 	logger = level.NewFilter(logger, lvl)
@@ -50,32 +48,32 @@ func configureLogger(levelStr, formatStr string) log.Logger {
 
 // logDebugf will log debug message
 func logDebugf(format string, v ...interface{}) {
-	level.Debug(Logger).Log("msg", fmt.Sprintf(format, v...))
+	_ = level.Debug(Logger).Log("msg", fmt.Sprintf(format, v...))
 }
 
 // logInfof will log info message
 func logInfof(format string, v ...interface{}) {
-	level.Info(Logger).Log("msg", fmt.Sprintf(format, v...))
+	_ = level.Info(Logger).Log("msg", fmt.Sprintf(format, v...))
 }
 
 // logWarnf will log warning message
 func logWarnf(format string, v ...interface{}) {
-	level.Warn(Logger).Log("msg", fmt.Sprintf(format, v...))
+	_ = level.Warn(Logger).Log("msg", fmt.Sprintf(format, v...))
 }
 
 // logErrorf will log error message
 func logErrorf(format string, v ...interface{}) {
-	level.Error(Logger).Log("msg", fmt.Sprintf(format, v...))
+	_ = level.Error(Logger).Log("msg", fmt.Sprintf(format, v...))
 }
 
 // logError will print error message directly
 func logError(msg string) {
-	level.Error(Logger).Log("msg", msg)
+	_ = level.Error(Logger).Log("msg", msg)
 }
 
 // logFatalf will log error message
 func logFatalf(format string, v ...interface{}) {
-	level.Error(Logger).Log("msg", fmt.Sprintf(format, v...))
+	_ = level.Error(Logger).Log("msg", fmt.Sprintf(format, v...))
 }
 
 /* ================ Auxiliaries ================ */
@@ -163,7 +161,7 @@ func castString(t interface{}) string {
 
 // parseConstLabels turn param string into prometheus.Labels
 func parseConstLabels(s string) prometheus.Labels {
-	labels := make(prometheus.Labels, 0)
+	labels := make(prometheus.Labels)
 	s = strings.TrimSpace(s)
 	if len(s) == 0 {
 		return nil

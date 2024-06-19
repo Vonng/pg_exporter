@@ -510,7 +510,7 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 				s.queryScrapeHitCount[query.Name]++
 			}
 		}
-		// TODO add label for which predicate caused skip?
+		// TODO: add label for which predicate caused skip?
 		if len(query.PredicateQueries) > 0 {
 			skipped, _ := query.PredicateSkip()
 			if skipped {

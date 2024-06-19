@@ -3,6 +3,7 @@ package exporter
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"sync"
@@ -112,7 +113,7 @@ func (q *Collector) executePredicateQueries(ctx context.Context) bool {
 		if err != nil {
 			// If a predicate query fails that's treated as a skip, and the err
 			// flag is set so Fatal will be respected if set.
-			if err == context.DeadlineExceeded { // timeout
+			if errors.Is(err, context.DeadlineExceeded) { // timeout
 				q.err = fmt.Errorf("%s timeout because duration %v exceed limit %v",
 					msgPrefix, time.Now().Sub(q.scrapeBegin), q.TimeoutDuration())
 			} else {
@@ -120,7 +121,7 @@ func (q *Collector) executePredicateQueries(ctx context.Context) bool {
 			}
 			return false
 		}
-		defer rows.Close()
+		defer rows.Close() // TODO: defer in a for loop
 
 		// The predicate passes if it returns exactly one row with one column
 		// that is a boolean true.
@@ -132,7 +133,7 @@ func (q *Collector) executePredicateQueries(ctx context.Context) bool {
 			q.err = fmt.Errorf("%s failed because it returned %d columns, expected 1", msgPrefix, len(colTypes))
 		}
 		if colTypes[0].DatabaseTypeName() != "BOOL" {
-			q.err = fmt.Errorf("%s failed because it returned a column of type %s, expected BOOL. Consider a CAST(colname AS boolean) or colname::boolean in the query.", msgPrefix, colTypes[0].DatabaseTypeName())
+			q.err = fmt.Errorf("%s failed because it returned a column of type %s, expect bool. consider a cast(colname as boolean) or colname::boolean in the query", msgPrefix, colTypes[0].DatabaseTypeName())
 		}
 		firstRow := true
 		predicatePass := sql.NullBool{}
@@ -149,7 +150,7 @@ func (q *Collector) executePredicateQueries(ctx context.Context) bool {
 			}
 		}
 		if !(predicatePass.Valid && predicatePass.Bool) {
-			// succesfully executed predicate query requested a skip
+			// successfully executed predicate query requested a skip
 			logDebugf("%s returned false, null or zero rows, skipping query", msgPrefix)
 			return false
 		}
@@ -176,9 +177,9 @@ func (q *Collector) execute() {
 		logDebugf("query [%s] @ server [%s] executing begin", q.Server.Database, q.Name)
 	}
 
-	// Check predicate queries if any
+	// check predicate queries if any
 	if predicatePass := q.executePredicateQueries(ctx); !predicatePass {
-		// predicateSkip and err if appropriate were set as side-effects
+		// predicateSkip and err if appropriate were set as side effects
 		return
 	}
 
@@ -187,7 +188,7 @@ func (q *Collector) execute() {
 
 	// error handling: if query failed because of timeout or error, record and return
 	if err != nil {
-		if err == context.DeadlineExceeded { // timeout
+		if errors.Is(err, context.DeadlineExceeded) { // timeout
 			q.err = fmt.Errorf("query [%s] timeout because duration %v exceed limit %v",
 				q.Name, time.Now().Sub(q.scrapeBegin), q.TimeoutDuration())
 		} else {
@@ -195,7 +196,9 @@ func (q *Collector) execute() {
 		}
 		return
 	}
-	defer rows.Close()
+
+	// close rows
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 
 	// parsing meta:  fetch column metadata for dynamic name lookup
 	columnNames, err := rows.Columns()
@@ -262,7 +265,7 @@ func (q *Collector) execute() {
 
 // makeDescMap will generate descriptor map from Query
 func (q *Collector) makeDescMap() {
-	descriptors := make(map[string]*prometheus.Desc, 0)
+	descriptors := make(map[string]*prometheus.Desc)
 
 	// rename label name if label column have rename option
 	labelNames := make([]string, len(q.LabelNames))
@@ -296,7 +299,7 @@ func (q *Collector) sendDescriptors(ch chan<- *prometheus.Desc) {
 }
 
 // cacheExpired report whether this instance needs actual execution
-// Note you have to using Server.scrapeBegin as "now", and set that timestamp as
+// Note you have to use Server.scrapeBegin as "now", and set that timestamp as
 func (q *Collector) cacheExpired() bool {
 	if q.Server.scrapeBegin.Sub(q.lastScrape) > time.Duration(q.TTL*float64(time.Second)) {
 		return true

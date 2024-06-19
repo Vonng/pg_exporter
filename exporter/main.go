@@ -1,6 +1,7 @@
 package exporter
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -78,7 +79,7 @@ func Reload() error {
 	return nil
 }
 
-// DummyServer reponse with a dummy metrics pg_up 0 or pgbouncer_up 0
+// DummyServer response with a dummy metrics pg_up 0 or pgbouncer_up 0
 func DummyServer() (s *http.Server, exit <-chan bool) {
 	mux := http.NewServeMux()
 	dummyMetricName := `pg_up`
@@ -86,7 +87,7 @@ func DummyServer() (s *http.Server, exit <-chan bool) {
 		dummyMetricName = `pgbouncer_up`
 	}
 	mux.HandleFunc(*metricPath, func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, "# HELP %s last scrape was able to connect to the server: 1 for yes, 0 for no\n# TYPE %s gauge\n%s 0", dummyMetricName, dummyMetricName, dummyMetricName)
+		_, _ = fmt.Fprintf(w, "# HELP %s last scrape was able to connect to the server: 1 for yes, 0 for no\n# TYPE %s gauge\n%s 0", dummyMetricName, dummyMetricName, dummyMetricName)
 	})
 
 	listenAddr := (*webConfig.WebListenAddresses)[0]
@@ -96,7 +97,7 @@ func DummyServer() (s *http.Server, exit <-chan bool) {
 	}
 	exitChan := make(chan bool, 1)
 	go func() {
-		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
+		if err := httpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			logDebugf("shutdown dummy server")
 		}
 		exitChan <- true
@@ -206,14 +207,11 @@ func Run() {
 	<-closeChan
 	http.Handle(*metricPath, promhttp.Handler())
 
-	logInfof("pg_exporter for %s start, listen on http://%s%s", ShadowPGURL(*pgURL), listenAddr, *metricPath)
+	logInfof("pg_exporter for %s start, listen on %s%s", ShadowPGURL(*pgURL), listenAddr, *metricPath)
 
 	srv := &http.Server{}
 	if err := web.ListenAndServe(srv, webConfig, Logger); err != nil {
 		logFatalf("http server failed: %s", err.Error())
 	}
 
-	//if err = http.ListenAndServe(*listenAddress, nil); err != nil {
-	//	logFatalf("http server failed: %s", err.Error())
-	//}
 }

@@ -351,7 +351,7 @@ func (e *Exporter) collectInternalMetrics(ch chan<- prometheus.Metric) {
 // NewExporter construct a PG Exporter instance for given dsn
 func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 	e = &Exporter{dsn: dsn}
-	e.servers = make(map[string]*Server, 0)
+	e.servers = make(map[string]*Server)
 	for _, opt := range opts {
 		opt(e)
 	}
@@ -425,10 +425,10 @@ func (e *Exporter) OnDatabaseChange(change map[string]bool) {
 			}
 		}
 		if add {
-			// TODO: spawn new server
+			// spawn new server
 			e.CreateServer(dbname)
 		} else {
-			// TODO: close old server
+			// close old server
 			e.RemoveServer(dbname)
 		}
 	}

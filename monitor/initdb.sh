@@ -6,7 +6,7 @@ set -euo pipefail
 # Desc      :   initdb.sh
 # Path      :   /pg/bin/initdb.sh
 # Depend    :   CentOS 7
-# Author    :   Vonng(fengruohang@outlook.com)
+# Author    :   Vonng(rh@vonng.com)
 # Note      :   Run this as dbsu (postgres)
 #==============================================================#
 PROG_NAME="$(basename $0))"
