@@ -1,6 +1,6 @@
 #==============================================================#
 # File      :   Makefile
-# Mtime     :   2024-01-26
+# Mtime     :   2024-06-19
 # Copyright (C) 2018-2022 Ruohang Feng
 #==============================================================#
 
@@ -105,10 +105,10 @@ uninstall:
 	sudo rm -rf /usr/bin/pg_exporter
 
 run:
-	go run main.go --log.level=Info --config=pg_exporter.yml --auto-discovery
+	go run main.go --log.level=info --config=pg_exporter.yml --auto-discovery
 
 debug:
-	go run main.go --log.level=Debug --config=pg_exporter.yml --auto-discovery
+	go run main.go --log.level=debug --config=pg_exporter.yml --auto-discovery
 
 curl:
 	curl localhost:9630/metrics | grep -v '#' | grep pg_
