@@ -3,7 +3,6 @@ package exporter
 import (
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -33,7 +32,7 @@ func GetConfig() (res string) {
 
 // ParseConfig turn config content into Query struct
 func ParseConfig(content []byte) (queries map[string]*Query, err error) {
-	queries = make(map[string]*Query, 0)
+	queries = make(map[string]*Query)
 	if err = yaml.Unmarshal(content, &queries); err != nil {
 		return nil, fmt.Errorf("malformed config: %w", err)
 	}
@@ -96,7 +95,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 		return nil, fmt.Errorf("invalid config path: %s: %w", configPath, err)
 	}
 	if stat.IsDir() { // recursively iterate conf files if a dir is given
-		files, err := ioutil.ReadDir(configPath)
+		files, err := os.ReadDir(configPath)
 		if err != nil {
 			return nil, fmt.Errorf("fail reading config dir: %s: %w", configPath, err)
 		}
@@ -112,7 +111,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 
 		// make global config map and assign priority according to config file alphabetic orders
 		// priority is an integer range from 1 to 999, where 1 - 99 is reserved for user
-		queries = make(map[string]*Query, 0)
+		queries = make(map[string]*Query)
 		var queryCount, configCount int
 		for _, confPath := range confFiles {
 			if singleQueries, err := LoadConfig(confPath); err != nil {
@@ -133,7 +132,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 	}
 
 	// single file case: recursive exit condition
-	content, err := ioutil.ReadFile(configPath)
+	content, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("fail reading config file %s: %w", configPath, err)
 	}
@@ -145,7 +144,7 @@ func LoadConfig(configPath string) (queries map[string]*Query, err error) {
 		q.Path = stat.Name()
 		q.Branch = branch
 		// if timeout is not set, set to 100ms by default
-		// if timeout is set to a neg number, set to 0 so it's actually disabled
+		// if timeout is set to a neg number, set to 0, so it's actually disabled
 		if q.Timeout == 0 {
 			q.Timeout = 0.1
 		}

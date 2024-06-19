@@ -8,9 +8,7 @@ import (
 	"time"
 )
 
-/**********************************************************************************************\
-*                                        Exporter                                              *
-\**********************************************************************************************/
+/* ================ Exporter ================ */
 
 // Exporter implement prometheus.Collector interface
 // exporter contains one or more (auto-discover-database) servers that can scrape metrics with Query
@@ -57,13 +55,13 @@ type Exporter struct {
 	serverScrapeTotalCount   *prometheus.GaugeVec // {datname} database level how many metrics scraped from server
 	serverScrapeErrorCount   *prometheus.GaugeVec // {datname} database level: how many error occurs when scraping server
 
-	queryCacheTTL          *prometheus.GaugeVec // {datname,query} query cache ttl
-	queryScrapeTotalCount  *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
-	queryScrapeErrorCount  *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
+	queryCacheTTL                 *prometheus.GaugeVec // {datname,query} query cache ttl
+	queryScrapeTotalCount         *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
+	queryScrapeErrorCount         *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
 	queryScrapePredicateSkipCount *prometheus.GaugeVec // {datname,query} query level: how many times was the query skipped due to predicate
-	queryScrapeDuration    *prometheus.GaugeVec // {datname,query} query level: how many seconds the query spends?
-	queryScrapeMetricCount *prometheus.GaugeVec // {datname,query} query level: how many metrics the query returns?
-	queryScrapeHitCount    *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
+	queryScrapeDuration           *prometheus.GaugeVec // {datname,query} query level: how many seconds the query spends?
+	queryScrapeMetricCount        *prometheus.GaugeVec // {datname,query} query level: how many metrics the query returns?
+	queryScrapeHitCount           *prometheus.GaugeVec // {datname,query} query level: how many errors the query triggers?
 
 }
 
@@ -348,9 +346,7 @@ func (e *Exporter) collectInternalMetrics(ch chan<- prometheus.Metric) {
 	e.queryScrapeHitCount.Collect(ch)
 }
 
-/**************************************************************\
-* Exporter Creation
-\**************************************************************/
+/* ================ Exporter Creation ================ */
 
 // NewExporter construct a PG Exporter instance for given dsn
 func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
@@ -571,9 +567,8 @@ func WithConnectTimeout(timeout int) ExporterOpt {
 	}
 }
 
-/**************************************************************\
-* Exporter REST API
-\**************************************************************/
+/* ================ Exporter RESTAPI ================ */
+
 // ExplainFunc expose explain document
 func (e *Exporter) ExplainFunc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")

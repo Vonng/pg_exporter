@@ -5,8 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jackc/pgx/v5/pgtype"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/prometheus/client_golang/prometheus"
 	"html/template"
 	"regexp"
@@ -17,16 +17,10 @@ import (
 	"time"
 )
 
-/*
-*********************************************************************************************\
-*                                       Const                                                  *
-\*********************************************************************************************
-*/
+/* ================ Const ================ */
 const connMaxLifeTime = 1 * time.Minute // close connection after 1 minute to avoid conn leak
 
-/**********************************************************************************************\
-*                                       Server                                                 *
-\**********************************************************************************************/
+/* ================ Server ================ */
 
 // Server represent a postgres connection, with additional fact, conf, runtime info
 type Server struct {
@@ -74,13 +68,13 @@ type Server struct {
 	totalCount  float64   // total scrape count on this server
 	totalTime   float64   // total time spend on scraping
 
-	queryCacheTTL          map[string]float64 // internal query metrics: cache time to live
-	queryScrapeTotalCount  map[string]float64 // internal query metrics: total executed
-	queryScrapeHitCount    map[string]float64 // internal query metrics: times serving from hit cache
-	queryScrapeErrorCount  map[string]float64 // internal query metrics: times failed
-	queryScrapePredicateSkipCount  map[string]float64 // internal query metrics: times skipped due to predicate
-	queryScrapeMetricCount map[string]float64 // internal query metrics: number of metrics scraped
-	queryScrapeDuration    map[string]float64 // internal query metrics: time spend on executing
+	queryCacheTTL                 map[string]float64 // internal query metrics: cache time to live
+	queryScrapeTotalCount         map[string]float64 // internal query metrics: total executed
+	queryScrapeHitCount           map[string]float64 // internal query metrics: times serving from hit cache
+	queryScrapeErrorCount         map[string]float64 // internal query metrics: times failed
+	queryScrapePredicateSkipCount map[string]float64 // internal query metrics: times skipped due to predicate
+	queryScrapeMetricCount        map[string]float64 // internal query metrics: number of metrics scraped
+	queryScrapeDuration           map[string]float64 // internal query metrics: time spend on executing
 }
 
 func (s *Server) GetConnectTimeout() time.Duration {
@@ -166,7 +160,7 @@ func ParseSemver(semverStr string) int {
 }
 
 // PostgresPrecheck checks postgres connection and gathering facts
-// if any important fact changed, it will triggers a plan before next scrape
+// if any important fact changed, it will trigger a plan before next scrape
 func PostgresPrecheck(s *Server) (err error) {
 	if s.DB == nil { // if db is not initialized, create a new DB
 		if s.DB, err = sql.Open("pgx", s.dsn); err != nil {
@@ -271,7 +265,7 @@ func PostgresPrecheck(s *Server) (err error) {
 func (s *Server) Plan(queries ...*Query) {
 	// if queries are explicitly given, use it instead of server.queries
 	if len(queries) > 0 {
-		newQueries := make(map[string]*Query, 0)
+		newQueries := make(map[string]*Query)
 		for _, q := range queries {
 			newQueries[q.Name] = q
 		}
@@ -564,9 +558,7 @@ func (s *Server) Uptime() float64 {
 	return time.Now().Sub(s.serverInit).Seconds()
 }
 
-/**************************************************************\
-* Server Creation
-\**************************************************************/
+/* ================ Server Creation ================ */
 
 // NewServer will check dsn, but not trying to connect
 func NewServer(dsn string, opts ...ServerOpt) *Server {
@@ -619,7 +611,7 @@ func WithQueries(queries map[string]*Query) ServerOpt {
 	}
 }
 
-// WithClusterQueryDisabled will marks server only execute query without cluster tag
+// WithServerTags will mark server only execute query without cluster tag
 func WithServerTags(tags []string) ServerOpt {
 	return func(s *Server) {
 		s.Tags = tags

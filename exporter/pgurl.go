@@ -1,13 +1,12 @@
 package exporter
 
 import (
-	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
 )
 
-// GetPGURL will retrive, parse, modify postgres connection string
+// GetPGURL will retrieve, parse, modify postgres connection string
 func GetPGURL() string {
 	return ProcessPGURL(RetrievePGURL())
 }
@@ -36,7 +35,7 @@ func RetrievePGURL() (res string) {
 	}
 	// file content from file PG_EXPORTER_URL_FILE
 	if filename := os.Getenv("PG_EXPORTER_URL_FILE"); filename != "" {
-		if fileContents, err := ioutil.ReadFile(filename); err != nil {
+		if fileContents, err := os.ReadFile(filename); err != nil {
 			logFatalf("PG_EXPORTER_URL_FILE=%s is specified, fail loading url, exit", err.Error())
 			os.Exit(-1)
 		} else {
@@ -87,6 +86,7 @@ func ShadowPGURL(pgurl string) string {
 		logFatalf("Could not parse connection string %s", err.Error())
 		os.Exit(-1)
 	}
+
 	// We need to handle two cases:
 	// 1. The password is in the format postgresql://localhost:5432/postgres?sslmode=disable&user=<user>&password=<pass>
 	// 2. The password is in the format postgresql://<user>:<pass>@localhost:5432/postgres?sslmode=disable

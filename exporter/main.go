@@ -173,7 +173,7 @@ func Run() {
 		}
 	}()
 
-	/*************** REST API ***************/
+	/* ================ REST API ================ */
 	// basic
 	http.HandleFunc("/", TitleFunc)
 	http.HandleFunc("/version", VersionFunc)

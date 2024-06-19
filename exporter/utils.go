@@ -27,7 +27,7 @@ func configureLogger(levelStr, formatStr string) log.Logger {
 	}
 
 	var lvl level.Option
-	switch levelStr {
+	switch strings.ToLower(levelStr) {
 	case "debug":
 		lvl = level.AllowDebug()
 	case "info":
@@ -37,7 +37,9 @@ func configureLogger(levelStr, formatStr string) log.Logger {
 	case "error":
 		lvl = level.AllowError()
 	default:
-		panic("unknown log level: " + levelStr)
+		// fallback to default info level
+		// panic("unknown log level: " + levelStr)
+		lvl = level.AllowInfo()
 	}
 
 	logger = level.NewFilter(logger, lvl)
@@ -51,7 +53,7 @@ func logDebugf(format string, v ...interface{}) {
 	level.Debug(Logger).Log("msg", fmt.Sprintf(format, v...))
 }
 
-// Infof will log info message
+// logInfof will log info message
 func logInfof(format string, v ...interface{}) {
 	level.Info(Logger).Log("msg", fmt.Sprintf(format, v...))
 }

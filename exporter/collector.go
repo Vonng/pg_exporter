@@ -9,9 +9,7 @@ import (
 	"time"
 )
 
-/**********************************************************************************************\
-*                                   Query Instance                                             *
-\**********************************************************************************************/
+/* ================ Collector ================ */
 
 // Collector holds runtime information of a Query running on a Server
 // It is deeply coupled with Server. Besides, it can be a collector itself
@@ -20,12 +18,12 @@ type Collector struct {
 	Server *Server // It's a query, but holds a server
 
 	// runtime information
-	lock        sync.RWMutex                // scrape lock
-	result      []prometheus.Metric         // cached metrics
-	descriptors map[string]*prometheus.Desc // maps column index to descriptor, build on init
-	cacheHit    bool                        // indicate last scrape was served from cache or real execution
-	predicateSkip string                    // if nonempty, predicate query caused skip of this scrape
-	err         error
+	lock          sync.RWMutex                // scrape lock
+	result        []prometheus.Metric         // cached metrics
+	descriptors   map[string]*prometheus.Desc // maps column index to descriptor, build on init
+	cacheHit      bool                        // indicate last scrape was served from cache or real execution
+	predicateSkip string                      // if nonempty, predicate query caused skip of this scrape
+	err           error
 
 	// stats
 	lastScrape     time.Time     // SERVER's scrape start time (for cache window align)
@@ -80,8 +78,7 @@ func (q *Collector) Error() error {
 	return q.err
 }
 
-// Did the last scrape skip due to predicate query and if so which predicate
-// query caused the skip?
+// PredicateSkip tells the last scrape skip due to predicate query and if so which predicate query caused the skip?
 func (q *Collector) PredicateSkip() (bool, string) {
 	return q.predicateSkip != "", q.predicateSkip
 }
@@ -140,7 +137,7 @@ func (q *Collector) executePredicateQueries(ctx context.Context) bool {
 		firstRow := true
 		predicatePass := sql.NullBool{}
 		for rows.Next() {
-			if ! firstRow {
+			if !firstRow {
 				q.err = fmt.Errorf("%s failed because it returned more than one row", msgPrefix)
 				return false
 			}
@@ -151,7 +148,7 @@ func (q *Collector) executePredicateQueries(ctx context.Context) bool {
 				return false
 			}
 		}
-		if ! (predicatePass.Valid && predicatePass.Bool) {
+		if !(predicatePass.Valid && predicatePass.Bool) {
 			// succesfully executed predicate query requested a skip
 			logDebugf("%s returned false, null or zero rows, skipping query", msgPrefix)
 			return false
@@ -261,9 +258,7 @@ func (q *Collector) execute() {
 	return
 }
 
-/**************************************************************\
-* Query Instance Auxiliary
-\**************************************************************/
+/* ================ Collector Auxiliary ================ */
 
 // makeDescMap will generate descriptor map from Query
 func (q *Collector) makeDescMap() {

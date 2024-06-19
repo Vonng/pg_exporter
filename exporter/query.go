@@ -8,27 +8,25 @@ import (
 	"time"
 )
 
-/**********************************************************************************************\
-*                                       Query                                                  *
-\**********************************************************************************************/
+/* ================ Query ================ */
 
 // Query hold the information of how to fetch metric and parse them
 type Query struct {
-	Name   string `yaml:"name,omitempty"`  // actual query name, used as metric prefix
-	Desc   string `yaml:"desc,omitempty"`  // description of this metric query
-	SQL    string `yaml:"query"` // SQL command to fetch metrics
+	Name             string           `yaml:"name,omitempty"`              // actual query name, used as metric prefix
+	Desc             string           `yaml:"desc,omitempty"`              // description of this metric query
+	SQL              string           `yaml:"query"`                       // SQL command to fetch metrics
 	PredicateQueries []PredicateQuery `yaml:"predicate_queries,omitempty"` // SQL command to filter metrics
-	Branch string `yaml:"-"`     // branch name, top layer key of config file
+	Branch           string           `yaml:"-"`                           // branch name, top layer key of config file
 
 	// control query behaviour
-	Tags       []string `yaml:"tags,omitempty"`               // tags are used for execution control
-	TTL        float64  `yaml:"ttl,omitempty"`                // caching ttl in seconds
-	Timeout    float64  `yaml:"timeout,omitempty"`            // query execution timeout in seconds
-	Priority   int      `yaml:"priority,omitempty"` // execution priority, from 1 to 999
-	MinVersion int      `yaml:"min_version,omitempty"`        // minimal supported version, include
-	MaxVersion int      `yaml:"max_version,omitempty"`        // maximal supported version, not include
-	Fatal      bool     `yaml:"fatal,omitempty"`              // if query marked fatal fail, entire scrape will fail
-	Skip       bool     `yaml:"skip,omitempty"`               // if query marked skip, it will be omit while loading
+	Tags       []string `yaml:"tags,omitempty"`        // tags are used for execution control
+	TTL        float64  `yaml:"ttl,omitempty"`         // caching ttl in seconds
+	Timeout    float64  `yaml:"timeout,omitempty"`     // query execution timeout in seconds
+	Priority   int      `yaml:"priority,omitempty"`    // execution priority, from 1 to 999
+	MinVersion int      `yaml:"min_version,omitempty"` // minimal supported version, include
+	MaxVersion int      `yaml:"max_version,omitempty"` // maximal supported version, not include
+	Fatal      bool     `yaml:"fatal,omitempty"`       // if query marked fatal fail, entire scrape will fail
+	Skip       bool     `yaml:"skip,omitempty"`        // if query marked skip, it will be omit while loading
 
 	Metrics []map[string]*Column `yaml:"metrics"` // metric definition list
 
@@ -43,9 +41,9 @@ type Query struct {
 // A PredicateQuery is a query that returns a 1-column resultset that's used to decide whether
 // to run the main query.
 type PredicateQuery struct {
-	Name        string             `yaml:"name,omitempty"`   // predicate query name, only used for logging
-	SQL         string             `yaml:"predicate_query"`  // SQL command to return a predicate
-	TTL         float64            `yaml:"ttl,omitempty"`    // How long to cache results for
+	Name string  `yaml:"name,omitempty"`  // predicate query name, only used for logging
+	SQL  string  `yaml:"predicate_query"` // SQL command to return a predicate
+	TTL  float64 `yaml:"ttl,omitempty"`   // How long to cache results for
 }
 
 var queryTemplate, _ = template.New("Query").Parse(`##
