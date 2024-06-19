@@ -1,0 +1,121 @@
+##
+# SYNOPSIS
+#       pg_checkpointer_*
+#
+# DESCRIPTION
+#       PostgreSQL checkpointer writer metrics
+#
+# OPTIONS
+#       Tags       [cluster]
+#       TTL        10
+#       Priority   0
+#       Timeout    100ms
+#       Fatal      false
+#       Version    170000 ~ higher
+#       Source     331-pg_checkpointer.yml
+#
+# METRICS
+#       timed (COUNTER)
+#           Number of scheduled checkpoints that have been performed
+#       req (COUNTER)
+#           Number of requested checkpoints that have been performed
+#       restartpoints_timed (COUNTER)
+#           Number of scheduled restartpoints due to timeout or after a failed attempt to perform it
+#       restartpoints_req (COUNTER)
+#           Number of requested restartpoints
+#       restartpoints_done (COUNTER)
+#           Number of restartpoints that have been performed
+#       write_time (COUNTER)
+#           Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk, in seconds
+#       sync_time (COUNTER)
+#           Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk, in seconds
+#       buffers_written (COUNTER)
+#           Number of buffers written during checkpoints and restartpoints
+#       reset_time (COUNTER)
+#           Time at which bgwriter statistics were last reset
+#
+
+pg_checkpointer_17:
+  name: pg_checkpointer
+  desc: "PostgreSQL checkpointer stat metrics (PG 17+)"
+  # https://www.postgresql.org/docs/devel/monitoring-stats.html#MONITORING-PG-STAT-CHECKPOINTER-VIEW
+  query: SELECT num_timed, num_requested, restartpoints_timed, restartpoints_req, restartpoints_done, write_time, sync_time, buffers_written, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_checkpointer;
+
+  ttl: 10
+  min_version: 170000
+  tags:
+    - cluster
+
+  metrics:
+    - num_timed:
+        usage: COUNTER
+        rename: timed
+        description: Number of scheduled checkpoints that have been performed
+    - num_requested:
+        rename: req
+        usage: COUNTER
+        description: Number of requested checkpoints that have been performed
+    - restartpoints_timed:
+        usage: COUNTER
+        description: Number of scheduled restartpoints due to timeout or after a failed attempt to perform it
+    - restartpoints_req:
+        usage: COUNTER
+        description: Number of requested restartpoints
+    - restartpoints_done:
+        usage: COUNTER
+        description: Number of restartpoints that have been performed
+    - write_time:
+        usage: COUNTER
+        scale: 1e-3
+        description: Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk, in seconds
+    - sync_time:
+        usage: COUNTER
+        scale: 1e-3
+        description: Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk, in seconds
+    - buffers_written:
+        usage: COUNTER
+        description: Number of buffers written during checkpoints and restartpoints
+    - reset_time:
+        usage: COUNTER
+        description: Time at which checkpointer statistics were last reset
+
+
+pg_checkpointer_94_16:
+  name: pg_checkpointer
+  desc: "PostgreSQL checkpointer stat metrics (PG 16-)"
+  # https://pgpedia.info/p/pg_stat_bgwriter.html
+  query: SELECT checkpoints_timed, checkpoints_req, checkpoint_write_time, checkpoint_sync_time, buffers_checkpoint, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_bgwriter;
+
+  ttl: 10
+  min_version: 090400
+  max_version: 170000
+  tags:
+    - cluster
+
+  metrics:
+    - checkpoints_timed:
+        usage: COUNTER
+        rename: timed
+        description: Number of scheduled checkpoints that have been performed
+    - checkpoints_req:
+        usage: COUNTER
+        rename: req
+        description: Number of requested checkpoints that have been performed
+    - checkpoint_write_time:
+        rename: write_time
+        usage: COUNTER
+        scale: 1e-3
+        description: Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk, in seconds
+    - checkpoint_sync_time:
+        usage: COUNTER
+        rename: sync_time
+        scale: 1e-3
+        description: Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk, in seconds
+    - buffers_checkpoint:
+        usage: COUNTER
+        rename: buffers_written
+        description: Number of buffers written during checkpoints and restartpoints
+    - reset_time:
+        usage: COUNTER
+        description: Time at which checkpointer statistics were last reset
+
