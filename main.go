@@ -1,5 +1,6 @@
 /***********************************************************************\
-Copyright © 2022 Ruohang Feng <rh@vonng.com>
+Copyright © 2019-2024 Ruohang Feng <rh@vonng.com>
+Contributors: https://github.com/Vonng/pigsty/graphs/contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
