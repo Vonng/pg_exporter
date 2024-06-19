@@ -26,9 +26,9 @@
 #       pages (GAUGE)
 #           Size of the on-disk representation of this table in pages
 #       tuples (COUNTER)
-#           All txid before this have been forzen on this table
+#           All txid before this have been frozen on this table
 #       frozenxid (COUNTER)
-#           All txid before this have been forzen on this table
+#           All txid before this have been frozen on this table
 #       age (GAUGE)
 #           Age of this table in vacuum cycles
 #       ncols (GAUGE)
