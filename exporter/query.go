@@ -14,21 +14,21 @@ import (
 
 // Query hold the information of how to fetch metric and parse them
 type Query struct {
-	Name   string `yaml:"name"`  // actual query name, used as metric prefix
-	Desc   string `yaml:"desc"`  // description of this metric query
+	Name   string `yaml:"name,omitempty"`  // actual query name, used as metric prefix
+	Desc   string `yaml:"desc,omitempty"`  // description of this metric query
 	SQL    string `yaml:"query"` // SQL command to fetch metrics
 	PredicateQueries []PredicateQuery `yaml:"predicate_queries,omitempty"` // SQL command to filter metrics
 	Branch string `yaml:"-"`     // branch name, top layer key of config file
 
 	// control query behaviour
-	Tags       []string `yaml:"tags"`               // tags are used for execution control
-	TTL        float64  `yaml:"ttl"`                // caching ttl in seconds
-	Timeout    float64  `yaml:"timeout"`            // query execution timeout in seconds
+	Tags       []string `yaml:"tags,omitempty"`               // tags are used for execution control
+	TTL        float64  `yaml:"ttl,omitempty"`                // caching ttl in seconds
+	Timeout    float64  `yaml:"timeout,omitempty"`            // query execution timeout in seconds
 	Priority   int      `yaml:"priority,omitempty"` // execution priority, from 1 to 999
-	MinVersion int      `yaml:"min_version"`        // minimal supported version, include
-	MaxVersion int      `yaml:"max_version"`        // maximal supported version, not include
-	Fatal      bool     `yaml:"fatal"`              // if query marked fatal fail, entire scrape will fail
-	Skip       bool     `yaml:"skip"`               // if query marked skip, it will be omit while loading
+	MinVersion int      `yaml:"min_version,omitempty"`        // minimal supported version, include
+	MaxVersion int      `yaml:"max_version,omitempty"`        // maximal supported version, not include
+	Fatal      bool     `yaml:"fatal,omitempty"`              // if query marked fatal fail, entire scrape will fail
+	Skip       bool     `yaml:"skip,omitempty"`               // if query marked skip, it will be omit while loading
 
 	Metrics []map[string]*Column `yaml:"metrics"` // metric definition list
 

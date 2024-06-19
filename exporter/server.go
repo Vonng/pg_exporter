@@ -5,7 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/prometheus/client_golang/prometheus"
 	"html/template"
 	"regexp"
@@ -78,7 +79,7 @@ type Server struct {
 	queryScrapeHitCount    map[string]float64 // internal query metrics: times serving from hit cache
 	queryScrapeErrorCount  map[string]float64 // internal query metrics: times failed
 	queryScrapePredicateSkipCount  map[string]float64 // internal query metrics: times skipped due to predicate
-	queryScrapeMetricCount map[string]float64 // internal query metrics: number of metrics scrapped
+	queryScrapeMetricCount map[string]float64 // internal query metrics: number of metrics scraped
 	queryScrapeDuration    map[string]float64 // internal query metrics: time spend on executing
 }
 
@@ -110,7 +111,7 @@ func (s *Server) Check() error {
 // PgbouncerPrecheck checks pgbouncer connection before scrape
 func PgbouncerPrecheck(s *Server) (err error) {
 	if s.DB == nil { // if db is not initialized, create a new DB
-		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
+		if s.DB, err = sql.Open("pgx", s.dsn); err != nil {
 			s.UP = false
 			return
 		}
@@ -168,7 +169,7 @@ func ParseSemver(semverStr string) int {
 // if any important fact changed, it will triggers a plan before next scrape
 func PostgresPrecheck(s *Server) (err error) {
 	if s.DB == nil { // if db is not initialized, create a new DB
-		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
+		if s.DB, err = sql.Open("pgx", s.dsn); err != nil {
 			s.UP = false
 			return
 		}
@@ -203,14 +204,14 @@ func PostgresPrecheck(s *Server) (err error) {
 	var recovery bool
 	var datname, username string
 	var databases, namespaces, extensions []string
-	precheckSQL := `SELECT current_catalog, current_user, pg_is_in_recovery(),       
-	(SELECT array_agg(datname) AS databases FROM pg_database),
-	(SELECT array_agg(nspname) AS namespaces FROM pg_namespace),
-	(SELECT array_agg(extname) AS extensions FROM pg_extension);`
+	precheckSQL := `SELECT current_catalog, current_user, pg_catalog.pg_is_in_recovery(),
+	(SELECT pg_catalog.array_agg(d.datname)::text[] AS databases FROM pg_catalog.pg_database d WHERE d.datallowconn AND NOT d.datistemplate),
+	(SELECT pg_catalog.array_agg(n.nspname)::text[] AS namespaces FROM pg_catalog.pg_namespace n),
+	(SELECT pg_catalog.array_agg(e.extname)::text[] AS extensions FROM pg_catalog.pg_extension e);`
 	ctx, cancel2 := context.WithTimeout(context.Background(), s.GetConnectTimeout())
 	defer cancel2()
-	//if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, &databases, &namespaces, &extensions); err != nil {
-	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions)); err != nil {
+	m := pgtype.NewMap()
+	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, m.SQLScanner(&databases), m.SQLScanner(&namespaces), m.SQLScanner(&extensions)); err != nil {
 		s.UP = false
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
@@ -533,10 +534,10 @@ final:
 	if s.err != nil {
 		s.UP = false
 		s.errorCount++
-		logErrorf("fail scrapping server [%s]: %s", s.Name(), s.err.Error())
+		logErrorf("fail scraping server [%s]: %s", s.Name(), s.err.Error())
 	} else {
 		s.UP = true
-		logDebugf("server [%s] scrapped in %v",
+		logDebugf("server [%s] scraped in %v",
 			s.Name(), s.scrapeDone.Sub(s.scrapeBegin).Seconds())
 	}
 }

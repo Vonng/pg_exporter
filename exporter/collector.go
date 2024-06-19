@@ -70,7 +70,7 @@ func (q *Collector) Collect(ch chan<- prometheus.Metric) {
 	q.sendMetrics(ch) // the cache is already reset to zero even execute failed
 }
 
-// ResultSize report last scrapped metric count
+// ResultSize report last scraped metric count
 func (q *Collector) ResultSize() int {
 	return len(q.result)
 }

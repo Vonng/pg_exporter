@@ -38,14 +38,40 @@
 #       reset_time (COUNTER)
 #           Time at which bgwriter statistics were last reset
 #
-pg_bgwriter:
+pg_bgwriter_17:
   name: pg_bgwriter
-  desc: "PostgreSQL background writer metrics"
+  desc: "PostgreSQL background writer metrics PG 17+"
+  # https://pgpedia.info/p/pg_stat_bgwriter.html
+  query: SELECT buffers_clean, maxwritten_clean, buffers_alloc, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_bgwriter;
+
+  ttl: 10
+  min_version: 170000
+  tags:
+    - cluster
+  metrics:
+    - buffers_clean:
+        usage: COUNTER
+        description: Number of buffers written by the background writer
+    - maxwritten_clean:
+        usage: COUNTER
+        description: Number of times the background writer stopped a cleaning scan because it had written too many buffers
+    - buffers_alloc:
+        usage: COUNTER
+        description: Number of buffers allocated
+    - reset_time:
+        usage: COUNTER
+        description: Time at which bgwriter statistics were last reset
+
+
+pg_bgwriter_16:
+  name: pg_bgwriter
+  desc: "PostgreSQL background writer metrics (PG17-)"
   # https://pgpedia.info/p/pg_stat_bgwriter.html
   query: SELECT checkpoints_timed, checkpoints_req, checkpoint_write_time, checkpoint_sync_time, buffers_checkpoint, buffers_clean, buffers_backend, maxwritten_clean, buffers_backend_fsync, buffers_alloc, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_bgwriter;
 
   ttl: 10
   min_version: 090400
+  max_version: 170000
   tags:
     - cluster
 
