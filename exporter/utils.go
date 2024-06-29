@@ -41,8 +41,7 @@ func configureLogger(levelStr, formatStr string) log.Logger {
 	}
 
 	logger = level.NewFilter(logger, lvl)
-	logger = log.With(logger, "timestamp", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
-
+	logger = log.With(logger, "timestamp", log.DefaultTimestampUTC, "caller", log.Caller(4))
 	return logger
 }
 
