@@ -241,7 +241,7 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 - [`pg_clustering`](config/collector/530-pg_clustering.yml)
 - [`pg_backup`](config/collector/540-pg_backup.yml)
 - [`pg_db`](config/collector/610-pg_db.yml)
-- [`pg_db_conf`](config/collector/620-pg_db_conf.yml)
+- [`pg_db_confl`](config/collector/620-pg_db_confl.yml)
 - [`pg_pubrel`](config/collector/640-pg_pubrel.yml)
 - [`pg_subrel`](config/collector/650-pg_subrel.yml)
 - [`pg_table`](config/collector/700-pg_table.yml)
