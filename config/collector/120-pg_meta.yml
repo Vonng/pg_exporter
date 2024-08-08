@@ -30,9 +30,9 @@
 #       wal_level (LABEL)
 #           wal level
 #       version (LABEL)
-#           server version in human readable format
+#           server version in human-readable format
 #       ver_num (LABEL)
-#           server version number in machine readable format
+#           server version number in machine-readable format
 #       extensions (LABEL)
 #           server installed preload libraries
 #       primary_conninfo (LABEL)
@@ -86,10 +86,10 @@ pg_meta:
         description: wal level
     - version:
         usage: LABEL
-        description: server version in human readable format
+        description: server version in human-readable format
     - ver_num:
         usage: LABEL
-        description: server version number in machine readable format
+        description: server version number in machine-readable format
     - extensions:
         usage: LABEL
         description: server installed preload libraries
@@ -132,9 +132,9 @@ pg_meta:
 #       wal_level (LABEL)
 #           wal level
 #       version (LABEL)
-#           server version in human readable format
+#           server version in human-readable format
 #       ver_num (LABEL)
-#           server version number in machine readable format
+#           server version number in machine-readable format
 #       extensions (LABEL)
 #           server installed preload libraries
 #       primary_conninfo (LABEL)
@@ -187,10 +187,10 @@ pg_meta_13:
         description: wal level
     - version:
         usage: LABEL
-        description: server version in human readable format
+        description: server version in human-readable format
     - ver_num:
         usage: LABEL
-        description: server version number in machine readable format
+        description: server version number in machine-readable format
     - extensions:
         usage: LABEL
         description: server installed preload libraries

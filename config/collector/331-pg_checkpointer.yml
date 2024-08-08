@@ -15,9 +15,9 @@
 #       Source     331-pg_checkpointer.yml
 #
 # METRICS
-#       timed (COUNTER)
+#       num_timed (COUNTER)
 #           Number of scheduled checkpoints that have been performed
-#       req (COUNTER)
+#       num_requested (COUNTER)
 #           Number of requested checkpoints that have been performed
 #       restartpoints_timed (COUNTER)
 #           Number of scheduled restartpoints due to timeout or after a failed attempt to perform it

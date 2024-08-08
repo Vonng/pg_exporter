@@ -3,7 +3,7 @@
 #       pg_ssl_*
 #
 # DESCRIPTION
-#       PostgreSQL SSL client conenction count
+#       PostgreSQL SSL client connection count
 #
 # OPTIONS
 #       Tags       [cluster]
@@ -22,7 +22,7 @@
 #
 pg_ssl:
   name: pg_ssl
-  desc: PostgreSQL SSL client conenction count
+  desc: PostgreSQL SSL client connection count
   query: |
     SELECT count(*) FILTER (WHERE ssl) AS enabled, count(*) FILTER ( WHERE NOT ssl) AS disabled FROM pg_stat_ssl;
   ttl: 10
