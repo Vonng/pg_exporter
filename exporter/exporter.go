@@ -547,7 +547,7 @@ func WithExcludeDatabase(excludeStr string) ExporterOpt {
 	}
 }
 
-// WithIncludeDatabase configures exporter with excluded database
+// WithIncludeDatabase configures exporter with included database
 func WithIncludeDatabase(includeStr string) ExporterOpt {
 	return func(e *Exporter) {
 		inclMap := make(map[string]bool)

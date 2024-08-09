@@ -91,7 +91,6 @@ func (s *Server) Name() string {
 	return ShadowPGURL(s.dsn)
 }
 
-// Name is coalesce(s.Database, dsn)
 func (s *Server) Error() error {
 	return s.err
 }
