@@ -1,8 +1,10 @@
 package exporter
 
 import (
+	"errors"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -16,6 +18,7 @@ type Exporter struct {
 	// config params provided from ExporterOpt
 	dsn             string            // primary dsn
 	configPath      string            // config file path /directory
+	configReader    io.Reader         // reader to a config file, one of configPath or configReader must be set
 	disableCache    bool              // always execute query when been scraped
 	disableIntro    bool              // disable query level introspection metrics
 	autoDiscovery   bool              // discovery other database on primary server
@@ -355,10 +358,24 @@ func NewExporter(dsn string, opts ...ExporterOpt) (e *Exporter, err error) {
 	for _, opt := range opts {
 		opt(e)
 	}
-
-	if e.queries, err = LoadConfig(e.configPath); err != nil {
-		return nil, fmt.Errorf("fail loading config file %s: %w", e.configPath, err)
+	if len(e.configPath) > 0 && e.configReader != nil {
+		return nil, errors.New("exporter configPath and configReader options are mutually exclusive")
 	}
+	if len(e.configPath) > 0 {
+		if e.queries, err = LoadConfig(e.configPath); err != nil {
+			return nil, fmt.Errorf("fail loading config file %s: %w", e.configPath, err)
+		}
+	}
+	if e.configReader != nil {
+		b, rerr := io.ReadAll(e.configReader)
+		if rerr != nil {
+			return nil, fmt.Errorf("fail reading config file: %w", rerr)
+		}
+		if e.queries, err = ParseConfig(b); err != nil {
+			return nil, fmt.Errorf("fail parsing config file: %w", err)
+		}
+	}
+
 	logDebugf("exporter init with %d queries", len(e.queries))
 
 	// note here the server is still not connected. it will trigger connecting when being scraped
@@ -483,6 +500,13 @@ type ExporterOpt func(*Exporter)
 func WithConfig(configPath string) ExporterOpt {
 	return func(e *Exporter) {
 		e.configPath = configPath
+	}
+}
+
+// WithConfigReader uses a the provided reader to load a configuration for the Exporter
+func WithConfigReader(reader io.Reader) ExporterOpt {
+	return func(e *Exporter) {
+		e.configReader = reader
 	}
 }
 
