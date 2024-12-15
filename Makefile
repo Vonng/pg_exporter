@@ -1,11 +1,12 @@
 #==============================================================#
 # File      :   Makefile
 # Mtime     :   2024-06-19
-# Copyright (C) 2018-2022 Ruohang Feng
+# License   :   Apache-2.0 @ https://github.com/Vonng/pg_exporter
+# Copyright :   2018-2024  Ruohang Feng / Vonng (rh@vonng.com)
 #==============================================================#
 
 # Get Current Version
-VERSION=v0.7.0
+VERSION=v0.7.1
 # VERSION=`cat exporter/global.go | grep -E 'var Version' | grep -Eo '[0-9.]+'`
 
 # Release Dir

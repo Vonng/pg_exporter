@@ -3,11 +3,12 @@ package exporter
 import (
 	"errors"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
 	"io"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 /* ================ Exporter ================ */
@@ -131,11 +132,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		e.scrapeErrorCount.Add(1)
 	}
 	e.exporterUptime.Set(e.server.Uptime())
-	e.collectServerMetrics(s)
+	e.collectServerMetrics()
 	e.collectInternalMetrics(ch)
 }
 
-func (e *Exporter) collectServerMetrics(s *Server) {
+func (e *Exporter) collectServerMetrics() {
 	e.serverScrapeDuration.Reset()
 	e.serverScrapeTotalSeconds.Reset()
 	e.serverScrapeTotalCount.Reset()
@@ -212,7 +213,7 @@ func (e *Exporter) Close() {
 	}
 	// close peripheral servers (we may skip acquire lock here)
 	for _, srv := range e.IterateServer() {
-		if srv == nil {
+		if srv != nil {
 			err := srv.Close()
 			if err != nil {
 				logErrorf("fail closing server %s: %s", e.server.Name(), err.Error())
