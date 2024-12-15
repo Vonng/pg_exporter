@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 /* ================ Collector ================ */
@@ -115,7 +116,7 @@ func (q *Collector) executePredicateQueries(ctx context.Context) bool {
 			// flag is set so Fatal will be respected if set.
 			if errors.Is(err, context.DeadlineExceeded) { // timeout
 				q.err = fmt.Errorf("%s timeout because duration %v exceed limit %v",
-					msgPrefix, time.Now().Sub(q.scrapeBegin), q.TimeoutDuration())
+					msgPrefix, time.Since(q.scrapeBegin), q.TimeoutDuration())
 			} else {
 				q.err = fmt.Errorf("%s failed: %w", msgPrefix, err)
 			}
@@ -190,7 +191,7 @@ func (q *Collector) execute() {
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) { // timeout
 			q.err = fmt.Errorf("query [%s] timeout because duration %v exceed limit %v",
-				q.Name, time.Now().Sub(q.scrapeBegin), q.TimeoutDuration())
+				q.Name, time.Since(q.scrapeBegin), q.TimeoutDuration())
 		} else {
 			q.err = fmt.Errorf("query [%s] failed: %w", q.Name, err)
 		}
@@ -257,8 +258,7 @@ func (q *Collector) execute() {
 	}
 	q.err = nil
 	logDebugf("query [%s] executing complete in %v, metrics count: %d",
-		q.Name, time.Now().Sub(q.scrapeBegin), len(q.result))
-	return
+		q.Name, time.Since(q.scrapeBegin), len(q.result))
 }
 
 /* ================ Collector Auxiliary ================ */
@@ -301,10 +301,7 @@ func (q *Collector) sendDescriptors(ch chan<- *prometheus.Desc) {
 // cacheExpired report whether this instance needs actual execution
 // Note you have to use Server.scrapeBegin as "now", and set that timestamp as
 func (q *Collector) cacheExpired() bool {
-	if q.Server.scrapeBegin.Sub(q.lastScrape) > time.Duration(q.TTL*float64(time.Second)) {
-		return true
-	}
-	return false
+	return q.Server.scrapeBegin.Sub(q.lastScrape) > time.Duration(q.TTL*float64(time.Second))
 }
 
 func (q *Collector) cacheTTL() float64 {
