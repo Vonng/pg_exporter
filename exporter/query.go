@@ -3,9 +3,10 @@ package exporter
 import (
 	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"text/template"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 /* ================ Query ================ */

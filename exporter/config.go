@@ -2,10 +2,11 @@ package exporter
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // GetConfig will try load config from target path

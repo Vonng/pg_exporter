@@ -1,8 +1,9 @@
 package exporter
 
 import (
-	"github.com/go-kit/kit/log"
 	"sync"
+
+	"github.com/go-kit/kit/log"
 )
 
 /* ================ Parameters ================ */
