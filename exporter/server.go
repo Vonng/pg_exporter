@@ -5,8 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/lib/pq"
-	"github.com/prometheus/client_golang/prometheus"
 	"html/template"
 	"regexp"
 	"sort"
@@ -14,6 +12,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 /* ================ Const ================ */
@@ -546,13 +547,14 @@ func (s *Server) HasTag(tag string) bool {
 // Duration returns last scrape duration in float64 seconds
 func (s *Server) Duration() float64 {
 	s.lock.RLock()
-	s.lock.RUnlock()
-	return s.scrapeDone.Sub(s.scrapeBegin).Seconds()
+	defer s.lock.RUnlock()
+	sec := s.scrapeDone.Sub(s.scrapeBegin).Seconds()
+	return sec
 }
 
 // Uptime returns servers's uptime
 func (s *Server) Uptime() float64 {
-	return time.Now().Sub(s.serverInit).Seconds()
+	return time.Since(s.serverInit).Seconds()
 }
 
 /* ================ Server Creation ================ */
