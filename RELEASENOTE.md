@@ -2,7 +2,7 @@
 
 ------
 
-## 0.7.0 (WIP)
+## 0.7.0
 
 Refactor codebase for the latest go version.
 
@@ -16,7 +16,6 @@ Refactor codebase for the latest go version.
 - [Fix some typos and some metric description mistakes](https://github.com/Vonng/pg_exporter/pull/51) by [@ringerc](https://github.com/ringerc)
 - [Switch from unmaintained lib/pq driver to pgx with stdlib wrapper](https://github.com/Vonng/pg_exporter/pull/52) by [@ringerc](https://github.com/ringerc)
 
-Alpha 1: https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0-a1
 
 
 ------
