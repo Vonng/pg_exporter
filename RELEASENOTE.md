@@ -2,6 +2,37 @@
 
 ------
 
+## 0.7.1
+
+Routine update with dependabot
+
+* feat: support specifying configuration as Reader by @ringerc in https://github.com/Vonng/pg_exporter/pull/62
+* Bump golang.org/x/crypto from 0.21.0 to 0.31.0 by @dependabot in https://github.com/Vonng/pg_exporter/pull/63
+* Fix some typos
+* Full Changelog**: https://github.com/Vonng/pg_exporter/compare/v0.7.0...v0.7.1
+
+
+------
+
+## 0.7.0
+
+Refactor codebase for the latest go version.
+
+- [PostgreSQL 17 Metrics Support](https://github.com/Vonng/pg_exporter/issues/53) by @Vonng
+- [pg_exporter: predicate queries feature](https://github.com/Vonng/pg_exporter/pull/47) by [@ringerc](https://github.com/ringerc)
+- [Do a clean build in the dockerfile](https://github.com/Vonng/pg_exporter/pull/54) by [@ringerc](https://github.com/ringerc) by [@ringerc](https://github.com/ringerc)
+- [pg_exporter: don't panic after "bind: address already in use"](https://github.com/Vonng/pg_exporter/pull/46) by [@ringerc](https://github.com/ringerc)
+- [pg_exporter: fix /stat endpoint formatting](https://github.com/Vonng/pg_exporter/pull/48) by [@ringerc](https://github.com/ringerc)
+- [pg_exporter: omit default query properties on yaml export](https://github.com/Vonng/pg_exporter/pull/49) by [@ringerc](https://github.com/ringerc)
+- [Exclude template DBs from discovery and schema-qualify discovery query](https://github.com/Vonng/pg_exporter/pull/50) by [@ringerc](https://github.com/ringerc)
+- [Fix some typos and some metric description mistakes](https://github.com/Vonng/pg_exporter/pull/51) by [@ringerc](https://github.com/ringerc)
+- [Switch from unmaintained lib/pq driver to pgx with stdlib wrapper](https://github.com/Vonng/pg_exporter/pull/52) by [@ringerc](https://github.com/ringerc)
+
+
+
+
+------
+
 ## 0.7.0
 
 Refactor codebase for the latest go version.
