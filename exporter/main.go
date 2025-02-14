@@ -115,12 +115,12 @@ func Run() {
 	}
 
 	if *configPath == "" {
-		logErrorf("no valid config path, exit")
+		Logger.Error("no valid config path, exit")
 		os.Exit(1)
 	}
 
 	if len(*webConfig.WebListenAddresses) == 0 {
-		logFatalf("invalid listen address: %v", *webConfig.WebListenAddresses)
+		Logger.Error("invalid listen address", "addresses", *webConfig.WebListenAddresses)
 		os.Exit(1)
 	}
 	listenAddr := (*webConfig.WebListenAddresses)[0]

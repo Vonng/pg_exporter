@@ -1,9 +1,8 @@
 package exporter
 
 import (
+	"log/slog"
 	"sync"
-
-	"github.com/go-kit/kit/log"
 )
 
 /* ================ Parameters ================ */
@@ -19,5 +18,5 @@ var defaultPGURL = "postgresql:///?sslmode=disable"
 var (
 	PgExporter *Exporter
 	ReloadLock sync.Mutex
-	Logger     log.Logger
+	Logger     *slog.Logger
 )

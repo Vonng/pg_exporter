@@ -2,78 +2,79 @@ package exporter
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 /* ================ Logger ================ */
 
-func configureLogger(levelStr, formatStr string) log.Logger {
-	var logger log.Logger
+func configureLogger(levelStr, formatStr string) *slog.Logger {
+	var level slog.Level
+	switch strings.ToLower(levelStr) {
+	case "debug":
+		level = slog.LevelDebug
+	case "info":
+		level = slog.LevelInfo
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo // fallback to default info level
+	}
 
+	opts := &slog.HandlerOptions{
+		Level: level,
+	}
+
+	var handler slog.Handler
 	switch formatStr {
 	case "json":
-		logger = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
+		handler = slog.NewJSONHandler(os.Stderr, opts)
 	case "logfmt", "":
-		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+		handler = slog.NewTextHandler(os.Stderr, opts)
 	default:
 		panic("unknown log format: " + formatStr)
 	}
 
-	var lvl level.Option
-	switch strings.ToLower(levelStr) {
-	case "debug":
-		lvl = level.AllowDebug()
-	case "info":
-		lvl = level.AllowInfo()
-	case "warn":
-		lvl = level.AllowWarn()
-	case "error":
-		lvl = level.AllowError()
-	default:
-		lvl = level.AllowInfo() // fallback to default info level
-	}
-
-	logger = level.NewFilter(logger, lvl)
-	logger = log.With(logger, "timestamp", log.DefaultTimestampUTC, "caller", log.Caller(4))
-	return logger
+	return slog.New(handler)
 }
 
 // logDebugf will log debug message
 func logDebugf(format string, v ...interface{}) {
-	_ = level.Debug(Logger).Log("msg", fmt.Sprintf(format, v...))
+	Logger.Debug(fmt.Sprintf(format, v...))
 }
 
 // logInfof will log info message
 func logInfof(format string, v ...interface{}) {
-	_ = level.Info(Logger).Log("msg", fmt.Sprintf(format, v...))
+	Logger.Info(fmt.Sprintf(format, v...))
 }
 
 // logWarnf will log warning message
 func logWarnf(format string, v ...interface{}) {
-	_ = level.Warn(Logger).Log("msg", fmt.Sprintf(format, v...))
+	Logger.Warn(fmt.Sprintf(format, v...))
 }
 
 // logErrorf will log error message
 func logErrorf(format string, v ...interface{}) {
-	_ = level.Error(Logger).Log("msg", fmt.Sprintf(format, v...))
+	Logger.Error(fmt.Sprintf(format, v...))
 }
 
 // logError will print error message directly
 func logError(msg string) {
-	_ = level.Error(Logger).Log("msg", msg)
+	Logger.Error(msg)
 }
 
 // logFatalf will log error message
 func logFatalf(format string, v ...interface{}) {
-	_ = level.Error(Logger).Log("msg", fmt.Sprintf(format, v...))
+	Logger.Error(fmt.Sprintf(format, v...))
+	os.Exit(1)
 }
 
 /* ================ Auxiliaries ================ */
