@@ -1,10 +1,11 @@
 #==============================================================#
 # Author:   Vonng (rh@vonng.com)
 # Desc  :   pg_exporter metrics collector definition
-# Ver   :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9+
+# Ver   :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9~1.24+
 # Ctime :   2019-12-09
-# Mtime :   2024-06-19
-# Copyright (C) 2019-2024 Ruohang Feng
+# Mtime :   2025-02-14
+# License   :   Apache-2.0 @ https://github.com/Vonng/pg_exporter
+# Copyright :   2018-2025  Ruohang Feng / Vonng (rh@vonng.com)
 #==============================================================#
 
 #==============================================================#
@@ -529,9 +530,9 @@ pg_replica_only:
 #       wal_level (LABEL)
 #           wal level
 #       version (LABEL)
-#           server version in human readable format
+#           server version in human-readable format
 #       ver_num (LABEL)
-#           server version number in machine readable format
+#           server version number in machine-readable format
 #       extensions (LABEL)
 #           server installed preload libraries
 #       primary_conninfo (LABEL)
@@ -585,10 +586,10 @@ pg_meta:
         description: wal level
     - version:
         usage: LABEL
-        description: server version in human readable format
+        description: server version in human-readable format
     - ver_num:
         usage: LABEL
-        description: server version number in machine readable format
+        description: server version number in machine-readable format
     - extensions:
         usage: LABEL
         description: server installed preload libraries
@@ -631,9 +632,9 @@ pg_meta:
 #       wal_level (LABEL)
 #           wal level
 #       version (LABEL)
-#           server version in human readable format
+#           server version in human-readable format
 #       ver_num (LABEL)
-#           server version number in machine readable format
+#           server version number in machine-readable format
 #       extensions (LABEL)
 #           server installed preload libraries
 #       primary_conninfo (LABEL)
@@ -686,10 +687,10 @@ pg_meta_13:
         description: wal level
     - version:
         usage: LABEL
-        description: server version in human readable format
+        description: server version in human-readable format
     - ver_num:
         usage: LABEL
-        description: server version number in machine readable format
+        description: server version number in machine-readable format
     - extensions:
         usage: LABEL
         description: server installed preload libraries
@@ -2130,9 +2131,16 @@ pg_size:
   name: pg_size
   desc: PostgreSQL Database, WAL, Log size since v10
   query: |
-    SELECT datname, pg_database_size(oid) AS bytes FROM pg_database UNION ALL
-      SELECT 'log' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_logdir()) AS bytes UNION ALL
-      SELECT 'wal' AS datname, (SELECT (coalesce(sum(size), 0)) AS size FROM pg_catalog.pg_ls_waldir()) AS bytes;
+    SELECT datname, pg_database_size(oid) AS bytes FROM pg_database
+    UNION ALL
+    SELECT 'log' AS datname, 
+          (CASE 
+              WHEN EXISTS (SELECT setting FROM pg_settings WHERE name = 'log_directory' and setting like '/%') 
+              THEN (SELECT COALESCE(SUM(size), 0) FROM pg_catalog.pg_ls_logdir()) 
+              ELSE 0 
+          END) AS bytes
+    UNION ALL
+    SELECT 'wal' AS datname, (SELECT COALESCE(SUM(size), 0) FROM pg_catalog.pg_ls_waldir()) AS bytes;
   ttl: 60
   timeout: 1
   min_version: 100000
@@ -2334,9 +2342,9 @@ pg_bgwriter_16:
 #       Source     331-pg_checkpointer.yml
 #
 # METRICS
-#       timed (COUNTER)
+#       num_timed (COUNTER)
 #           Number of scheduled checkpoints that have been performed
-#       req (COUNTER)
+#       num_requested (COUNTER)
 #           Number of requested checkpoints that have been performed
 #       restartpoints_timed (COUNTER)
 #           Number of scheduled restartpoints due to timeout or after a failed attempt to perform it
@@ -2443,7 +2451,7 @@ pg_checkpointer_94_16:
 #       pg_ssl_*
 #
 # DESCRIPTION
-#       PostgreSQL SSL client conenction count
+#       PostgreSQL SSL client connection count
 #
 # OPTIONS
 #       Tags       [cluster]
@@ -2462,7 +2470,7 @@ pg_checkpointer_94_16:
 #
 pg_ssl:
   name: pg_ssl
-  desc: PostgreSQL SSL client conenction count
+  desc: PostgreSQL SSL client connection count
   query: |
     SELECT count(*) FILTER (WHERE ssl) AS enabled, count(*) FILTER ( WHERE NOT ssl) AS disabled FROM pg_stat_ssl;
   ttl: 10
@@ -4079,7 +4087,45 @@ pg_db_10_11:
 #       confl_deadlock (COUNTER)
 #           Number of queries in this database that have been canceled due to deadlocks
 #
-pg_db_confl:
+pg_db_confl_16:
+  name: pg_db_confl
+  desc: PostgreSQL database conflicts metrics (PG16+, only available on replica)
+  # https://pgpedia.info/p/pg_stat_database_conflicts.html
+  query: SELECT * FROM pg_stat_database_conflicts;
+
+  ttl: 10
+  min_version: 160000
+  tags:
+    - cluster
+    - replica
+
+  metrics:
+    - datid:
+        usage: DISCARD
+    - datname:
+        usage: LABEL
+        description: Name of this database
+    - confl_tablespace:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to dropped tablespaces
+    - confl_lock:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to lock timeouts
+    - confl_snapshot:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to old snapshots
+    - confl_bufferpin:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to pinned buffers
+    - confl_deadlock:
+        usage: COUNTER
+        description: Number of queries in this database that have been canceled due to deadlocks
+    - confl_active_logicalslot:
+        usage: COUNTER
+        description: Number of uses of logical slots in this database that have been canceled due to old snapshots or too low a wal_level on the primary
+
+
+pg_db_confl_15:
   name: pg_db_confl
   desc: PostgreSQL database conflicts metrics (only available on replica)
   # https://pgpedia.info/p/pg_stat_database_conflicts.html
@@ -4087,6 +4133,7 @@ pg_db_confl:
 
   ttl: 10
   min_version: 90100
+  max_version: 160000
   tags:
     - cluster
     - replica
@@ -5068,12 +5115,132 @@ pgbouncer_list:
 #       disabled (GAUGE)
 #           True(1) if this database is currently disabled, else 0
 #
-pgbouncer_database_116:
+pgbouncer_database_124:
   name: pgbouncer_database
-  desc: Pgbouncer database stats (since 1.16) # http://www.pgbouncer.org/usage.html#show-databases
+  desc: Pgbouncer database stats (since 1.24) # http://www.pgbouncer.org/usage.html#show-databases
+  query: SHOW DATABASES;
+  ttl: 10
+  min_version: 12400
+  tags:
+    - pgbouncer
+
+  metrics:
+    - name:
+        usage: LABEL
+        rename: datname
+        description: Name of configured database entry
+    - host:
+        usage: LABEL
+        description: Host that pgbouncer will connects to
+    - port:
+        usage: LABEL
+        description: Port that pgbouncer will connects to
+    - database:
+        usage: LABEL
+        rename: real_datname
+        description: The real database name pgbouncer connects to
+    - force_user:
+        usage: DISCARD
+    - pool_size:
+        usage: GAUGE
+        description: Maximum number of server connections
+    - min_pool_size:
+        usage: GAUGE
+        description: Minimum number of server connections
+    - reserve_pool_size:
+        usage: GAUGE
+        rename: reserve_pool
+        description: Maximum number of additional connections for this database
+    - server_lifetime:
+        usage: GAUGE
+        description: The maximum lifetime of a server connection for this database
+    - pool_mode:
+        usage: DISCARD
+    - load_balance_hosts:
+        usage: DISCARD
+    - max_connections:
+        usage: GAUGE
+        description: Maximum number of allowed connections for this database
+    - current_connections:
+        usage: GAUGE
+        description: Current number of connections for this database
+    - max_client_connections:
+        usage: GAUGE
+        description: Maximum number of allowed client connections for this pgbouncer instance
+    - current_client_connections:
+        usage: GAUGE
+        description: Current number of client connections for this database
+    - paused:
+        usage: GAUGE
+        description: True(1) if this database is currently paused, else 0
+    - disabled:
+        usage: GAUGE
+        description: True(1) if this database is currently disabled, else 0
+
+
+pgbouncer_database_123:
+  name: pgbouncer_database
+  desc: Pgbouncer database stats (1.23) # http://www.pgbouncer.org/usage.html#show-databases
+  query: SHOW DATABASES;
+  ttl: 10
+  min_version: 12300
+  max_version: 12400
+  tags:
+    - pgbouncer
+
+  metrics:
+    - name:
+        usage: LABEL
+        rename: datname
+        description: Name of configured database entry
+    - host:
+        usage: LABEL
+        description: Host that pgbouncer will connects to
+    - port:
+        usage: LABEL
+        description: Port that pgbouncer will connects to
+    - database:
+        usage: LABEL
+        rename: real_datname
+        description: The real database name pgbouncer connects to
+    - force_user:
+        usage: DISCARD
+    - pool_size:
+        usage: GAUGE
+        description: Maximum number of server connections
+    - min_pool_size:
+        usage: GAUGE
+        description: Minimum number of server connections
+    - reserve_pool:
+        usage: GAUGE
+        description: Maximum number of additional connections for this database
+    - server_lifetime:
+        usage: GAUGE
+        description: The maximum lifetime of a server connection for this database
+    - pool_mode:
+        usage: DISCARD
+    - max_connections:
+        usage: GAUGE
+        description: Maximum number of allowed connections for this database
+    - current_connections:
+        usage: GAUGE
+        description: Current number of connections for this database
+    - paused:
+        usage: GAUGE
+        description: True(1) if this database is currently paused, else 0
+    - disabled:
+        usage: GAUGE
+        description: True(1) if this database is currently disabled, else 0
+
+
+
+pgbouncer_database_116_122:
+  name: pgbouncer_database
+  desc: Pgbouncer database stats (1.16-1.22) # http://www.pgbouncer.org/usage.html#show-databases
   query: SHOW DATABASES;
   ttl: 10
   min_version: 11600
+  max_version: 12300
   tags:
     - pgbouncer
 
@@ -5257,12 +5424,12 @@ pgbouncer_database_108_115:
 #       avg_wait_time (GAUGE)
 #           Time spent by clients waiting for a server, in seconds (average per second).
 #
-pgbouncer_stat:
+pgbouncer_stat_124:
   name: pgbouncer_stat
-  desc: Pgbouncer stats per database   # http://www.pgbouncer.org/usage.html#show-stats
+  desc: Pgbouncer stats per database (since 1.24)   # http://www.pgbouncer.org/usage.html#show-stats
   query: SHOW STATS;
   ttl: 10
-  min_version: 10800
+  min_version: 12400
   tags:
     - pgbouncer
 
@@ -5272,10 +5439,169 @@ pgbouncer_stat:
         rename: datname
         description: Name of database
     - total_xact_count:
-        usage: GAUGE
+        usage: COUNTER
         description: Total number of SQL transactions pooled by pgbouncer
     - total_query_count:
+        usage: COUNTER
+        description: Total number of SQL queries pooled by pgbouncer
+    - total_server_assignment_count:
+        usage: COUNTER
+        description: Total times a server was assigned to a client
+    - total_received:
+        usage: COUNTER
+        description: Total volume in bytes of network traffic received by pgbouncer
+    - total_sent:
+        usage: COUNTER
+        description: Total volume in bytes of network traffic sent by pgbouncer
+    - total_xact_time:
+        usage: COUNTER
+        scale: 1e-6
+        description: Total number of seconds spent when in a transaction
+    - total_query_time:
+        usage: COUNTER
+        scale: 1e-6
+        description: Total number of seconds spent when executing queries
+    - total_wait_time:
+        usage: COUNTER
+        scale: 1e-6
+        description: Time spent by clients waiting for a server, in seconds
+    - total_client_parse_count:
+        usage: COUNTER
+        description: Total number of prepared statements created by clients
+    - total_server_parse_count:
+        usage: COUNTER
+        description: Total number of prepared statements created on a server.
+    - total_bind_count:
+        usage: COUNTER
+        description: Total number of prepared statements readied for execution by clients and forwarded to postgres
+    - avg_xact_count:
         usage: GAUGE
+        description: Average transactions per second in last stat period
+    - avg_query_count:
+        usage: GAUGE
+        description: Average queries per second in last stat period
+    - avg_server_assignment_count:
+        usage: GAUGE
+        description: Average number of times a server as assigned to a client per second in the last stat period.
+    - avg_recv:
+        usage: GAUGE
+        description: Average received (from clients) bytes per second
+    - avg_sent:
+        usage: GAUGE
+        description: Average sent (to clients) bytes per second
+    - avg_xact_time:
+        usage: GAUGE
+        scale: 1e-6
+        description: Average transaction duration, in seconds
+    - avg_query_time:
+        usage: GAUGE
+        scale: 1e-6
+        description: Average query duration, in seconds
+    - avg_wait_time:
+        usage: GAUGE
+        scale: 1e-6
+        description: Time spent by clients waiting for a server, in seconds (average per second).
+    - avg_client_parse_count:
+        usage: COUNTER
+        description: Average number of prepared statements created by clients
+    - avg_server_parse_count:
+        usage: COUNTER
+        description: Average number of prepared statements created on a server.
+    - avg_bind_count:
+        usage: COUNTER
+        description: Average number of prepared statements readied for execution by clients and forwarded to postgres
+
+
+pgbouncer_stat_123:
+  name: pgbouncer_stat
+  desc: Pgbouncer stats per database (1.23)   # http://www.pgbouncer.org/usage.html#show-stats
+  query: SHOW STATS;
+  ttl: 10
+  min_version: 12300
+  max_version: 12400
+  tags:
+    - pgbouncer
+
+  metrics:
+    - database:
+        usage: LABEL
+        rename: datname
+        description: Name of database
+    - total_xact_count:
+        usage: COUNTER
+        description: Total number of SQL transactions pooled by pgbouncer
+    - total_query_count:
+        usage: COUNTER
+        description: Total number of SQL queries pooled by pgbouncer
+    - total_server_assignment_count:
+        usage: COUNTER
+        description: Total times a server was assigned to a client
+    - total_received:
+        usage: COUNTER
+        description: Total volume in bytes of network traffic received by pgbouncer
+    - total_sent:
+        usage: COUNTER
+        description: Total volume in bytes of network traffic sent by pgbouncer
+    - total_xact_time:
+        usage: COUNTER
+        scale: 1e-6
+        description: Total number of seconds spent when in a transaction
+    - total_query_time:
+        usage: COUNTER
+        scale: 1e-6
+        description: Total number of seconds spent when executing queries
+    - total_wait_time:
+        usage: COUNTER
+        scale: 1e-6
+        description: Time spent by clients waiting for a server, in seconds
+    - avg_xact_count:
+        usage: GAUGE
+        description: Average transactions per second in last stat period
+    - avg_query_count:
+        usage: GAUGE
+        description: Average queries per second in last stat period
+    - avg_server_assignment_count:
+        usage: GAUGE
+        description: Average number of times a server as assigned to a client per second in the last stat period.
+    - avg_recv:
+        usage: GAUGE
+        description: Average received (from clients) bytes per second
+    - avg_sent:
+        usage: GAUGE
+        description: Average sent (to clients) bytes per second
+    - avg_xact_time:
+        usage: GAUGE
+        scale: 1e-6
+        description: Average transaction duration, in seconds
+    - avg_query_time:
+        usage: GAUGE
+        scale: 1e-6
+        description: Average query duration, in seconds
+    - avg_wait_time:
+        usage: GAUGE
+        scale: 1e-6
+        description: Time spent by clients waiting for a server, in seconds (average per second).
+
+pgbouncer_stat_108_122:
+  name: pgbouncer_stat
+  desc: Pgbouncer stats per database (1.08 - 1.22)   # http://www.pgbouncer.org/usage.html#show-stats
+  query: SHOW STATS;
+  ttl: 10
+  min_version: 10800
+  max_version: 12300
+  tags:
+    - pgbouncer
+
+  metrics:
+    - database:
+        usage: LABEL
+        rename: datname
+        description: Name of database
+    - total_xact_count:
+        usage: COUNTER
+        description: Total number of SQL transactions pooled by pgbouncer
+    - total_query_count:
+        usage: COUNTER
         description: Total number of SQL queries pooled by pgbouncer
     - total_received:
         usage: COUNTER
@@ -5362,12 +5688,87 @@ pgbouncer_stat:
 #       pool_mode (LABEL)
 #           Pooling mode in use
 #
-pgbouncer_pool_118:
+pgbouncer_pool_124:
   name: pgbouncer_pool
-  desc: Pgbouncer pool stats (1.16+)    # http://www.pgbouncer.org/usage.html#show-pools
+  desc: Pgbouncer pool stats (1.24+)    # http://www.pgbouncer.org/usage.html#show-pools
   query: SHOW POOLS;
-  ttl: 10
+  ttl: {{ ttl_norm }}
+  min_version: 12400
+  tags:
+    - pgbouncer
+
+  metrics:
+    - database:
+        usage: LABEL
+        rename: datname
+        description: Database name of this pool
+    - user:
+        usage: LABEL
+        description: User name of this pool
+    - cl_active:
+        usage: GAUGE
+        rename: active_clients
+        description: Client connections that are linked to server connection and can process queries
+    - cl_waiting:
+        usage: GAUGE
+        rename: waiting_clients
+        description: Client connections that have sent queries but have not yet got a server connection
+    - cl_active_cancel_req:
+        usage: GAUGE
+        rename: active_cancel_clients
+        description: Client connections that have forwarded query cancellations to the server and are waiting for the server response.
+    - cl_waiting_cancel_req:
+        usage: GAUGE
+        rename: cancel_clients
+        description: Client connections that have not forwarded query cancellations to the server yet.
+    - sv_active:
+        usage: GAUGE
+        rename: active_servers
+        description: Server connections that are linked to a client
+    - sv_active_cancel:
+        usage: GAUGE
+        rename: active_cancel_servers
+        description: Server connections that are currently forwarding a cancel request
+    - sv_being_canceled:
+        usage: GAUGE
+        rename: cancel_servers
+        description: cancel requests have completed that were sent to cancel a query on this server
+    - sv_idle:
+        usage: GAUGE
+        rename: idle_servers
+        description: Server connections that are unused and immediately usable for client queries
+    - sv_used:
+        usage: GAUGE
+        rename: used_servers
+        description: Server connections that have been idle for more than server_check_delay (means have to run check query)
+    - sv_tested:
+        usage: GAUGE
+        rename: tested_servers
+        description: Server connections that are currently running reset or check query
+    - sv_login:
+        usage: GAUGE
+        rename: login_servers
+        description: Server connections currently in the process of logging in
+    - maxwait:
+        usage: GAUGE
+        description: How long the first(oldest) client in the queue has waited, in seconds, key metric
+    - maxwait_us:
+        usage: GAUGE
+        description: Microsecond part of the maximum waiting time.
+    - pool_mode:
+        usage: LABEL
+        description: Pooling mode in use
+    - load_balance_hosts:
+        usage: LABEL
+        description: The load_balance_hosts in use
+
+pgbouncer_pool_118_123:
+  name: pgbouncer_pool
+  desc: Pgbouncer pool stats (1.18-1.23)    # http://www.pgbouncer.org/usage.html#show-pools
+  query: SHOW POOLS;
+  ttl: {{ ttl_norm }}
   min_version: 11800
+  max_version: 12400
   tags:
     - pgbouncer
 
@@ -5437,7 +5838,7 @@ pgbouncer_pool_118:
 
 pgbouncer_pool_116_118:
   name: pgbouncer_pool
-  desc: Pgbouncer pool stats (1.16+)    # http://www.pgbouncer.org/usage.html#show-pools
+  desc: Pgbouncer pool stats (1.16-1.17)    # http://www.pgbouncer.org/usage.html#show-pools
   query: SHOW POOLS;
   ttl: 10
   min_version: 11600
