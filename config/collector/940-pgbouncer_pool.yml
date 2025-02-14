@@ -44,7 +44,7 @@ pgbouncer_pool_124:
   name: pgbouncer_pool
   desc: Pgbouncer pool stats (1.24+)    # http://www.pgbouncer.org/usage.html#show-pools
   query: SHOW POOLS;
-  ttl: {{ ttl_norm }}
+  ttl: 10
   min_version: 12400
   tags:
     - pgbouncer
@@ -118,7 +118,7 @@ pgbouncer_pool_118_123:
   name: pgbouncer_pool
   desc: Pgbouncer pool stats (1.18-1.23)    # http://www.pgbouncer.org/usage.html#show-pools
   query: SHOW POOLS;
-  ttl: {{ ttl_norm }}
+  ttl: 10
   min_version: 11800
   max_version: 12400
   tags:
