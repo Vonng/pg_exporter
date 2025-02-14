@@ -6,7 +6,7 @@ PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty
 
 PG Exporter is fully **customizable**: it defines almost all metrics with declarative YAML [configuration](pg_exporter.yml) files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
 
-The latest stable version is [`0.7.0`](https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0), which support PostgreSQL 10 ~ 17+ and Pgbouncer 1.8 ~ 1.23+. 
+The latest stable version is [`0.8.0`](https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0), which support PostgreSQL 10 ~ 17+ and Pgbouncer 1.8 ~ 1.24+. 
 
 [![pigsty-v2-3](https://github.com/Vonng/pigsty/assets/8587410/ec2b8acb-d564-49ab-b7f0-214da176a7c8)](https://demo.pigsty.cc)
 
