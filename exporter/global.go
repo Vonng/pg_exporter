@@ -9,7 +9,7 @@ import (
 /* ================ Parameters ================ */
 
 // Version is read by make build procedure
-var Version = "0.7.1"
+var Version = "0.8.0"
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 
