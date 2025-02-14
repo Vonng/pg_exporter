@@ -2,6 +2,17 @@
 
 ------
 
+## 0.8.0
+
+* add pgBouncer 1.24 new metrics support (stat, pool, database)
+* fix: `310-pg_size.yml` fails if log dir not set properly https://github.com/Vonng/pg_exporter/issues/64 by [@Süleyman Vurucu](https://github.com/suikast42)
+* Build with the latest go 1.24 and bump all the dependencies
+* Refactor logging with the standard `log/slog` instead of `go-kit`
+* Full Changelog**: https://github.com/Vonng/pg_exporter/compare/v0.7.1...v0.8.0
+
+
+------
+
 ## 0.7.1
 
 Routine update with dependabot

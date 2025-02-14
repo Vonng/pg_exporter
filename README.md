@@ -1,12 +1,18 @@
 # PG Exporter
 
+
+[![Webite: pigsty](https://img.shields.io/badge/website-pgsty.com-slategray?style=flat&logo=cilium&logoColor=white)](https://pgsty.com)
+[![Version: v0.8.0](https://img.shields.io/badge/version-v0.8.0-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/Vonng/pg_exporter/releases/tag/v0.8.0)
+[![License: Apache-2.0](https://img.shields.io/github/license/Vonng/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/Vonng/pg_exporter/blob/main/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/Vonng/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#Vonng/pg_exporter&Date)
+
 [Prometheus](https://prometheus.io/) [Exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics.
 
 PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty.io), which is a **Battery-Included, Local-First PostgreSQL Distribution as an Open-Source RDS Alternative**: [Demo](https://demo.pigsty.cc) & [Gallery](https://github.com/Vonng/pigsty/wiki/Gallery)
 
 PG Exporter is fully **customizable**: it defines almost all metrics with declarative YAML [configuration](pg_exporter.yml) files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
 
-The latest stable version is [`0.8.0`](https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0), which support PostgreSQL 10 ~ 17+ and Pgbouncer 1.8 ~ 1.24+. 
+The latest stable version is [`0.8.0`](https://github.com/Vonng/pg_exporter/releases/tag/v0.8.0), which support PostgreSQL 10 ~ 17+ and Pgbouncer 1.8 ~ 1.24+. 
 
 [![pigsty-v2-3](https://github.com/Vonng/pigsty/assets/8587410/ec2b8acb-d564-49ab-b7f0-214da176a7c8)](https://demo.pigsty.cc)
 
@@ -487,6 +493,6 @@ Author: [Vonng](https://vonng.com/en) ([rh@vonng.com](mailto:rh@vonng.com))
 
 Contributors: https://github.com/Vonng/pg_exporter/graphs/contributors
 
-License: [Apache Apache License Version 2.0](LICENSE)
+License: [Apache License Version 2.0](LICENSE)
 
-Copyright: 2018-2024 rh@vonng.com
+Copyright: 2018-2025 rh@vonng.com

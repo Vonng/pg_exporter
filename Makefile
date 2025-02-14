@@ -2,7 +2,7 @@
 # File      :   Makefile
 # Mtime     :   2025-02-14
 # License   :   Apache-2.0 @ https://github.com/Vonng/pg_exporter
-# Copyright :   2018-2024  Ruohang Feng / Vonng (rh@vonng.com)
+# Copyright :   2018-2025  Ruohang Feng / Vonng (rh@vonng.com)
 #==============================================================#
 
 # Get Current Version
