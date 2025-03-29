@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.22-alpine AS builder-env
+FROM golang:1.24-alpine AS builder-env
 
 # Build a self-contained pg_exporter container with a clean environment and no
 # dependencies.
