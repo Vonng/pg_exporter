@@ -2,6 +2,15 @@
 
 ------
 
+## 0.8.1
+
+* Bump dependencies to the latest version
+* [Bump golang.org/x/net from 0.35.0 to 0.36.0 #67](https://github.com/Vonng/pg_exporter/pull/67)
+* Update docker images building tags
+
+
+------
+
 ## 0.8.0
 
 * add pgBouncer 1.24 new metrics support (stat, pool, database)

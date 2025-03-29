@@ -1,7 +1,7 @@
 # PG Exporter
 
 
-[![Webite: pigsty](https://img.shields.io/badge/website-pgsty.com-slategray?style=flat&logo=cilium&logoColor=white)](https://pgsty.com)
+[![Webite: pigsty](https://img.shields.io/badge/website-pgsty.com-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io)
 [![Version: v0.8.1](https://img.shields.io/badge/version-v0.8.1-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/Vonng/pg_exporter/releases/tag/v0.8.1)
 [![License: Apache-2.0](https://img.shields.io/github/license/Vonng/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/Vonng/pg_exporter/blob/main/LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/Vonng/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#Vonng/pg_exporter&Date)
@@ -18,7 +18,7 @@ The latest stable version is [`0.8.1`](https://github.com/Vonng/pg_exporter/rele
 
 
 
---------------------
+------
 
 ## Features
 
@@ -29,11 +29,10 @@ The latest stable version is [`0.8.1`](https://github.com/Vonng/pg_exporter/rele
 * Dynamic Planning: Define multiple branches for a collector. Install specific branch when server & exporter meet certain conditions.
 * Rich [self-monitoring](https://demo.pigsty.cc/d/pgsql-exporter) metrics about `pg_exporter` itself.
 * Auto-discovery multiple databases, and run database level collectors
-* Tested and verified in a real-world production environment: 12K+ cores for 5+ years.
+* Tested and verified in a real-world production environment: 12K+ cores for 6+ years.
 
 
-
---------------------
+------
 
 ## Quick Start
 
@@ -109,7 +108,7 @@ Flags:
 
 
 
---------------------
+------
 
 ## API
 
@@ -182,7 +181,7 @@ Or [download](https://github.com/Vonng/pg_exporter/releases) the latest prebuilt
 
 
 
---------------------
+------
 
 ## Deployment
 
@@ -195,7 +194,7 @@ Redhat rpm and Debian/Ubuntu deb packages is made with `nfpm`.
 Which is also available on Pigsty's PGSQL repo.
 
 
---------------------
+------
 
 ## Configuration
 
