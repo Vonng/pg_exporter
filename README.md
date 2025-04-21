@@ -8,7 +8,8 @@
 
 > **Advanced [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [Prometheus](https://prometheus.io/)**
 
-PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **declarative YAML configuration**, **dynamic query planning**, and **customizable metrics collection**. Powering [**Pigsty**](https://pigsty.io)'s unparalleled PostgreSQL observability, it delivers unparalleled metrics that the community has always needed.
+PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **declarative YAML configuration**, **dynamic query planning**, and **customizable metrics collection**. 
+Powering [**Pigsty**](https://pigsty.io)'s monitoring system, it delivers more metrics with customize capabilities.
 
 <div align="center">
     <a href="#quick-start">Quick Start</a> •
