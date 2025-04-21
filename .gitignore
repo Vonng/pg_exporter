@@ -1,24 +1,16 @@
 # binary files
-temp/
 pg_exporter
+
+# tmp files
+test/
+deploy/
+upload.sh
+temp/
+dist/
+.DS_Store
 
 # IDE files
 .vscode/
 .idea/
+.code/
 pg_exporter.iml
-
-# rpm files
-rpmbuild/
-make-rpm.sh
-
-# mac os files
-.DS_Store
-
-# test files
-pg_exporter_test.go
-test/
-deploy/
-upload.sh
-
-temp/
-dist/

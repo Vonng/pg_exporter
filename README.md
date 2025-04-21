@@ -18,7 +18,7 @@ PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **
     <a href="#deployment">Deployment</a> •
     <a href="#collectors">Collectors</a> •
     <a href="https://demo.pigsty.cc">Demo</a>
-</div><br><br>
+</div><br>
 
 [![pigsty-dashboard](https://pigsty.io/img/pigsty/dashboard.jpg)](https://demo.pigsty.cc)
 
@@ -49,9 +49,7 @@ PG_EXPORTER_URL='postgres://user:pass@host:port/postgres' pg_exporter
 curl http://localhost:9630/metrics   # access metrics
 ```
 
-PG Exporter provides only 4 built-in metrics (`pg_up`, `pg_version`, `pg_in_recovery`, `pg_exporter_build_info`). **All other metrics are defined in configuration files**, with comprehensive defaults in the included [`pg_exporter.yml`](pg_exporter.yml).
-
-
+There are 4 built-in metrics `pg_up`, `pg_version`, `pg_in_recovery`, `pg_exporter_build_info`. **All other metrics are defined in [`pg_exporter.yml`](pg_exporter.yml)**.
 
 
 
