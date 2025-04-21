@@ -1,54 +1,19 @@
-##
-# SYNOPSIS
-#       pg_shmem_*
-#
-# DESCRIPTION
-#       Allocations made from the server's main shared memory segment
-#
-# OPTIONS
-#       Tags       [cluster, schema:monitor]
-#       TTL        60
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    130000 ~ higher
-#       Source     380-pg_shmem.yml
-#
-# METRICS
-#       name (LABEL)
-#           Name of the shared memory allocation
-#       offset (GAUGE)
-#           The offset at which the allocation starts
-#       size (GAUGE)
-#           Size of the allocation
-#       allocated_size (GAUGE)
-#           Size of the allocation including padding
-#
-
+#==============================================================#
+# 380 pg_shmem
+#==============================================================#
 # pg_shmem require su privilege to work. Disable it or create auxiliary function with su before use:
 # CREATE OR REPLACE FUNCTION monitor.pg_shmem() RETURNS SETOF pg_shmem_allocations AS $$ SELECT * FROM pg_shmem_allocations;$$ LANGUAGE SQL SECURITY DEFINER;
 pg_shmem:
   name: pg_shmem
   desc: Allocations made from the server's main shared memory segment
   query: SELECT coalesce(name, 'Free') AS name, off AS offset, size, allocated_size FROM monitor.pg_shmem();
-
   ttl: 60
   min_version: 130000
   skip: true            # disable it by default
-  tags:
-    - cluster
-    - schema:monitor
-
+  tags: [cluster, "schema:monitor" ]
   metrics:
-    - name:
-        usage: LABEL
-        description: Name of the shared memory allocation
-    - offset:
-        usage: GAUGE
-        description: The offset at which the allocation starts
-    - size:
-        usage: GAUGE
-        description: Size of the allocation
-    - allocated_size:
-        usage: GAUGE
-        description: Size of the allocation including padding
+    - name:            { usage: LABEL ,description: Name of the shared memory allocation }
+    - offset:          { usage: GAUGE ,description: The offset at which the allocation starts }
+    - size:            { usage: GAUGE ,description: Size of the allocation }
+    - allocated_size:  { usage: GAUGE ,description: Size of the allocation including padding }
+

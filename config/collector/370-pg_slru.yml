@@ -1,76 +1,21 @@
-##
-# SYNOPSIS
-#       pg_slru.pg_slru_13_*
-#
-# DESCRIPTION
-#       PostgreSQL simple-least-recently-used (SLRU) cache statistics v13
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        60
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    130000 ~ higher
-#       Source     370-pg_slru.yml
-#
-# METRICS
-#       name (LABEL)
-#           Name of the SLRU
-#       blks_zeroed (COUNTER)
-#           Number of blocks zeroed during initializations
-#       blks_hit (COUNTER)
-#           Number of times disk blocks were found already in the SLRU, so that a read was not necessary
-#       blks_read (COUNTER)
-#           Number of disk blocks read for this SLRU
-#       blks_written (COUNTER)
-#           Number of disk blocks written for this SLRU
-#       blks_exists (COUNTER)
-#           Number of blocks checked for existence for this SLRU
-#       flushes (COUNTER)
-#           Number of flushes of dirty data for this SLRU
-#       truncates (COUNTER)
-#           Number of truncates for this SLRU
-#       reset_time (COUNTER)
-#           Time at which these statistics were last reset
-#
+#==============================================================#
+# 370 pg_slru
+#==============================================================#
 pg_slru_13:
   name: pg_slru
   desc: PostgreSQL simple-least-recently-used (SLRU) cache statistics v13
   query: SELECT name, blks_zeroed, blks_hit, blks_read, blks_written, blks_exists, flushes, truncates, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_slru;
-
   ttl: 60
   min_version: 130000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - name:
-        usage: LABEL
-        description: Name of the SLRU
-    - blks_zeroed:
-        usage: COUNTER
-        description: Number of blocks zeroed during initializations
-    - blks_hit:
-        usage: COUNTER
-        description: Number of times disk blocks were found already in the SLRU, so that a read was not necessary
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read for this SLRU
-    - blks_written:
-        usage: COUNTER
-        description: Number of disk blocks written for this SLRU
-    - blks_exists:
-        usage: COUNTER
-        description: Number of blocks checked for existence for this SLRU
-    - flushes:
-        usage: COUNTER
-        description: Number of flushes of dirty data for this SLRU
-    - truncates:
-        usage: COUNTER
-        description: Number of truncates for this SLRU
-    - reset_time:
-        usage: COUNTER
-        description: Time at which these statistics were last reset
-
+    - name:         { usage: LABEL   ,description: Name of the SLRU }
+    - blks_zeroed:  { usage: COUNTER ,description: Number of blocks zeroed during initializations }
+    - blks_hit:     { usage: COUNTER ,description: Number of times disk blocks were found already in the SLRU, so that a read was not necessary }
+    - blks_read:    { usage: COUNTER ,description: Number of disk blocks read for this SLRU }
+    - blks_written: { usage: COUNTER ,description: Number of disk blocks written for this SLRU }
+    - blks_exists:  { usage: COUNTER ,description: Number of blocks checked for existence for this SLRU }
+    - flushes:      { usage: COUNTER ,description: Number of flushes of dirty data for this SLRU }
+    - truncates:    { usage: COUNTER ,description: Number of truncates for this SLRU }
+    - reset_time:   { usage: GAUGE   ,description: Time at which these statistics were last reset }
 

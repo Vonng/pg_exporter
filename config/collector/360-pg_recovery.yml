@@ -1,35 +1,9 @@
-##
-# SYNOPSIS
-#       pg_recovery_*
-#
-# DESCRIPTION
-#       PostgreSQL control recovery metrics (9.6+)
-#
-# OPTIONS
-#       Tags       [cluster, replica]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90600 ~ higher
-#       Source     360-pg_recovery.yml
-#
-# METRICS
-#       min_timeline (COUNTER)
-#           Min recovery ending loc's timeline
-#       min_lsn (COUNTER)
-#           Minimum recovery ending location
-#       backup_start_lsn (COUNTER)
-#           Backup start location
-#       backup_end_lsn (COUNTER)
-#           Backup end location
-#       require_record (GAUGE)
-#           End-of-backup record required
-#
+#==============================================================#
+# 360 pg_recovery
+#==============================================================#
 pg_recovery:
   name: pg_recovery
   desc: PostgreSQL control recovery metrics (9.6+)
-
   query: |
     SELECT min_recovery_end_timeline    AS min_timeline,
       min_recovery_end_lsn - '0/0' AS min_lsn,
@@ -39,27 +13,13 @@ pg_recovery:
     FROM pg_control_recovery();
   ttl: 10
   min_version: 090600
-  tags:
-    - cluster
-    - replica
-
+  tags: [ cluster, replica ]
   metrics:
-    - min_timeline:
-        usage: COUNTER
-        description: Min recovery ending loc's timeline
-    - min_lsn:
-        usage: COUNTER
-        description:  Minimum recovery ending location
-    - backup_start_lsn:
-        usage: COUNTER
-        description: Backup start location
-    - backup_end_lsn:
-        usage: COUNTER
-        description: Backup end location
-    - require_record:
-        usage: GAUGE
-        description: End-of-backup record required
-
+    - min_timeline:      { usage: COUNTER ,description: Min recovery ending loc's timeline }
+    - min_lsn:           { usage: COUNTER ,description: Minimum recovery ending location }
+    - backup_start_lsn:  { usage: COUNTER ,description: Backup start location }
+    - backup_end_lsn:    { usage: COUNTER ,description: Backup end location }
+    - require_record:    { usage: GAUGE   ,description: End-of-backup record required }
 
 pg_recovery_prefetch:
   name: pg_recovery_prefetch
@@ -67,39 +27,17 @@ pg_recovery_prefetch:
   query: SELECT prefetch,hit,skip_init,skip_new,skip_fpw,skip_rep,wal_distance,block_distance,io_depth,extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_recovery_prefetch;
   ttl: 10
   min_version: 150000
-  tags:
-    - cluster
-    - replica
-
+  tags: [ cluster, replica ]
   metrics:
-    - prefetch:
-        usage: COUNTER
-        description: Number of blocks prefetched because they were not in the buffer pool
-    - hit:
-        usage: COUNTER
-        description:  Number of blocks not prefetched because they were already in the buffer pool
-    - skip_init:
-        usage: COUNTER
-        description: Number of blocks not prefetched because they would be zero-initialized
-    - skip_new:
-        usage: COUNTER
-        description: Number of blocks not prefetched because they didn't exist yet
-    - skip_fpw:
-        usage: GAUGE
-        description: Number of blocks not prefetched because a full page image was included in the WAL
-    - skip_rep:
-        usage: COUNTER
-        description: Number of blocks not prefetched because they were already recently prefetched
-    - wal_distance:
-        usage: GAUGE
-        description: How many bytes ahead the prefetcher is looking
-    - block_distance:
-        usage: GAUGE
-        description: How many blocks ahead the prefetcher is looking
-    - io_depth:
-        usage: GAUGE
-        description: How many prefetches have been initiated but are not yet known to have completed
-    - reset_time:
-        usage: COUNTER
-        description: Time at which these recovery prefetch statistics were last reset
+    - prefetch:       { usage: COUNTER ,description: Number of blocks prefetched because they were not in the buffer pool }
+    - hit:            { usage: COUNTER ,description: Number of blocks not prefetched because they were already in the buffer pool }
+    - skip_init:      { usage: COUNTER ,description: Number of blocks not prefetched because they would be zero-initialized }
+    - skip_new:       { usage: COUNTER ,description: Number of blocks not prefetched because they didn't exist yet }
+    - skip_fpw:       { usage: GAUGE   ,description: Number of blocks not prefetched because a full page image was included in the WAL }
+    - skip_rep:       { usage: COUNTER ,description: Number of blocks not prefetched because they were already recently prefetched }
+    - wal_distance:   { usage: GAUGE   ,description: How many bytes ahead the prefetcher is looking }
+    - block_distance: { usage: GAUGE   ,description: How many blocks ahead the prefetcher is looking }
+    - io_depth:       { usage: GAUGE   ,description: How many prefetches have been initiated but are not yet known to have completed }
+    - reset_time:     { usage: GAUGE   ,description: Time at which these recovery prefetch statistics were last reset }
+
 

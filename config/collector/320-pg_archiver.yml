@@ -1,55 +1,18 @@
-##
-# SYNOPSIS
-#       pg_archiver_*
-#
-# DESCRIPTION
-#       PostgreSQL archiver process statistics
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        60
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     320-pg_archiver.yml
-#
-# METRICS
-#       finish_count (COUNTER)
-#           Number of WAL files that have been successfully archived
-#       failed_count (COUNTER)
-#           Number of failed attempts for archiving WAL files
-#       last_finish_time (COUNTER)
-#           Time of the last successful archive operation
-#       last_failed_time (COUNTER)
-#           Time of the last failed archival operation
-#       reset_time (GAUGE)
-#           Time at which archive statistics were last reset
-#
+#==============================================================#
+# 320 pg_archiver
+#==============================================================#
 pg_archiver:
   name: pg_archiver
   desc: PostgreSQL archiver process statistics
   query: SELECT archived_count AS finish_count, failed_count, last_archived_time AS last_finish_time, last_failed_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_archiver;
   ttl: 60
   min_version: 090400
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - finish_count:
-        usage: COUNTER
-        description: Number of WAL files that have been successfully archived
-    - failed_count:
-        usage: COUNTER
-        description: Number of failed attempts for archiving WAL files
-    - last_finish_time:
-        usage: COUNTER
-        description: Time of the last successful archive operation
-    - last_failed_time:
-        usage: COUNTER
-        description: Time of the last failed archival operation
-    - reset_time:
-        usage: GAUGE
-        description: Time at which archive statistics were last reset
+    - finish_count:        { usage: COUNTER ,description: Number of WAL files that have been successfully archived }
+    - failed_count:        { usage: COUNTER ,description: Number of failed attempts for archiving WAL files }
+    - last_finish_time:    { usage: COUNTER ,description: Time of the last successful archive operation }
+    - last_failed_time:    { usage: COUNTER ,description: Time of the last failed archival operation }
+    - reset_time:          { usage: GAUGE   ,description: Time at which archive statistics were last reset }
 
 

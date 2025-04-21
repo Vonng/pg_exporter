@@ -1,204 +1,72 @@
-##
-# SYNOPSIS
-#       pg_meta_*
-#
-# DESCRIPTION
-#       PostgreSQL meta info
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90600 ~ 130000
-#       Source     120-pg_meta.yml
-#
-# METRICS
-#       cluster_id (LABEL)
-#           cluster system identifier
-#       cluster_name (LABEL)
-#           cluster name
-#       listen_port (LABEL)
-#           listen port
-#       data_dir (LABEL)
-#           data directory path
-#       conf_path (LABEL)
-#           postgresql.conf path
-#       hba_path (LABEL)
-#           pg_hba.conf path
-#       wal_level (LABEL)
-#           wal level
-#       version (LABEL)
-#           server version in human-readable format
-#       ver_num (LABEL)
-#           server version number in machine-readable format
-#       extensions (LABEL)
-#           server installed preload libraries
-#       primary_conninfo (LABEL)
-#           connection string to upstream (do not set password here)
-#       info (GAUGE)
-#           constant 1
-#
-pg_meta:
-  name: pg_meta
-  desc: PostgreSQL meta info
-  query: |
-    SELECT (SELECT system_identifier FROM pg_control_system()) AS cluster_id,
-           current_setting('cluster_name')                     AS cluster_name,
-           current_setting('port')                             AS listen_port,
-           current_setting('data_directory')                   AS data_dir,
-           current_setting('config_file')                      AS conf_path,
-           current_setting('hba_file')                         AS hba_path,
-           current_setting('wal_level')                        AS wal_level,
-           current_setting('server_version')                   AS version,
-           current_setting('server_version_num')               AS ver_num,
-           current_setting('shared_preload_libraries')         AS extensions,
-           'N/A'                                               AS primary_conninfo,
-           1                                                   AS info
-  ttl: 10
-  min_version: 090600
-  max_version: 130000
-  tags:
-    - cluster
-
-  metrics:
-    - cluster_id:
-        usage: LABEL
-        description: cluster system identifier
-    - cluster_name:
-        usage: LABEL
-        description: cluster name
-    - listen_port:
-        usage: LABEL
-        description: listen port
-    - data_dir:
-        usage: LABEL
-        description: data directory path
-    - conf_path:
-        usage: LABEL
-        description: postgresql.conf path
-    - hba_path:
-        usage: LABEL
-        description: pg_hba.conf path
-    - wal_level:
-        usage: LABEL
-        description: wal level
-    - version:
-        usage: LABEL
-        description: server version in human-readable format
-    - ver_num:
-        usage: LABEL
-        description: server version number in machine-readable format
-    - extensions:
-        usage: LABEL
-        description: server installed preload libraries
-    - primary_conninfo:
-        usage: LABEL
-        description: connection string to upstream (do not set password here)
-    - info:
-        usage: GAUGE
-        description: constant 1
-
-##
-# SYNOPSIS
-#       pg_meta.pg_meta_13_*
-#
-# DESCRIPTION
-#       PostgreSQL meta info for pg 13, with extra primary conninfo
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    130000 ~ higher
-#       Source     120-pg_meta.yml
-#
-# METRICS
-#       cluster_id (LABEL)
-#           cluster system identifier
-#       cluster_name (LABEL)
-#           cluster name
-#       listen_port (LABEL)
-#           listen port
-#       data_dir (LABEL)
-#           data directory path
-#       conf_path (LABEL)
-#           postgresql.conf path
-#       hba_path (LABEL)
-#           pg_hba.conf path
-#       wal_level (LABEL)
-#           wal level
-#       version (LABEL)
-#           server version in human-readable format
-#       ver_num (LABEL)
-#           server version number in machine-readable format
-#       extensions (LABEL)
-#           server installed preload libraries
-#       primary_conninfo (LABEL)
-#           connection string to upstream (do not set password here)
-#       info (GAUGE)
-#           constant 1
-#
+#==============================================================#
+# 120 pg_meta
+#==============================================================#
 pg_meta_13:
   name: pg_meta
   desc: PostgreSQL meta info for pg 13, with extra primary conninfo
   query: |
-    SELECT (SELECT system_identifier FROM pg_control_system()) AS cluster_id,
-           current_setting('cluster_name')                     AS cluster_name,
-           current_setting('port')                             AS listen_port,
-           current_setting('data_directory')                   AS data_dir,
-           current_setting('config_file')                      AS conf_path,
-           current_setting('hba_file')                         AS hba_path,
-           current_setting('wal_level')                        AS wal_level,
-           current_setting('server_version')                   AS version,
-           current_setting('server_version_num')               AS ver_num,
-           current_setting('shared_preload_libraries')         AS extensions,
-           current_setting('primary_conninfo')                 AS primary_conninfo,
-           1                                                   AS info
+    SELECT 
+      (SELECT system_identifier FROM pg_control_system()) AS cluster_id,
+      current_setting('cluster_name')                     AS cluster_name,
+      current_setting('port')                             AS listen_port,
+      current_setting('data_directory')                   AS data_dir,
+      current_setting('config_file')                      AS conf_path,
+      current_setting('hba_file')                         AS hba_path,
+      current_setting('wal_level')                        AS wal_level,
+      current_setting('server_version')                   AS version,
+      current_setting('server_version_num')               AS ver_num,
+      current_setting('shared_preload_libraries')         AS extensions,
+      current_setting('primary_conninfo')                 AS primary_conninfo,
+      1                                                   AS info
   ttl: 10
   min_version: 130000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - cluster_id:
-        usage: LABEL
-        description: cluster system identifier
-    - cluster_name:
-        usage: LABEL
-        description: cluster name
-    - listen_port:
-        usage: LABEL
-        description: listen port
-    - data_dir:
-        usage: LABEL
-        description: data directory path
-    - conf_path:
-        usage: LABEL
-        description: postgresql.conf path
-    - hba_path:
-        usage: LABEL
-        description: pg_hba.conf path
-    - wal_level:
-        usage: LABEL
-        description: wal level
-    - version:
-        usage: LABEL
-        description: server version in human-readable format
-    - ver_num:
-        usage: LABEL
-        description: server version number in machine-readable format
-    - extensions:
-        usage: LABEL
-        description: server installed preload libraries
-    - primary_conninfo:
-        usage: LABEL
-        description: connection string to upstream (do not set password here)
-    - info:
-        usage: GAUGE
-        description: constant 1
+    - cluster_id:        { usage: LABEL ,description: cluster system identifier }
+    - cluster_name:      { usage: LABEL ,description: cluster name }
+    - listen_port:       { usage: LABEL ,description: listen port }
+    - data_dir:          { usage: LABEL ,description: data directory path }
+    - conf_path:         { usage: LABEL ,description: postgresql.conf path }
+    - hba_path:          { usage: LABEL ,description: pg_hba.conf path }
+    - wal_level:         { usage: LABEL ,description: wal level }
+    - version:           { usage: LABEL ,description: server version in human-readable format }
+    - ver_num:           { usage: LABEL ,description: server version number in machine-readable format }
+    - extensions:        { usage: LABEL ,description: server installed preload libraries }
+    - primary_conninfo:  { usage: LABEL ,description: connection string to upstream (do not set password here) }
+    - info:              { usage: GAUGE ,description: constant 1 }
 
+pg_meta_10:
+  name: pg_meta
+  desc: PostgreSQL meta info
+  query: |
+    SELECT 
+      (SELECT system_identifier FROM pg_control_system()) AS cluster_id,
+      current_setting('cluster_name')                     AS cluster_name,
+      current_setting('port')                             AS listen_port,
+      current_setting('data_directory')                   AS data_dir,
+      current_setting('config_file')                      AS conf_path,
+      current_setting('hba_file')                         AS hba_path,
+      current_setting('wal_level')                        AS wal_level,
+      current_setting('server_version')                   AS version,
+      current_setting('server_version_num')               AS ver_num,
+      current_setting('shared_preload_libraries')         AS extensions,
+      'N/A'                                               AS primary_conninfo,
+      1                                                   AS info
+  ttl: 10
+  min_version: 090600
+  max_version: 130000
+  tags: [ cluster ]
+  metrics:
+    - cluster_id:        { usage: LABEL ,description: cluster system identifier }
+    - cluster_name:      { usage: LABEL ,description: cluster name }
+    - listen_port:       { usage: LABEL ,description: listen port }
+    - data_dir:          { usage: LABEL ,description: data directory path }
+    - conf_path:         { usage: LABEL ,description: postgresql.conf path }
+    - hba_path:          { usage: LABEL ,description: pg_hba.conf path }
+    - wal_level:         { usage: LABEL ,description: wal level }
+    - version:           { usage: LABEL ,description: server version in human-readable format }
+    - ver_num:           { usage: LABEL ,description: server version number in machine-readable format }
+    - extensions:        { usage: LABEL ,description: server installed preload libraries }
+    - primary_conninfo:  { usage: LABEL ,description: connection string to upstream (do not set password here) }
+    - info:              { usage: GAUGE ,description: constant 1 }
 

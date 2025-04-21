@@ -1,115 +1,38 @@
-##
-# SYNOPSIS
-#       pg_bgwriter_*
-#
-# DESCRIPTION
-#       PostgreSQL background writer metrics
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     330-pg_bgwriter.yml
-#
-# METRICS
-#       checkpoints_timed (COUNTER)
-#           Number of scheduled checkpoints that have been performed
-#       checkpoints_req (COUNTER)
-#           Number of requested checkpoints that have been performed
-#       checkpoint_write_time (COUNTER)
-#           Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk, in seconds
-#       checkpoint_sync_time (COUNTER)
-#           Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk, in seconds
-#       buffers_checkpoint (COUNTER)
-#           Number of buffers written during checkpoints
-#       buffers_clean (COUNTER)
-#           Number of buffers written by the background writer
-#       buffers_backend (COUNTER)
-#           Number of buffers written directly by a backend
-#       maxwritten_clean (COUNTER)
-#           Number of times the background writer stopped a cleaning scan because it had written too many buffers
-#       buffers_backend_fsync (COUNTER)
-#           Number of times a backend had to execute its own fsync call
-#       buffers_alloc (COUNTER)
-#           Number of buffers allocated
-#       reset_time (COUNTER)
-#           Time at which bgwriter statistics were last reset
-#
+#==============================================================#
+# 330 pg_bgwriter
+#==============================================================#
+# https://pgpedia.info/p/pg_stat_bgwriter.html
 pg_bgwriter_17:
   name: pg_bgwriter
   desc: "PostgreSQL background writer metrics PG 17+"
-  # https://pgpedia.info/p/pg_stat_bgwriter.html
   query: SELECT buffers_clean, maxwritten_clean, buffers_alloc, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_bgwriter;
-
   ttl: 10
   min_version: 170000
-  tags:
-    - cluster
+  tags: [ cluster ]
   metrics:
-    - buffers_clean:
-        usage: COUNTER
-        description: Number of buffers written by the background writer
-    - maxwritten_clean:
-        usage: COUNTER
-        description: Number of times the background writer stopped a cleaning scan because it had written too many buffers
-    - buffers_alloc:
-        usage: COUNTER
-        description: Number of buffers allocated
-    - reset_time:
-        usage: COUNTER
-        description: Time at which bgwriter statistics were last reset
+    - buffers_clean:       { usage: COUNTER ,description: Number of buffers written by the background writer }
+    - maxwritten_clean:    { usage: COUNTER ,description: Number of times the background writer stopped a cleaning scan because it had written too many buffers }
+    - buffers_alloc:       { usage: COUNTER ,description: Number of buffers allocated }
+    - reset_time:          { usage: GAUGE   ,description: Time at which bgwriter statistics were last reset }
 
-
-pg_bgwriter_16:
+pg_bgwriter_10:
   name: pg_bgwriter
   desc: "PostgreSQL background writer metrics (PG17-)"
-  # https://pgpedia.info/p/pg_stat_bgwriter.html
   query: SELECT checkpoints_timed, checkpoints_req, checkpoint_write_time, checkpoint_sync_time, buffers_checkpoint, buffers_clean, buffers_backend, maxwritten_clean, buffers_backend_fsync, buffers_alloc, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_bgwriter;
-
   ttl: 10
   min_version: 090400
   max_version: 170000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - checkpoints_timed:
-        usage: COUNTER
-        description: Number of scheduled checkpoints that have been performed
-    - checkpoints_req:
-        usage: COUNTER
-        description: Number of requested checkpoints that have been performed
-    - checkpoint_write_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk, in seconds
-    - checkpoint_sync_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk, in seconds
-    - buffers_checkpoint:
-        usage: COUNTER
-        description: Number of buffers written during checkpoints
-    - buffers_clean:
-        usage: COUNTER
-        description: Number of buffers written by the background writer
-    - buffers_backend:
-        usage: COUNTER
-        description: Number of buffers written directly by a backend
-    - maxwritten_clean:
-        usage: COUNTER
-        description: Number of times the background writer stopped a cleaning scan because it had written too many buffers
-    - buffers_backend_fsync:
-        usage: COUNTER
-        description: Number of times a backend had to execute its own fsync call
-        # Number of times a backend had to execute its own fsync call (normally the background writer handles those even when the backend does its own write)
-    - buffers_alloc:
-        usage: COUNTER
-        description: Number of buffers allocated
-    - reset_time:
-        usage: COUNTER
-        description: Time at which bgwriter statistics were last reset
+    - checkpoints_timed:     { usage: COUNTER              ,description: Number of scheduled checkpoints that have been performed }
+    - checkpoints_req:       { usage: COUNTER              ,description: Number of requested checkpoints that have been performed }
+    - checkpoint_write_time: { usage: COUNTER ,scale: 1e-3 ,description: Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk, in seconds }
+    - checkpoint_sync_time:  { usage: COUNTER ,scale: 1e-3 ,description: Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk, in seconds }
+    - buffers_checkpoint:    { usage: COUNTER              ,description: Number of buffers written during checkpoints }
+    - buffers_clean:         { usage: COUNTER              ,description: Number of buffers written by the background writer }
+    - buffers_backend:       { usage: COUNTER              ,description: Number of buffers written directly by a backend }
+    - maxwritten_clean:      { usage: COUNTER              ,description: Number of times the background writer stopped a cleaning scan because it had written too many buffers }
+    - buffers_backend_fsync: { usage: COUNTER              ,description: Number of times a backend had to execute its own fsync call }
+    - buffers_alloc:         { usage: COUNTER              ,description: Number of buffers allocated }
+    - reset_time:            { usage: GAUGE                ,description: Time at which bgwriter statistics were last reset }
 

@@ -1,25 +1,6 @@
-##
-# SYNOPSIS
-#       pg_sync_standby_*
-#
-# DESCRIPTION
-#       PostgreSQL synchronous standby status and names
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     220-pg_sync_standby.yml
-#
-# METRICS
-#       names (LABEL)
-#           List of standby servers that can support synchronous replication, <null> if not enabled
-#       enabled (GAUGE)
-#           Synchronous commit enabled, 1 if enabled, 0 if disabled
-#
+#==============================================================#
+# 220 pg_sync_standby
+#==============================================================#
 pg_sync_standby:
   name: pg_sync_standby
   desc: PostgreSQL synchronous standby status and names
@@ -27,16 +8,10 @@ pg_sync_standby:
     SELECT CASE WHEN names <> '' THEN names ELSE '<null>' END AS names, CASE WHEN names <> '' THEN 1 ELSE 0 END AS enabled FROM (SELECT current_setting('synchronous_standby_names') AS names) n;
   ttl: 10
   min_version: 090400
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - names:
-        usage: LABEL
-        description: List of standby servers that can support synchronous replication, <null> if not enabled
-    - enabled:
-        usage: GAUGE
-        description: Synchronous commit enabled, 1 if enabled, 0 if disabled
+    - names:             { usage: LABEL ,description: List of standby servers that can support synchronous replication, <null> if not enabled }
+    - enabled:           { usage: GAUGE ,description: Synchronous commit enabled, 1 if enabled, 0 if disabled }
 
 
 

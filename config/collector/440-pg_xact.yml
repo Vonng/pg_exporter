@@ -1,46 +1,16 @@
-##
-# SYNOPSIS
-#       pg_xact_*
-#
-# DESCRIPTION
-#       PostgreSQL transaction identifier metrics
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     440-pg_xact.yml
-#
-# METRICS
-#       xmin (COUNTER)
-#           Earliest txid that is still active
-#       xmax (COUNTER)
-#           First as-yet-unassigned txid. txid >= this are invisible.
-#       xnum (GAUGE)
-#           Current active transaction count
-#
+#==============================================================#
+# 440 pg_xact
+#==============================================================#
 pg_xact:
   name: pg_xact
   desc: PostgreSQL transaction identifier metrics
   query: WITH snap(v) AS (SELECT txid_current_snapshot()), xset(v) AS  (SELECT txid_snapshot_xip(v) FROM snap), xnum(v) AS (SELECT count(*) from xset), xmin(v) AS (SELECT txid_snapshot_xmin(v) FROM snap), xmax(v) AS (SELECT txid_snapshot_xmin(v) FROM snap) SELECT xmin.v AS xmin, xmax.v AS xmax, xnum.v AS xnum FROM xmin, xmax, xnum;
-
   ttl: 10
   min_version: 090400
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - xmin:
-        usage: COUNTER
-        description: Earliest txid that is still active
-    - xmax:
-        usage: COUNTER
-        description: First as-yet-unassigned txid. txid >= this are invisible.
-    - xnum:
-        usage: GAUGE
-        description: Current active transaction count
+    - xmin: { usage: COUNTER ,description: Earliest txid that is still active }
+    - xmax: { usage: COUNTER ,description: First as-yet-unassigned txid. txid >= this are invisible. }
+    - xnum: { usage: GAUGE   ,description: Current active transaction count }
 
 

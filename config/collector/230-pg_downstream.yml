@@ -1,25 +1,6 @@
-##
-# SYNOPSIS
-#       pg_downstream_*
-#
-# DESCRIPTION
-#       PostgreSQL replication client count group by state
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     230-pg_downstream.yml
-#
-# METRICS
-#       state (LABEL)
-#           Replication client state, could be one of startup|catchup|streaming|backup|stopping
-#       count (GAUGE)
-#           Count of corresponding state
-#
+#==============================================================#
+# 230 pg_downstream
+#==============================================================#
 pg_downstream:
   name: pg_downstream
   desc: PostgreSQL replication client count group by state
@@ -27,15 +8,9 @@ pg_downstream:
     SELECT l.state, coalesce(count, 0 ) AS count FROM unnest(ARRAY ['streaming','startup','catchup', 'backup', 'stopping']) l(state) LEFT JOIN (SELECT state, count(*) AS count FROM pg_stat_replication GROUP BY state)r ON l.state =  r.state;
   ttl: 10
   min_version: 090400
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - state:
-        usage: LABEL
-        description: Replication client state, could be one of startup|catchup|streaming|backup|stopping
-    - count:
-        usage: GAUGE
-        description: Count of corresponding state
+    - state:             { usage: LABEL ,description: Replication client state, could be one of startup|catchup|streaming|backup|stopping }
+    - count:             { usage: GAUGE ,description: Count of corresponding state }
 
 

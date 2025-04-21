@@ -1,133 +1,63 @@
-##
-# SYNOPSIS
-#       pg_sub.pg_sub_10_*
-#
-# DESCRIPTION
-#       PostgreSQL subscription statistics ()
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    100000 ~ higher
-#       Source     260-pg_sub.yml
-#
-# METRICS
-#       subname (LABEL)
-#           Name of this subscription
-#       id (GAUGE)
-#           OID of the subscription
-#       pid (GAUGE)
-#           Process ID of the subscription main apply worker process
-#       received_lsn (COUNTER)
-#           Last write-ahead log location received
-#       reported_lsn (COUNTER)
-#           Last write-ahead log location reported to origin WAL sender
-#       msg_send_time (GAUGE)
-#           Send time of last message received from origin WAL sender
-#       msg_recv_time (GAUGE)
-#           Receipt time of last message received from origin WAL sender
-#       reported_time (GAUGE)
-#           Time of last write-ahead log location reported to origin WAL sender
-#
-
-pg_sub_10_14:
-  name: pg_sub
-  desc: PostgreSQL subscription statistics (10-14)
-  query: |
-    SELECT subname, subid AS id, pid,
-           received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
-           extract(epoch from last_msg_send_time) AS msg_send_time,
-           extract(epoch from last_msg_receipt_time) AS msg_recv_time,
-           extract(epoch from latest_end_time) AS reported_time
-    FROM pg_stat_subscription WHERE relid ISNULL;
-
-  ttl: 10
-  min_version: 100000
-  max_version: 150000
-  tags:
-    - cluster
-
-  metrics:
-    - subname:
-        usage: LABEL
-        description: Name of this subscription
-    - id:
-        usage: GAUGE
-        description: OID of the subscription
-    - pid:
-        usage: GAUGE
-        description: Process ID of the subscription main apply worker process
-    - received_lsn:
-        usage: COUNTER
-        description: Last write-ahead log location received
-        # the initial value of this field being 0
-    - reported_lsn:
-        usage: COUNTER
-        description: Last write-ahead log location reported to origin WAL sender
-    - msg_send_time:
-        usage: GAUGE
-        description: Send time of last message received from origin WAL sender
-    - msg_recv_time:
-        usage: GAUGE
-        description: Receipt time of last message received from origin WAL sender
-    - reported_time:
-        usage: GAUGE
-        description: Time of last write-ahead log location reported to origin WAL sender
-
-
+#==============================================================#
+# 260 pg_sub
+#==============================================================#
 pg_sub_15:
   name: pg_sub
   desc: PostgreSQL subscription statistics (15+)
-  query: |
-    SELECT s1.subname, subid AS id, pid, received_lsn, reported_lsn,
-           msg_send_time, msg_recv_time, reported_time,
-           apply_error_count, sync_error_count
+  query: |-
+    SELECT 
+      s1.subname, subid AS id, pid, received_lsn, reported_lsn,
+      msg_send_time, msg_recv_time, reported_time,
+      apply_error_count, sync_error_count
     FROM
-      (SELECT subname, subid, pid,
-          received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
-          extract(epoch from last_msg_send_time) AS msg_send_time,
-          extract(epoch from last_msg_receipt_time) AS msg_recv_time,
-          extract(epoch from latest_end_time) AS reported_time
+      (SELECT
+        subname, subid, pid,
+        received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
+        extract(epoch from last_msg_send_time) AS msg_send_time,
+        extract(epoch from last_msg_receipt_time) AS msg_recv_time,
+        extract(epoch from latest_end_time) AS reported_time
       FROM pg_stat_subscription WHERE relid ISNULL) s1
     LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid);
 
   ttl: 10
   min_version: 150000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - subname:
-        usage: LABEL
-        description: Name of this subscription
-    - id:
-        usage: GAUGE
-        description: OID of the subscription
-    - pid:
-        usage: GAUGE
-        description: Process ID of the subscription main apply worker process
-    - received_lsn:
-        usage: COUNTER
-        description: Last write-ahead log location received
-        # the initial value of this field being 0
-    - reported_lsn:
-        usage: COUNTER
-        description: Last write-ahead log location reported to origin WAL sender
-    - msg_send_time:
-        usage: GAUGE
-        description: Send time of last message received from origin WAL sender
-    - msg_recv_time:
-        usage: GAUGE
-        description: Receipt time of last message received from origin WAL sender
-    - reported_time:
-        usage: GAUGE
-        description: Time of last write-ahead log location reported to origin WAL sender
-    - apply_error_count:
-        usage: COUNTER
-        description: Number of times an error occurred while applying changes.
-    - sync_error_count:
-        usage: COUNTER
-        description: Number of times an error occurred during the initial table synchronization
+    - subname:             { usage: LABEL   ,description: Name of this subscription }
+    - id:                  { usage: GAUGE   ,description: OID of the subscription }
+    - pid:                 { usage: GAUGE   ,description: Process ID of the subscription main apply worker process }
+    - received_lsn:        { usage: COUNTER ,description: Last write-ahead log location received }
+    - reported_lsn:        { usage: COUNTER ,description: Last write-ahead log location reported to origin WAL sender }
+    - msg_send_time:       { usage: GAUGE   ,description: Send time of last message received from origin WAL sender }
+    - msg_recv_time:       { usage: GAUGE   ,description: Receipt time of last message received from origin WAL sender }
+    - reported_time:       { usage: GAUGE   ,description: Time of last write-ahead log location reported to origin WAL sender }
+    - apply_error_count:   { usage: COUNTER ,description: Number of times an error occurred while applying changes. }
+    - sync_error_count:    { usage: COUNTER ,description: Number of times an error occurred during the initial table synchronization }
+
+pg_sub_10:
+  name: pg_sub
+  desc: PostgreSQL subscription statistics (10-14)
+  query: |-
+    SELECT 
+      subname, subid AS id, pid,
+      received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
+      extract(epoch from last_msg_send_time) AS msg_send_time,
+      extract(epoch from last_msg_receipt_time) AS msg_recv_time,
+      extract(epoch from latest_end_time) AS reported_time
+    FROM pg_stat_subscription WHERE relid ISNULL;
+
+  ttl: 10
+  min_version: 100000
+  max_version: 150000
+  tags: [ cluster ]
+  metrics:
+    - subname:             { usage: LABEL   ,description: Name of this subscription }
+    - id:                  { usage: GAUGE   ,description: OID of the subscription }
+    - pid:                 { usage: GAUGE   ,description: Process ID of the subscription main apply worker process }
+    - received_lsn:        { usage: COUNTER ,description: Last write-ahead log location received }
+    - reported_lsn:        { usage: COUNTER ,description: Last write-ahead log location reported to origin WAL sender }
+    - msg_send_time:       { usage: GAUGE   ,description: Send time of last message received from origin WAL sender }
+    - msg_recv_time:       { usage: GAUGE   ,description: Receipt time of last message received from origin WAL sender }
+    - reported_time:       { usage: GAUGE   ,description: Time of last write-ahead log location reported to origin WAL sender }
+
+

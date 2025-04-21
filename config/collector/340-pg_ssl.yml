@@ -1,25 +1,6 @@
-##
-# SYNOPSIS
-#       pg_ssl_*
-#
-# DESCRIPTION
-#       PostgreSQL SSL client connection count
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90500 ~ higher
-#       Source     340-pg_ssl.yml
-#
-# METRICS
-#       enabled (GAUGE)
-#           Number of client connection that use ssl
-#       disabled (GAUGE)
-#           Number of client connection that does not use ssl
-#
+#==============================================================#
+# 340 pg_ssl
+#==============================================================#
 pg_ssl:
   name: pg_ssl
   desc: PostgreSQL SSL client connection count
@@ -27,15 +8,9 @@ pg_ssl:
     SELECT count(*) FILTER (WHERE ssl) AS enabled, count(*) FILTER ( WHERE NOT ssl) AS disabled FROM pg_stat_ssl;
   ttl: 10
   min_version: 090500
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - enabled:
-        usage: GAUGE
-        description: Number of client connection that use ssl
-    - disabled:
-        usage: GAUGE
-        description: Number of client connection that does not use ssl
+    - enabled:            { usage: GAUGE   ,description: Number of client connection that use ssl }
+    - disabled:           { usage: GAUGE   ,description: Number of client connection that does not use ssl }
 
 
