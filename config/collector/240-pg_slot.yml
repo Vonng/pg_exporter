@@ -50,7 +50,6 @@ pg_slot_17:
     - invalidation_reason: { usage: GAUGE    ,description: ok=0, wal_removed=1, rows_removed=2, wal_level_insufficient=3 }
     - inactive_since:      { usage: GAUGE    ,description: The time when the slot became inactive }
 
-# 
 pg_slot_16:
   name: pg_slot
   desc: PostgreSQL replication slot metrics v16 with conflicting
@@ -142,7 +141,7 @@ pg_slot_13:
   name: pg_slot
   desc: PostgreSQL replication slot metrics v13 (wal safe size and status)
   query: |-
-    SELECT slot_name, slot_type, plugin, database AS datname,datoid,active_pid
+    SELECT slot_name, slot_type, plugin, database AS datname,datoid,active_pid,
       active,temporary,xmin::TEXT::BIGINT AS xmin,catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
       restart_lsn - '0/0' AS restart_lsn, confirmed_flush_lsn - '0/0' AS confirm_lsn,
       CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END - restart_lsn AS retained_bytes,

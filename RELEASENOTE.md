@@ -6,11 +6,18 @@
 ## 0.9.0
 
 * `pg_slot` overhaul: Add 16/17 pg_replication_slot metrics
-* Format collector in compact mode
 * allow `pg_slot` collector run on replica since 16/17
 * restrict pg_clustering, pg_indexing, pg_vacuuming run on primary
 * mark all `reset_time` as `GAUGE` rather than `COUNTER`
+* fix `pg_recovery_prefetch_skip_fpw` type from `GAUGE` to `COUNTER`
 * normalize collector branch name with min pg ver suffix
+* Format collector in compact mode
+* Add license file to binary packages
+* move `Vonng/pg_exporter` repo to `pgsty/pg_exporter`
+
+https://github.com/Vonng/pg_exporter/releases/tag/v0.9.0
+
+
 
 ------
 
@@ -19,6 +26,10 @@
 * Bump dependencies to the latest version
 * [Bump golang.org/x/net from 0.35.0 to 0.36.0 #67](https://github.com/Vonng/pg_exporter/pull/67)
 * Update docker images building tags
+
+https://github.com/Vonng/pg_exporter/releases/tag/v0.8.1
+
+
 
 
 ------
@@ -30,6 +41,9 @@
 * Build with the latest go 1.24 and bump all the dependencies
 * Refactor logging with the standard `log/slog` instead of `go-kit`
 * Full Changelog**: https://github.com/Vonng/pg_exporter/compare/v0.7.1...v0.8.0
+
+https://github.com/Vonng/pg_exporter/releases/tag/v0.8.0
+
 
 
 ------
@@ -43,23 +57,7 @@ Routine update with dependabot
 * Fix some typos
 * Full Changelog**: https://github.com/Vonng/pg_exporter/compare/v0.7.0...v0.7.1
 
-
-------
-
-## 0.7.0
-
-Refactor codebase for the latest go version.
-
-- [PostgreSQL 17 Metrics Support](https://github.com/Vonng/pg_exporter/issues/53) by @Vonng
-- [pg_exporter: predicate queries feature](https://github.com/Vonng/pg_exporter/pull/47) by [@ringerc](https://github.com/ringerc)
-- [Do a clean build in the dockerfile](https://github.com/Vonng/pg_exporter/pull/54) by [@ringerc](https://github.com/ringerc) by [@ringerc](https://github.com/ringerc)
-- [pg_exporter: don't panic after "bind: address already in use"](https://github.com/Vonng/pg_exporter/pull/46) by [@ringerc](https://github.com/ringerc)
-- [pg_exporter: fix /stat endpoint formatting](https://github.com/Vonng/pg_exporter/pull/48) by [@ringerc](https://github.com/ringerc)
-- [pg_exporter: omit default query properties on yaml export](https://github.com/Vonng/pg_exporter/pull/49) by [@ringerc](https://github.com/ringerc)
-- [Exclude template DBs from discovery and schema-qualify discovery query](https://github.com/Vonng/pg_exporter/pull/50) by [@ringerc](https://github.com/ringerc)
-- [Fix some typos and some metric description mistakes](https://github.com/Vonng/pg_exporter/pull/51) by [@ringerc](https://github.com/ringerc)
-- [Switch from unmaintained lib/pq driver to pgx with stdlib wrapper](https://github.com/Vonng/pg_exporter/pull/52) by [@ringerc](https://github.com/ringerc)
-
+https://github.com/Vonng/pg_exporter/releases/tag/v0.7.1
 
 
 
@@ -79,6 +77,7 @@ Refactor codebase for the latest go version.
 - [Fix some typos and some metric description mistakes](https://github.com/Vonng/pg_exporter/pull/51) by [@ringerc](https://github.com/ringerc)
 - [Switch from unmaintained lib/pq driver to pgx with stdlib wrapper](https://github.com/Vonng/pg_exporter/pull/52) by [@ringerc](https://github.com/ringerc)
 
+https://github.com/Vonng/pg_exporter/releases/tag/v0.7.0
 
 
 ------

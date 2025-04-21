@@ -25,9 +25,9 @@ pg_meta_13:
     - cluster_id:        { usage: LABEL ,description: cluster system identifier }
     - cluster_name:      { usage: LABEL ,description: cluster name }
     - listen_port:       { usage: LABEL ,description: listen port }
-    - data_dir:          { usage: LABEL ,description: data directory path }
-    - conf_path:         { usage: LABEL ,description: postgresql.conf path }
-    - hba_path:          { usage: LABEL ,description: pg_hba.conf path }
+    - data_dir:          { usage: LABEL ,description: path to data directory }
+    - conf_path:         { usage: LABEL ,description: path to postgresql.conf }
+    - hba_path:          { usage: LABEL ,description: path to pg_hba.conf }
     - wal_level:         { usage: LABEL ,description: wal level }
     - version:           { usage: LABEL ,description: server version in human-readable format }
     - ver_num:           { usage: LABEL ,description: server version number in machine-readable format }
@@ -60,9 +60,9 @@ pg_meta_10:
     - cluster_id:        { usage: LABEL ,description: cluster system identifier }
     - cluster_name:      { usage: LABEL ,description: cluster name }
     - listen_port:       { usage: LABEL ,description: listen port }
-    - data_dir:          { usage: LABEL ,description: data directory path }
-    - conf_path:         { usage: LABEL ,description: postgresql.conf path }
-    - hba_path:          { usage: LABEL ,description: pg_hba.conf path }
+    - data_dir:          { usage: LABEL ,description: path to data directory }
+    - conf_path:         { usage: LABEL ,description: path to postgresql.conf }
+    - hba_path:          { usage: LABEL ,description: path to pg_hba.conf }
     - wal_level:         { usage: LABEL ,description: wal level }
     - version:           { usage: LABEL ,description: server version in human-readable format }
     - ver_num:           { usage: LABEL ,description: server version number in machine-readable format }

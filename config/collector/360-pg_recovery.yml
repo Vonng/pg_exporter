@@ -33,7 +33,7 @@ pg_recovery_prefetch:
     - hit:            { usage: COUNTER ,description: Number of blocks not prefetched because they were already in the buffer pool }
     - skip_init:      { usage: COUNTER ,description: Number of blocks not prefetched because they would be zero-initialized }
     - skip_new:       { usage: COUNTER ,description: Number of blocks not prefetched because they didn't exist yet }
-    - skip_fpw:       { usage: GAUGE   ,description: Number of blocks not prefetched because a full page image was included in the WAL }
+    - skip_fpw:       { usage: COUNTER ,description: Number of blocks not prefetched because a full page image was included in the WAL }
     - skip_rep:       { usage: COUNTER ,description: Number of blocks not prefetched because they were already recently prefetched }
     - wal_distance:   { usage: GAUGE   ,description: How many bytes ahead the prefetcher is looking }
     - block_distance: { usage: GAUGE   ,description: How many blocks ahead the prefetcher is looking }

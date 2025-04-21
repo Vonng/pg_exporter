@@ -42,10 +42,10 @@
 #    query: |                                                        # Metrics Query SQL
 #
 #      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#             pg_current_wal_lsn() - `0/0`                           AS lsn,
-#             pg_current_wal_insert_lsn() - `0/0`                    AS insert_lsn,
-#             pg_current_wal_lsn() - `0/0`                           AS write_lsn,
-#             pg_current_wal_flush_lsn() - `0/0`                     AS flush_lsn,
+#             pg_current_wal_lsn() - '0/0'                           AS lsn,
+#             pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
+#             pg_current_wal_lsn() - '0/0'                           AS write_lsn,
+#             pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
 #             extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
 #             extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
 #             pg_is_in_backup()                                      AS is_in_backup,
@@ -337,9 +337,9 @@ pg_meta_13:
     - cluster_id:        { usage: LABEL ,description: cluster system identifier }
     - cluster_name:      { usage: LABEL ,description: cluster name }
     - listen_port:       { usage: LABEL ,description: listen port }
-    - data_dir:          { usage: LABEL ,description: data directory path }
-    - conf_path:         { usage: LABEL ,description: postgresql.conf path }
-    - hba_path:          { usage: LABEL ,description: pg_hba.conf path }
+    - data_dir:          { usage: LABEL ,description: path to data directory }
+    - conf_path:         { usage: LABEL ,description: path to postgresql.conf }
+    - hba_path:          { usage: LABEL ,description: path to pg_hba.conf }
     - wal_level:         { usage: LABEL ,description: wal level }
     - version:           { usage: LABEL ,description: server version in human-readable format }
     - ver_num:           { usage: LABEL ,description: server version number in machine-readable format }
@@ -372,9 +372,9 @@ pg_meta_10:
     - cluster_id:        { usage: LABEL ,description: cluster system identifier }
     - cluster_name:      { usage: LABEL ,description: cluster name }
     - listen_port:       { usage: LABEL ,description: listen port }
-    - data_dir:          { usage: LABEL ,description: data directory path }
-    - conf_path:         { usage: LABEL ,description: postgresql.conf path }
-    - hba_path:          { usage: LABEL ,description: pg_hba.conf path }
+    - data_dir:          { usage: LABEL ,description: path to data directory }
+    - conf_path:         { usage: LABEL ,description: path to postgresql.conf }
+    - hba_path:          { usage: LABEL ,description: path to pg_hba.conf }
     - wal_level:         { usage: LABEL ,description: wal level }
     - version:           { usage: LABEL ,description: server version in human-readable format }
     - ver_num:           { usage: LABEL ,description: server version number in machine-readable format }
@@ -585,7 +585,6 @@ pg_slot_17:
     - invalidation_reason: { usage: GAUGE    ,description: ok=0, wal_removed=1, rows_removed=2, wal_level_insufficient=3 }
     - inactive_since:      { usage: GAUGE    ,description: The time when the slot became inactive }
 
-# 
 pg_slot_16:
   name: pg_slot
   desc: PostgreSQL replication slot metrics v16 with conflicting
@@ -677,7 +676,7 @@ pg_slot_13:
   name: pg_slot
   desc: PostgreSQL replication slot metrics v13 (wal safe size and status)
   query: |-
-    SELECT slot_name, slot_type, plugin, database AS datname,datoid,active_pid
+    SELECT slot_name, slot_type, plugin, database AS datname,datoid,active_pid,
       active,temporary,xmin::TEXT::BIGINT AS xmin,catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
       restart_lsn - '0/0' AS restart_lsn, confirmed_flush_lsn - '0/0' AS confirm_lsn,
       CASE WHEN pg_is_in_recovery() THEN pg_last_wal_replay_lsn() ELSE pg_current_wal_lsn() END - restart_lsn AS retained_bytes,
@@ -1171,7 +1170,7 @@ pg_recovery_prefetch:
     - hit:            { usage: COUNTER ,description: Number of blocks not prefetched because they were already in the buffer pool }
     - skip_init:      { usage: COUNTER ,description: Number of blocks not prefetched because they would be zero-initialized }
     - skip_new:       { usage: COUNTER ,description: Number of blocks not prefetched because they didn't exist yet }
-    - skip_fpw:       { usage: GAUGE   ,description: Number of blocks not prefetched because a full page image was included in the WAL }
+    - skip_fpw:       { usage: COUNTER ,description: Number of blocks not prefetched because a full page image was included in the WAL }
     - skip_rep:       { usage: COUNTER ,description: Number of blocks not prefetched because they were already recently prefetched }
     - wal_distance:   { usage: GAUGE   ,description: How many bytes ahead the prefetcher is looking }
     - block_distance: { usage: GAUGE   ,description: How many blocks ahead the prefetcher is looking }

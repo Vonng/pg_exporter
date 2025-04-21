@@ -42,10 +42,10 @@
 #    query: |                                                        # Metrics Query SQL
 #
 #      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#             pg_current_wal_lsn() - `0/0`                           AS lsn,
-#             pg_current_wal_insert_lsn() - `0/0`                    AS insert_lsn,
-#             pg_current_wal_lsn() - `0/0`                           AS write_lsn,
-#             pg_current_wal_flush_lsn() - `0/0`                     AS flush_lsn,
+#             pg_current_wal_lsn() - '0/0'                           AS lsn,
+#             pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
+#             pg_current_wal_lsn() - '0/0'                           AS write_lsn,
+#             pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
 #             extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
 #             extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
 #             pg_is_in_backup()                                      AS is_in_backup,
