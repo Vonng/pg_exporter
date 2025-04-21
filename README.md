@@ -1,7 +1,7 @@
 # PG Exporter
 
 
-[![Webite: pigsty](https://img.shields.io/badge/website-pgsty.com-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io)
+[![Webite: pigsty](https://img.shields.io/badge/website-pigsty.io-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io)
 [![Version: v0.8.1](https://img.shields.io/badge/version-v0.8.1-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/Vonng/pg_exporter/releases/tag/v0.8.1)
 [![License: Apache-2.0](https://img.shields.io/github/license/Vonng/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/Vonng/pg_exporter/blob/main/LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/Vonng/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#Vonng/pg_exporter&Date)

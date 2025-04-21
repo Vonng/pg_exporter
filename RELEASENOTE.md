@@ -1,5 +1,14 @@
 # Release Note
 
+
+------
+
+## 0.9.0
+
+* Add 16/17 pg_replication_slot metrics
+* Format collector in compact mode
+
+
 ------
 
 ## 0.8.1
