@@ -1,72 +1,27 @@
-##
-# SYNOPSIS
-#       pg_indexing_*
-#
-# DESCRIPTION
-#       PostgreSQL index creating progress (v12+)
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    120000 ~ higher
-#       Source     520-pg_indexing.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of the database
-#       pid (LABEL)
-#           Process id of indexing table
-#       relname (LABEL)
-#           Relation name of indexed table
-#       blocks (GAUGE)
-#           Percent of blocks been proceeded
-#       tuples (GAUGE)
-#           Percent of tuples been proceeded
-#       partitions (GAUGE)
-#           Percent of partitions been proceeded
-#       lockers (GAUGE)
-#           Percent of lockers been proceeded
-#
+#==============================================================#
+# 520 pg_indexing
+#==============================================================#
 pg_indexing:
   name: pg_indexing
   desc: PostgreSQL index creating progress (v12+)
-
-  query: |
+  query: |-
     SELECT datname, pid, relid::RegClass AS relname,
       (CASE WHEN blocks_total > 0 THEN 1.0 * blocks_done / blocks_total ELSE NULL END) AS blocks,
       (CASE WHEN tuples_total > 0 THEN 1.0 * tuples_done / tuples_total ELSE NULL END) AS tuples,
       (CASE WHEN partitions_total > 0 THEN 1.0 * partitions_done / partitions_total ELSE NULL END) AS partitions,
       (CASE WHEN lockers_total > 0 THEN 1.0 * lockers_done / lockers_total ELSE NULL END) AS lockers
     FROM pg_stat_progress_create_index pspci;
+  
   ttl: 10
   min_version: 120000
-  tags:
-    - cluster
-
+  tags: [ cluster, primary ]
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database
-    - pid:
-        usage: LABEL
-        description: Process id of indexing table
-    - relname:
-        usage: LABEL
-        description: Relation name of indexed table
-    - blocks:
-        usage: GAUGE
-        description: Percent of blocks been proceeded
-    - tuples:
-        usage: GAUGE
-        description: Percent of tuples been proceeded
-    - partitions:
-        usage: GAUGE
-        description: Percent of partitions been proceeded
-    - lockers:
-        usage: GAUGE
-        description: Percent of lockers been proceeded
+    - datname:     { usage: LABEL, description: Name of the database }
+    - pid:         { usage: LABEL, description: Process id of indexing table }
+    - relname:     { usage: LABEL, description: Relation name of indexed table }
+    - blocks:      { usage: GAUGE, description: Percent of blocks been proceeded }
+    - tuples:      { usage: GAUGE, description: Percent of tuples been proceeded }
+    - partitions:  { usage: GAUGE, description: Percent of partitions been proceeded }
+    - lockers:     { usage: GAUGE, description: Percent of lockers been proceeded }
 
 

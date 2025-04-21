@@ -5,9 +5,12 @@
 
 ## 0.9.0
 
-* Add 16/17 pg_replication_slot metrics
+* `pg_slot` overhaul: Add 16/17 pg_replication_slot metrics
 * Format collector in compact mode
-
+* allow `pg_slot` collector run on replica since 16/17
+* restrict pg_clustering, pg_indexing, pg_vacuuming run on primary
+* mark all `reset_time` as `GAUGE` rather than `COUNTER`
+* normalize collector branch name with min pg ver suffix
 
 ------
 

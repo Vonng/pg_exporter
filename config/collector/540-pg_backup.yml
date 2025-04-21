@@ -1,51 +1,17 @@
-##
-# SYNOPSIS
-#       pg_backup_*
-#
-# DESCRIPTION
-#       PostgreSQL basebackup progress since 13
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    130000 ~ higher
-#       Source     540-pg_backup.yml
-#
-# METRICS
-#       pid (LABEL)
-#           process id of basebackup sender
-#       phase (GAUGE)
-#           Phase encoded in 0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive
-#       total_bytes (GAUGE)
-#           Total amount of data that will be streamed
-#       sent_bytes (GAUGE)
-#           Amount of data streamed
-#
+#==============================================================#
+# 540 pg_backup
+#==============================================================#
 pg_backup:
   name: pg_backup
   desc: PostgreSQL basebackup progress since 13
   query: SELECT pid, param1 AS phase, CASE param2 WHEN -1::integer THEN NULL::bigint ELSE param2 END AS total_bytes, param3 AS sent_bytes FROM pg_stat_get_progress_info('BASEBACKUP');
-
   ttl: 10
   min_version: 130000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - pid:
-        usage: LABEL
-        description: process id of basebackup sender
-    - phase:
-        usage: GAUGE
-        description: Phase encoded in 0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive
-    - total_bytes:
-        usage: GAUGE
-        description: Total amount of data that will be streamed
-    - sent_bytes:
-        usage: GAUGE
-        description: Amount of data streamed
+    - pid:           { usage: LABEL, description: process id of basebackup sender }
+    - phase:         { usage: GAUGE, description: Phase encoded in 0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive }
+    - total_bytes:   { usage: GAUGE, description: Total amount of data that will be streamed }
+    - sent_bytes:    { usage: GAUGE, description: Amount of data streamed }
 
 

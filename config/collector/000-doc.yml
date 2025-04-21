@@ -1,12 +1,14 @@
 #==============================================================#
-# Author:   Vonng (rh@vonng.com)
-# Desc  :   pg_exporter metrics collector definition
-# Ver   :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9~1.24+
-# Ctime :   2019-12-09
-# Mtime :   2025-02-14
+# Desc      :   pg_exporter metrics collector definition
+# Ver       :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9~1.24+
+# Ctime     :   2019-12-09
+# Mtime     :   2025-04-21
+# Homepage  :   https://pigsty.io
+# Author    :   Ruohang Feng (rh@vonng.com)
 # License   :   Apache-2.0 @ https://github.com/Vonng/pg_exporter
 # Copyright :   2018-2025  Ruohang Feng / Vonng (rh@vonng.com)
 #==============================================================#
+
 
 #==============================================================#
 # 1. Config File

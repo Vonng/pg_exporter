@@ -1,12 +1,14 @@
 #==============================================================#
-# Author:   Vonng (rh@vonng.com)
-# Desc  :   pg_exporter metrics collector definition
-# Ver   :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9~1.24+
-# Ctime :   2019-12-09
-# Mtime :   2025-02-14
+# Desc      :   pg_exporter metrics collector definition
+# Ver       :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9~1.24+
+# Ctime     :   2019-12-09
+# Mtime     :   2025-04-21
+# Homepage  :   https://pigsty.io
+# Author    :   Ruohang Feng (rh@vonng.com)
 # License   :   Apache-2.0 @ https://github.com/Vonng/pg_exporter
 # Copyright :   2018-2025  Ruohang Feng / Vonng (rh@vonng.com)
 #==============================================================#
+
 
 #==============================================================#
 # 1. Config File
@@ -1407,319 +1409,98 @@ pg_query_10:
     - sblk_written: { usage: COUNTER ,description: Total number of shared blocks written by the statement }
 
 
-##
-# SYNOPSIS
-#       pg_vacuuming_*
-#
-# DESCRIPTION
-#       PostgreSQL vacuum progress since 9.6
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    120000 ~ higher
-#       Source     510-pg_vacuuming.yml
-#
-# METRICS
-#       datname (LABEL)
-#           database name
-#       pid (LABEL)
-#           process id of indexing table
-#       relname (LABEL)
-#           relation name of indexed table
-#       progress (GAUGE)
-#           the actual progress
-#
+#==============================================================#
+# 510 pg_vacuuming
+#==============================================================#
 pg_vacuuming:
   name: pg_vacuuming
-  desc: PostgreSQL vacuum progress since 9.6
-  query: |
-    SELECT datname, pid, relid::RegClass AS relname,
-        CASE phase WHEN 'scanning heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0.0 END)
-        WHEN 'vacuuming heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_vacuumed / heap_blks_total ELSE 0 END)
-        ELSE NULL END AS progress FROM pg_stat_progress_vacuum pspv;
+  desc: PostgreSQL vacuum progress since 12
+  query: |-
+    SELECT 
+      datname, pid, relid::RegClass AS relname,
+      CASE phase WHEN 'scanning heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0.0 END)
+      WHEN 'vacuuming heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_vacuumed / heap_blks_total ELSE 0 END)
+      ELSE NULL END AS progress FROM pg_stat_progress_vacuum pspv;
+  
   ttl: 10
   min_version: 120000
-  tags:
-    - cluster
-
+  tags: [ cluster, primary ]
   metrics:
-    - datname:
-        usage: LABEL
-        description: database name
-    - pid:
-        usage: LABEL
-        description: process id of indexing table
-    - relname:
-        usage: LABEL
-        description: relation name of indexed table
-    - progress:
-        usage: GAUGE
-        description: the actual progress
+    - datname:     { usage: LABEL, description: database name }
+    - pid:         { usage: LABEL, description: process id of indexing table }
+    - relname:     { usage: LABEL, description: relation name of indexed table }
+    - progress:    { usage: GAUGE, description: the actual progress }
 
 
-##
-# SYNOPSIS
-#       pg_indexing_*
-#
-# DESCRIPTION
-#       PostgreSQL index creating progress (v12+)
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    120000 ~ higher
-#       Source     520-pg_indexing.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of the database
-#       pid (LABEL)
-#           Process id of indexing table
-#       relname (LABEL)
-#           Relation name of indexed table
-#       blocks (GAUGE)
-#           Percent of blocks been proceeded
-#       tuples (GAUGE)
-#           Percent of tuples been proceeded
-#       partitions (GAUGE)
-#           Percent of partitions been proceeded
-#       lockers (GAUGE)
-#           Percent of lockers been proceeded
-#
+#==============================================================#
+# 520 pg_indexing
+#==============================================================#
 pg_indexing:
   name: pg_indexing
   desc: PostgreSQL index creating progress (v12+)
-
-  query: |
+  query: |-
     SELECT datname, pid, relid::RegClass AS relname,
       (CASE WHEN blocks_total > 0 THEN 1.0 * blocks_done / blocks_total ELSE NULL END) AS blocks,
       (CASE WHEN tuples_total > 0 THEN 1.0 * tuples_done / tuples_total ELSE NULL END) AS tuples,
       (CASE WHEN partitions_total > 0 THEN 1.0 * partitions_done / partitions_total ELSE NULL END) AS partitions,
       (CASE WHEN lockers_total > 0 THEN 1.0 * lockers_done / lockers_total ELSE NULL END) AS lockers
     FROM pg_stat_progress_create_index pspci;
+  
   ttl: 10
   min_version: 120000
-  tags:
-    - cluster
-
+  tags: [ cluster, primary ]
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database
-    - pid:
-        usage: LABEL
-        description: Process id of indexing table
-    - relname:
-        usage: LABEL
-        description: Relation name of indexed table
-    - blocks:
-        usage: GAUGE
-        description: Percent of blocks been proceeded
-    - tuples:
-        usage: GAUGE
-        description: Percent of tuples been proceeded
-    - partitions:
-        usage: GAUGE
-        description: Percent of partitions been proceeded
-    - lockers:
-        usage: GAUGE
-        description: Percent of lockers been proceeded
+    - datname:     { usage: LABEL, description: Name of the database }
+    - pid:         { usage: LABEL, description: Process id of indexing table }
+    - relname:     { usage: LABEL, description: Relation name of indexed table }
+    - blocks:      { usage: GAUGE, description: Percent of blocks been proceeded }
+    - tuples:      { usage: GAUGE, description: Percent of tuples been proceeded }
+    - partitions:  { usage: GAUGE, description: Percent of partitions been proceeded }
+    - lockers:     { usage: GAUGE, description: Percent of lockers been proceeded }
 
 
-##
-# SYNOPSIS
-#       pg_clustering_*
-#
-# DESCRIPTION
-#       PostgreSQL cluster or vacuum full progress (v12+)
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    120000 ~ higher
-#       Source     530-pg_clustering.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of databae been clustering
-#       pid (LABEL)
-#           Process id of indexing table
-#       relname (LABEL)
-#           Relation name of indexed table
-#       tup_scan (GAUGE)
-#           How much tuple been scanned
-#       progress (GAUGE)
-#           Progress of heap been processed
-#
+#==============================================================#
+# 530 pg_clustering
+#==============================================================#
 pg_clustering:
   name: pg_clustering
   desc: PostgreSQL cluster or vacuum full progress (v12+)
-  query: SELECT datname, pid, relid::RegClass AS relname, param4 AS tup_scan, CASE WHEN param6 > 0 THEN 1.0 * param7 / param6 ELSE 0 END AS progress FROM pg_stat_get_progress_info('cluster') s LEFT JOIN pg_database d ON s.datid = d.oid;;
+  query: SELECT datname, pid, relid::RegClass AS relname, param4 AS tup_scan, CASE WHEN param6 > 0 THEN 1.0 * param7 / param6 ELSE 0 END AS progress FROM pg_stat_get_progress_info('cluster') s LEFT JOIN pg_database d ON s.datid = d.oid;
   ttl: 10
   min_version: 120000
-  tags:
-    - cluster
-
+  tags: [ cluster, primary ]
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of databae been clustering
-    - pid:
-        usage: LABEL
-        description: Process id of indexing table
-    - relname:
-        usage: LABEL
-        description: Relation name of indexed table
-    - tup_scan:
-        usage: GAUGE
-        description: How much tuple been scanned
-    - progress:
-        usage: GAUGE
-        description: Progress of heap been processed
+    - datname:     { usage: LABEL, description: Name of databae been clustering }
+    - pid:         { usage: LABEL, description: Process id of indexing table }
+    - relname:     { usage: LABEL, description: Relation name of indexed table }
+    - tup_scan:    { usage: GAUGE, description: How much tuple been scanned }
+    - progress:    { usage: GAUGE, description: Progress of heap been processed }
 
-##
-# SYNOPSIS
-#       pg_backup_*
-#
-# DESCRIPTION
-#       PostgreSQL basebackup progress since 13
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    130000 ~ higher
-#       Source     540-pg_backup.yml
-#
-# METRICS
-#       pid (LABEL)
-#           process id of basebackup sender
-#       phase (GAUGE)
-#           Phase encoded in 0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive
-#       total_bytes (GAUGE)
-#           Total amount of data that will be streamed
-#       sent_bytes (GAUGE)
-#           Amount of data streamed
-#
+
+#==============================================================#
+# 540 pg_backup
+#==============================================================#
 pg_backup:
   name: pg_backup
   desc: PostgreSQL basebackup progress since 13
   query: SELECT pid, param1 AS phase, CASE param2 WHEN -1::integer THEN NULL::bigint ELSE param2 END AS total_bytes, param3 AS sent_bytes FROM pg_stat_get_progress_info('BASEBACKUP');
-
   ttl: 10
   min_version: 130000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - pid:
-        usage: LABEL
-        description: process id of basebackup sender
-    - phase:
-        usage: GAUGE
-        description: Phase encoded in 0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive
-    - total_bytes:
-        usage: GAUGE
-        description: Total amount of data that will be streamed
-    - sent_bytes:
-        usage: GAUGE
-        description: Amount of data streamed
+    - pid:           { usage: LABEL, description: process id of basebackup sender }
+    - phase:         { usage: GAUGE, description: Phase encoded in 0~5 initial, wait checkpoint, estimate, streaming, waiting archive, transfer archive }
+    - total_bytes:   { usage: GAUGE, description: Total amount of data that will be streamed }
+    - sent_bytes:    { usage: GAUGE, description: Amount of data streamed }
 
 
-##
-# SYNOPSIS
-#       pg_db.pg_db_12_13_*
-#
-# DESCRIPTION
-#       PostgreSQL database stats from pg_stat_database v12 v13 (with 2 new checksum metrics)
-#
-# OPTIONS
-#       Tags       [cluster]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    120000 ~ 140000
-#       Source     610-pg_db.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of the database
-#       datid (GAUGE)
-#           OID of the database
-#       age (GAUGE)
-#           Age of database calculated from datfrozenxid
-#       is_template (GAUGE)
-#           If true(1), then this database can be cloned by any user with CREATEDB privileges
-#       allow_conn (GAUGE)
-#           If false(0) then no one can connect to this database.
-#       conn_limit (GAUGE)
-#           Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
-#       frozen_xid (GAUGE)
-#           All transaction IDs before this one have been frozened
-#       numbackends (GAUGE)
-#           Number of backends currently connected to this database
-#       xact_commit (COUNTER)
-#           Number of transactions in this database that have been committed
-#       xact_rollback (COUNTER)
-#           Number of transactions in this database that have been rolled back
-#       xact_total (COUNTER)
-#           Number of transactions in this database
-#       blks_read (COUNTER)
-#           Number of disk blocks read in this database
-#       blks_hit (COUNTER)
-#           Number of times disk blocks were found already in the buffer cache
-#       blks_access (COUNTER)
-#           Number of times disk blocks that accessed read+hit
-#       tup_returned (COUNTER)
-#           Number of rows returned by queries in this database
-#       tup_fetched (COUNTER)
-#           Number of rows fetched by queries in this database
-#       tup_inserted (COUNTER)
-#           Number of rows inserted by queries in this database
-#       tup_updated (COUNTER)
-#           Number of rows updated by queries in this database
-#       tup_deleted (COUNTER)
-#           Number of rows deleted by queries in this database
-#       tup_modified (COUNTER)
-#           Number of rows modified by queries in this database
-#       conflicts (COUNTER)
-#           Number of queries canceled due to conflicts with recovery in this database
-#       temp_files (COUNTER)
-#           Number of temporary files created by queries in this database
-#       temp_bytes (COUNTER)
-#           Total amount of data written to temporary files by queries in this database.
-#       deadlocks (COUNTER)
-#           Number of deadlocks detected in this database
-#       cks_fails (COUNTER)
-#           Number of data page checksum failures detected in this database, -1 for not enabled
-#       cks_fail_time (GAUGE)
-#           Time at which the last data page checksum failure was detected in this database
-#       blk_read_time (COUNTER)
-#           Time spent reading data file blocks by backends in this database, in seconds
-#       blk_write_time (COUNTER)
-#           Time spent writing data file blocks by backends in this database, in seconds
-#       reset_time (COUNTER)
-#           Time at which database statistics were last reset
-#
-
-
+#==============================================================#
+# 610 pg_db
+#==============================================================#
 pg_db_14:
   name: pg_db
   desc: PostgreSQL database stats from pg_stat_database v14 (with 7 new time & session metrics)
-  query: |
+  query: |-
     SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
       numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total,blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
       conflicts,temp_files,temp_bytes,deadlocks,coalesce(checksum_failures, -1) AS cks_fails, checksum_last_failure AS cks_fail_time,blk_read_time,blk_write_time,
@@ -1728,143 +1509,49 @@ pg_db_14:
 
   ttl: 10
   min_version: 140000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database
-    - datid:
-        usage: GAUGE
-        description: OID of the database
-    - age:
-        usage: GAUGE
-        description: Age of database calculated from datfrozenxid
-    - is_template:
-        usage: GAUGE
-        description: If true(1), then this database can be cloned by any user with CREATEDB privileges
-        # If true, then this database can be cloned by any user with CREATEDB privileges; if false, then only superusers or the owner of the database can clone it.
-    - allow_conn:
-        usage: GAUGE
-        description: If false(0) then no one can connect to this database.
-        # This is used to protect the template0 database from being altered.
-    - conn_limit:
-        usage: GAUGE
-        description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
-    - frozen_xid:
-        usage: GAUGE
-        description: All transaction IDs before this one have been frozened
-    - numbackends:
-        usage: GAUGE
-        description: Number of backends currently connected to this database
-        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
-    - xact_commit:
-        usage: COUNTER
-        description: Number of transactions in this database that have been committed
-        # Number of transactions in this database that have been committed
-    - xact_rollback:
-        usage: COUNTER
-        description: Number of transactions in this database that have been rolled back
-    - xact_total:
-        usage: COUNTER
-        description: Number of transactions in this database
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read in this database
-    - blks_hit:
-        usage: COUNTER
-        description: Number of times disk blocks were found already in the buffer cache
-        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
-    - blks_access:
-        usage: COUNTER
-        description: Number of times disk blocks that accessed read+hit
-    - tup_returned:
-        usage: COUNTER
-        description: Number of rows returned by queries in this database
-    - tup_fetched:
-        usage: COUNTER
-        description: Number of rows fetched by queries in this database
-    - tup_inserted:
-        usage: COUNTER
-        description: Number of rows inserted by queries in this database
-    - tup_updated:
-        usage: COUNTER
-        description: Number of rows updated by queries in this database
-    - tup_deleted:
-        usage: COUNTER
-        description: Number of rows deleted by queries in this database
-    - tup_modified:
-        usage: COUNTER
-        description: Number of rows modified by queries in this database
-    - conflicts:
-        usage: COUNTER
-        description: Number of queries canceled due to conflicts with recovery in this database
-        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
-    - temp_files:
-        usage: COUNTER
-        description: Number of temporary files created by queries in this database
-        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
-    - temp_bytes:
-        usage: COUNTER
-        description: Total amount of data written to temporary files by queries in this database.
-        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
-    - deadlocks:
-        usage: COUNTER
-        description: Number of deadlocks detected in this database
-    - cks_fails:
-        usage: COUNTER
-        description: Number of data page checksum failures detected in this database, -1 for not enabled
-        # Number of data page checksum failures detected in this database (or on a shared object), or NULL if data checksums are not enabled.
-    - cks_fail_time:
-        usage: GAUGE
-        description: Time at which the last data page checksum failure was detected in this database
-        # Time at which the last data page checksum failure was detected in this database (or on a shared object), or NULL if data checksums are not enabled.
-    - blk_read_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent reading data file blocks by backends in this database, in seconds
-        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - blk_write_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent writing data file blocks by backends in this database, in seconds
-        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - session_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent by database sessions in this database, in seconds
-        # Time spent by database sessions in this database, in milliseconds (note that statistics are only updated when the state of a session changes, so if sessions have been idle for a long time, this idle time won't be included)
-    - active_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent executing SQL statements in this database, in seconds
-        # Time spent executing SQL statements in this database, in milliseconds (this corresponds to the states active and fastpath function call in pg_stat_activity)
-    - ixact_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent idling while in a transaction in this database, in seconds
-    - sessions:
-        usage: COUNTER
-        description: Total number of sessions established to this database
-    - sessions_abandoned:
-        usage: COUNTER
-        description: Number of database sessions to this database that were terminated because connection to the client was lost
-    - sessions_fatal:
-        usage: COUNTER
-        description: Number of database sessions to this database that were terminated by fatal errors
-    - sessions_killed:
-        usage: COUNTER
-        description: Number of database sessions to this database that were terminated by operator intervention
-    - reset_time:
-        usage: COUNTER
-        description: Time at which database statistics were last reset
+    - datname:             { usage: LABEL  ,description: Name of the database }
+    - datid:               { usage: GAUGE  ,description: OID of the database }
+    - age:                 { usage: GAUGE  ,description: Age of database calculated from datfrozenxid }
+    - is_template:         { usage: GAUGE  ,description: If true(1), then this database can be cloned by any user with CREATEDB privileges }
+    - allow_conn:          { usage: GAUGE  ,description: If false(0) then no one can connect to this database. }
+    - conn_limit:          { usage: GAUGE  ,description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit. }
+    - frozen_xid:          { usage: GAUGE  ,description: All transaction IDs before this one have been frozened }
+    - numbackends:         { usage: GAUGE  ,description: Number of backends currently connected to this database }
+    - xact_commit:         { usage: COUNTER ,description: Number of transactions in this database that have been committed }
+    - xact_rollback:       { usage: COUNTER ,description: Number of transactions in this database that have been rolled back }
+    - xact_total:          { usage: COUNTER ,description: Number of transactions in this database }
+    - blks_read:           { usage: COUNTER ,description: Number of disk blocks read in this database }
+    - blks_hit:            { usage: COUNTER ,description: Number of times disk blocks were found already in the buffer cache }
+    - blks_access:         { usage: COUNTER ,description: Number of times disk blocks that accessed read+hit }
+    - tup_returned:        { usage: COUNTER ,description: Number of rows returned by queries in this database }
+    - tup_fetched:         { usage: COUNTER ,description: Number of rows fetched by queries in this database }
+    - tup_inserted:        { usage: COUNTER ,description: Number of rows inserted by queries in this database }
+    - tup_updated:         { usage: COUNTER ,description: Number of rows updated by queries in this database }
+    - tup_deleted:         { usage: COUNTER ,description: Number of rows deleted by queries in this database }
+    - tup_modified:        { usage: COUNTER ,description: Number of rows modified by queries in this database }
+    - conflicts:           { usage: COUNTER ,description: Number of queries canceled due to conflicts with recovery in this database }
+    - temp_files:          { usage: COUNTER ,description: Number of temporary files created by queries in this database }
+    - temp_bytes:          { usage: COUNTER ,description: Total amount of data written to temporary files by queries in this database. }
+    - deadlocks:           { usage: COUNTER ,description: Number of deadlocks detected in this database }
+    - cks_fails:           { usage: COUNTER ,description: Number of data page checksum failures detected in this database, -1 for not enabled }
+    - cks_fail_time:       { usage: GAUGE  ,description: Time at which the last data page checksum failure was detected in this database }
+    - blk_read_time:       { usage: COUNTER ,scale: 1e-3 ,description: Time spent reading data file blocks by backends in this database, in seconds }
+    - blk_write_time:      { usage: COUNTER ,scale: 1e-3 ,description: Time spent writing data file blocks by backends in this database, in seconds }
+    - session_time:        { usage: COUNTER ,scale: 1e-3 ,description: Time spent by database sessions in this database, in seconds }
+    - active_time:         { usage: COUNTER ,scale: 1e-3 ,description: Time spent executing SQL statements in this database, in seconds }
+    - ixact_time:          { usage: COUNTER ,scale: 1e-3 ,description: Time spent idling while in a transaction in this database, in seconds }
+    - sessions:            { usage: COUNTER ,description: Total number of sessions established to this database }
+    - sessions_abandoned:  { usage: COUNTER ,description: Number of database sessions to this database that were terminated because connection to the client was lost }
+    - sessions_fatal:      { usage: COUNTER ,description: Number of database sessions to this database that were terminated by fatal errors }
+    - sessions_killed:     { usage: COUNTER ,description: Number of database sessions to this database that were terminated by operator intervention }
+    - reset_time:          { usage: GAUGE   ,description: Time at which database statistics were last reset }
 
-
-pg_db_12_13:
+pg_db_12:
   name: pg_db
   desc: PostgreSQL database stats from pg_stat_database v12 v13 (with 2 new checksum metrics)
-  query: |
+  query: |-
     SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
       numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total,blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
       conflicts,temp_files,temp_bytes,deadlocks,coalesce(checksum_failures, -1) AS cks_fails, checksum_last_failure AS cks_fail_time,blk_read_time,blk_write_time,
@@ -1873,520 +1560,155 @@ pg_db_12_13:
   ttl: 10
   min_version: 120000
   max_version: 140000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database
-    - datid:
-        usage: GAUGE
-        description: OID of the database
-    - age:
-        usage: GAUGE
-        description: Age of database calculated from datfrozenxid
-    - is_template:
-        usage: GAUGE
-        description: If true(1), then this database can be cloned by any user with CREATEDB privileges
-        # If true, then this database can be cloned by any user with CREATEDB privileges; if false, then only superusers or the owner of the database can clone it.
-    - allow_conn:
-        usage: GAUGE
-        description: If false(0) then no one can connect to this database.
-        # This is used to protect the template0 database from being altered.
-    - conn_limit:
-        usage: GAUGE
-        description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
-    - frozen_xid:
-        usage: GAUGE
-        description: All transaction IDs before this one have been frozened
-    - numbackends:
-        usage: GAUGE
-        description: Number of backends currently connected to this database
-        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
-    - xact_commit:
-        usage: COUNTER
-        description: Number of transactions in this database that have been committed
-        # Number of transactions in this database that have been committed
-    - xact_rollback:
-        usage: COUNTER
-        description: Number of transactions in this database that have been rolled back
-    - xact_total:
-        usage: COUNTER
-        description: Number of transactions in this database
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read in this database
-    - blks_hit:
-        usage: COUNTER
-        description: Number of times disk blocks were found already in the buffer cache
-        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
-    - blks_access:
-        usage: COUNTER
-        description: Number of times disk blocks that accessed read+hit
-    - tup_returned:
-        usage: COUNTER
-        description: Number of rows returned by queries in this database
-    - tup_fetched:
-        usage: COUNTER
-        description: Number of rows fetched by queries in this database
-    - tup_inserted:
-        usage: COUNTER
-        description: Number of rows inserted by queries in this database
-    - tup_updated:
-        usage: COUNTER
-        description: Number of rows updated by queries in this database
-    - tup_deleted:
-        usage: COUNTER
-        description: Number of rows deleted by queries in this database
-    - tup_modified:
-        usage: COUNTER
-        description: Number of rows modified by queries in this database
-    - conflicts:
-        usage: COUNTER
-        description: Number of queries canceled due to conflicts with recovery in this database
-        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
-    - temp_files:
-        usage: COUNTER
-        description: Number of temporary files created by queries in this database
-        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
-    - temp_bytes:
-        usage: COUNTER
-        description: Total amount of data written to temporary files by queries in this database.
-        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
-    - deadlocks:
-        usage: COUNTER
-        description: Number of deadlocks detected in this database
-    - cks_fails:
-        usage: COUNTER
-        description: Number of data page checksum failures detected in this database, -1 for not enabled
-        # Number of data page checksum failures detected in this database (or on a shared object), or NULL if data checksums are not enabled.
-    - cks_fail_time:
-        usage: GAUGE
-        description: Time at which the last data page checksum failure was detected in this database
-        # Time at which the last data page checksum failure was detected in this database (or on a shared object), or NULL if data checksums are not enabled.
-    - blk_read_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent reading data file blocks by backends in this database, in seconds
-        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - blk_write_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent writing data file blocks by backends in this database, in seconds
-        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - reset_time:
-        usage: COUNTER
-        description: Time at which database statistics were last reset
+    - datname:             { usage: LABEL  ,description: Name of the database }
+    - datid:               { usage: GAUGE  ,description: OID of the database }
+    - age:                 { usage: GAUGE  ,description: Age of database calculated from datfrozenxid }
+    - is_template:         { usage: GAUGE  ,description: If true(1), then this database can be cloned by any user with CREATEDB privileges }
+    - allow_conn:          { usage: GAUGE  ,description: If false(0) then no one can connect to this database. }
+    - conn_limit:          { usage: GAUGE  ,description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit. }
+    - frozen_xid:          { usage: GAUGE  ,description: All transaction IDs before this one have been frozened }
+    - numbackends:         { usage: GAUGE  ,description: Number of backends currently connected to this database }
+    - xact_commit:         { usage: COUNTER ,description: Number of transactions in this database that have been committed }
+    - xact_rollback:       { usage: COUNTER ,description: Number of transactions in this database that have been rolled back }
+    - xact_total:          { usage: COUNTER ,description: Number of transactions in this database }
+    - blks_read:           { usage: COUNTER ,description: Number of disk blocks read in this database }
+    - blks_hit:            { usage: COUNTER ,description: Number of times disk blocks were found already in the buffer cache }
+    - blks_access:         { usage: COUNTER ,description: Number of times disk blocks that accessed read+hit }
+    - tup_returned:        { usage: COUNTER ,description: Number of rows returned by queries in this database }
+    - tup_fetched:         { usage: COUNTER ,description: Number of rows fetched by queries in this database }
+    - tup_inserted:        { usage: COUNTER ,description: Number of rows inserted by queries in this database }
+    - tup_updated:         { usage: COUNTER ,description: Number of rows updated by queries in this database }
+    - tup_deleted:         { usage: COUNTER ,description: Number of rows deleted by queries in this database }
+    - tup_modified:        { usage: COUNTER ,description: Number of rows modified by queries in this database }
+    - conflicts:           { usage: COUNTER ,description: Number of queries canceled due to conflicts with recovery in this database }
+    - temp_files:          { usage: COUNTER ,description: Number of temporary files created by queries in this database }
+    - temp_bytes:          { usage: COUNTER ,description: Total amount of data written to temporary files by queries in this database. }
+    - deadlocks:           { usage: COUNTER ,description: Number of deadlocks detected in this database }
+    - cks_fails:           { usage: COUNTER ,description: Number of data page checksum failures detected in this database, -1 for not enabled }
+    - cks_fail_time:       { usage: GAUGE  ,description: Time at which the last data page checksum failure was detected in this database }
+    - blk_read_time:       { usage: COUNTER ,scale: 1e-3 ,description: Time spent reading data file blocks by backends in this database, in seconds }
+    - blk_write_time:      { usage: COUNTER ,scale: 1e-3 ,description: Time spent writing data file blocks by backends in this database, in seconds }
+    - reset_time:          { usage: GAUGE   ,description: Time at which database statistics were last reset }
 
-
-
-pg_db_10_11:
+pg_db_10:
   name: pg_db
   desc: PostgreSQL database stats from pg_stat_database v10 v11 (actually since 9.2)
-  query: |
+  query: |-
     SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
       numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total, blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
       conflicts,temp_files,temp_bytes,deadlocks,blk_read_time,blk_write_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_database d JOIN pg_stat_database sd ON d.oid = sd.datid;
-
   ttl: 10
   min_version: 090200
   max_version: 120000
-  tags:
-    - cluster
-
+  tags: [ cluster ]
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database
-    - datid:
-        usage: GAUGE
-        description: OID of the database
-    - age:
-        usage: GAUGE
-        description: Age of database calculated from datfrozenxid
-    - is_template:
-        usage: GAUGE
-        description: If true(1), then this database can be cloned by any user with CREATEDB privileges
-        # If true, then this database can be cloned by any user with CREATEDB privileges; if false, then only superusers or the owner of the database can clone it.
-    - allow_conn:
-        usage: GAUGE
-        description: If false(0) then no one can connect to this database.
-        # This is used to protect the template0 database from being altered.
-    - conn_limit:
-        usage: GAUGE
-        description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit.
-    - frozen_xid:
-        usage: GAUGE
-        description: All transaction IDs before this one have been frozened
-    - numbackends:
-        usage: GAUGE
-        description: Number of backends currently connected to this database
-        # Number of backends currently connected to this database, or NULL for shared objects. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.
-    - xact_commit:
-        usage: COUNTER
-        description: Number of transactions in this database that have been committed
-        # Number of transactions in this database that have been committed
-    - xact_rollback:
-        usage: COUNTER
-        description: Number of transactions in this database that have been rolled back
-    - xact_total:
-        usage: COUNTER
-        description: Number of transactions in this database
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read in this database
-    - blks_hit:
-        usage: COUNTER
-        description: Number of times disk blocks were found already in the buffer cache
-        # Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)
-    - blks_access:
-        usage: COUNTER
-        description: Number of times disk blocks that accessed read+hit
-    - tup_returned:
-        usage: COUNTER
-        description: Number of rows returned by queries in this database
-    - tup_fetched:
-        usage: COUNTER
-        description: Number of rows fetched by queries in this database
-    - tup_inserted:
-        usage: COUNTER
-        description: Number of rows inserted by queries in this database
-    - tup_updated:
-        usage: COUNTER
-        description: Number of rows updated by queries in this database
-    - tup_deleted:
-        usage: COUNTER
-        description: Number of rows deleted by queries in this database
-    - tup_modified:
-        usage: COUNTER
-        description: Number of rows modified by queries in this database
-    - conflicts:
-        usage: COUNTER
-        description: Number of queries canceled due to conflicts with recovery in this database
-        #  (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)
-    - temp_files:
-        usage: COUNTER
-        description: Number of temporary files created by queries in this database
-        # Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.
-    - temp_bytes:
-        usage: COUNTER
-        description: Total amount of data written to temporary files by queries in this database.
-        # Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.
-    - deadlocks:
-        usage: COUNTER
-        description: Number of deadlocks detected in this database
-    - blk_read_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent reading data file blocks by backends in this database, in seconds
-        # Time spent reading data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - blk_write_time:
-        usage: COUNTER
-        scale: 1e-3
-        description: Time spent writing data file blocks by backends in this database, in seconds
-        # Time spent writing data file blocks by backends in this database, in milliseconds (if track_io_timing is enabled, otherwise zero)
-    - reset_time:
-        usage: COUNTER
-        description: Time at which database statistics were last reset
-##
-# SYNOPSIS
-#       pg_db_confl_*
-#
-# DESCRIPTION
-#       PostgreSQL database conflicts metrics (only available on replica)
-#
-# OPTIONS
-#       Tags       [cluster, replica]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90100 ~ higher
-#       Source     620-pg_db_conf.yml
-#
-# METRICS
-#       datid (DISCARD)
-#           N/A
-#       datname (LABEL)
-#           Name of this database
-#       confl_tablespace (COUNTER)
-#           Number of queries in this database that have been canceled due to dropped tablespaces
-#       confl_lock (COUNTER)
-#           Number of queries in this database that have been canceled due to lock timeouts
-#       confl_snapshot (COUNTER)
-#           Number of queries in this database that have been canceled due to old snapshots
-#       confl_bufferpin (COUNTER)
-#           Number of queries in this database that have been canceled due to pinned buffers
-#       confl_deadlock (COUNTER)
-#           Number of queries in this database that have been canceled due to deadlocks
-#
+    - datname:             { usage: LABEL  ,description: Name of the database }
+    - datid:               { usage: GAUGE  ,description: OID of the database }
+    - age:                 { usage: GAUGE  ,description: Age of database calculated from datfrozenxid }
+    - is_template:         { usage: GAUGE  ,description: If true(1), then this database can be cloned by any user with CREATEDB privileges }
+    - allow_conn:          { usage: GAUGE  ,description: If false(0) then no one can connect to this database. }
+    - conn_limit:          { usage: GAUGE  ,description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit. }
+    - frozen_xid:          { usage: GAUGE  ,description: All transaction IDs before this one have been frozened }
+    - numbackends:         { usage: GAUGE  ,description: Number of backends currently connected to this database }
+    - xact_commit:         { usage: COUNTER ,description: Number of transactions in this database that have been committed }
+    - xact_rollback:       { usage: COUNTER ,description: Number of transactions in this database that have been rolled back }
+    - xact_total:          { usage: COUNTER ,description: Number of transactions in this database }
+    - blks_read:           { usage: COUNTER ,description: Number of disk blocks read in this database }
+    - blks_hit:            { usage: COUNTER ,description: Number of times disk blocks were found already in the buffer cache }
+    - blks_access:         { usage: COUNTER ,description: Number of times disk blocks that accessed read+hit }
+    - tup_returned:        { usage: COUNTER ,description: Number of rows returned by queries in this database }
+    - tup_fetched:         { usage: COUNTER ,description: Number of rows fetched by queries in this database }
+    - tup_inserted:        { usage: COUNTER ,description: Number of rows inserted by queries in this database }
+    - tup_updated:         { usage: COUNTER ,description: Number of rows updated by queries in this database }
+    - tup_deleted:         { usage: COUNTER ,description: Number of rows deleted by queries in this database }
+    - tup_modified:        { usage: COUNTER ,description: Number of rows modified by queries in this database }
+    - conflicts:           { usage: COUNTER ,description: Number of queries canceled due to conflicts with recovery in this database }
+    - temp_files:          { usage: COUNTER ,description: Number of temporary files created by queries in this database }
+    - temp_bytes:          { usage: COUNTER ,description: Total amount of data written to temporary files by queries in this database. }
+    - deadlocks:           { usage: COUNTER ,description: Number of deadlocks detected in this database }
+    - blk_read_time:       { usage: COUNTER ,scale: 1e-3 ,description: Time spent reading data file blocks by backends in this database, in seconds }
+    - blk_write_time:      { usage: COUNTER ,scale: 1e-3 ,description: Time spent writing data file blocks by backends in this database, in seconds }
+    - reset_time:          { usage: GAUGE   ,description: Time at which database statistics were last reset }
+#==============================================================#
+# 620 pg_db_confl
+#==============================================================#
+# https://pgpedia.info/p/pg_stat_database_conflicts.html
+
 pg_db_confl_16:
   name: pg_db_confl
-  desc: PostgreSQL database conflicts metrics (PG16+, only available on replica)
-  # https://pgpedia.info/p/pg_stat_database_conflicts.html
+  desc: PostgreSQL database conflicts metrics for PG16+
   query: SELECT * FROM pg_stat_database_conflicts;
-
   ttl: 10
   min_version: 160000
-  tags:
-    - cluster
-    - replica
-
+  tags: [ cluster, replica ]
   metrics:
-    - datid:
-        usage: DISCARD
-    - datname:
-        usage: LABEL
-        description: Name of this database
-    - confl_tablespace:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to dropped tablespaces
-    - confl_lock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to lock timeouts
-    - confl_snapshot:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to old snapshots
-    - confl_bufferpin:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to pinned buffers
-    - confl_deadlock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to deadlocks
-    - confl_active_logicalslot:
-        usage: COUNTER
-        description: Number of uses of logical slots in this database that have been canceled due to old snapshots or too low a wal_level on the primary
-
+    - datid:                { usage: DISCARD }
+    - datname:              { usage: LABEL  ,description: Name of this database }
+    - confl_tablespace:     { usage: COUNTER ,description: Number of queries in this database that have been canceled due to dropped tablespaces }
+    - confl_lock:           { usage: COUNTER ,description: Number of queries in this database that have been canceled due to lock timeouts }
+    - confl_snapshot:       { usage: COUNTER ,description: Number of queries in this database that have been canceled due to old snapshots }
+    - confl_bufferpin:      { usage: COUNTER ,description: Number of queries in this database that have been canceled due to pinned buffers }
+    - confl_deadlock:       { usage: COUNTER ,description: Number of queries in this database that have been canceled due to deadlocks }
+    - confl_active_logicalslot: { usage: COUNTER ,description: Number of uses of logical slots in this database that have been canceled due to old snapshots or too low a wal_level on the primary }
 
 pg_db_confl_15:
   name: pg_db_confl
-  desc: PostgreSQL database conflicts metrics (only available on replica)
-  # https://pgpedia.info/p/pg_stat_database_conflicts.html
+  desc: PostgreSQL database conflicts metrics for pg 9.1 - 16
   query: SELECT * FROM pg_stat_database_conflicts;
-
   ttl: 10
   min_version: 90100
   max_version: 160000
-  tags:
-    - cluster
-    - replica
-
+  tags: [ cluster, replica ]
   metrics:
-    - datid:
-        usage: DISCARD
-    - datname:
-        usage: LABEL
-        description: Name of this database
-    - confl_tablespace:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to dropped tablespaces
-    - confl_lock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to lock timeouts
-    - confl_snapshot:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to old snapshots
-    - confl_bufferpin:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to pinned buffers
-    - confl_deadlock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to deadlocks
+    - datid:                { usage: DISCARD }
+    - datname:              { usage: LABEL  ,description: Name of this database }
+    - confl_tablespace:     { usage: COUNTER ,description: Number of queries in this database that have been canceled due to dropped tablespaces }
+    - confl_lock:           { usage: COUNTER ,description: Number of queries in this database that have been canceled due to lock timeouts }
+    - confl_snapshot:       { usage: COUNTER ,description: Number of queries in this database that have been canceled due to old snapshots }
+    - confl_bufferpin:      { usage: COUNTER ,description: Number of queries in this database that have been canceled due to pinned buffers }
+    - confl_deadlock:       { usage: COUNTER ,description: Number of queries in this database that have been canceled due to deadlocks }
 
 
-##
-# SYNOPSIS
-#       pg_pubrel_*
-#
-# DESCRIPTION
-#       PostgreSQL publication and relation count
-#
-# OPTIONS
-#       Tags       []
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    100000 ~ higher
-#       Source     640-pg_pubrel.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of the database which publication belonged
-#       pubname (LABEL)
-#           Name of the publication
-#       count (GAUGE)
-#           Count of relation in the publication
-#
+#==============================================================#
+# 640 pg_pubrel
+#==============================================================#
 pg_pubrel:
   name: pg_pubrel
   desc: PostgreSQL publication and relation count
   query: SELECT CURRENT_CATALOG AS datname, pubname, count(*) AS count FROM pg_publication p, LATERAL pg_get_publication_tables(pubname) GROUP BY pubname;
   ttl: 10
   min_version: 100000
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database which publication belonged
-    - pubname:
-        usage: LABEL
-        description: Name of the publication
-    - count:
-        usage: GAUGE
-        description: Count of relation in the publication
+    - datname:              { usage: LABEL  ,description: Name of the database which publication belonged }
+    - pubname:              { usage: LABEL  ,description: Name of the publication }
+    - count:                { usage: GAUGE  ,description: Count of relation in the publication }
 
 
-##
-# SYNOPSIS
-#       pg_subrel_*
-#
-# DESCRIPTION
-#       PostgreSQL subscribed relation group by state
-#
-# OPTIONS
-#       Tags       []
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    100000 ~ higher
-#       Source     650-pg_subrel.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of the database which publication belonged
-#       subname (LABEL)
-#           Name of the subscription
-#       state (LABEL)
-#           State of table in subscription, i=initialize, d=data copy, s=sync, r=ready
-#       count (GAUGE)
-#           Count of relation in this subscription and corresponding state
-#
+#==============================================================#
+# 650 pg_subrel
+#==============================================================#
 pg_subrel:
   name: pg_subrel
   desc: PostgreSQL subscripted relation group by state
   query: SELECT CURRENT_CATALOG AS datname, subname, srsubstate::TEXT AS state, count(*) AS count FROM pg_subscription_rel sr LEFT JOIN pg_stat_subscription  ss ON sr.srsubid = ss.subid GROUP BY 2, 3;
   ttl: 10
   min_version: 100000
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database which publication belonged
-    - subname:
-        usage: LABEL
-        description: Name of the subscription
-    - state:
-        usage: LABEL
-        description: State of table in subscription, i=initialize, d=data copy, s=sync, r=ready
-    - count:
-        usage: GAUGE
-        description: Count of relation in this subscription and corresponding state
+    - datname:              { usage: LABEL  ,description: Name of the database which publication belonged }
+    - subname:              { usage: LABEL  ,description: Name of the subscription }
+    - state:                { usage: LABEL  ,description: State of table in subscription, i=initialize, d=data copy, s=sync, r=ready }
+    - count:                { usage: GAUGE  ,description: Count of relation in this subscription and corresponding state }
 
 
-##
-# SYNOPSIS
-#       pg_table.pg_table_10_12_*
-#
-# DESCRIPTION
-#       PostgreSQL table metrics (9.4-12)
-#
-# OPTIONS
-#       Tags       []
-#       TTL        10
-#       Priority   0
-#       Timeout    1s
-#       Fatal      false
-#       Version    90400 ~ 130000
-#       Source     700-pg_table.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Database name of this table
-#       relname (LABEL)
-#           Relation name of this table
-#       relid (GAUGE)
-#           Relation oid of this table
-#       kind (GAUGE)
-#           Relation kind r/table/114,m/mview/109,t/toast/116,p/partitioned/112
-#       pages (GAUGE)
-#           Size of the on-disk representation of this table in pages
-#       tuples (COUNTER)
-#           All txid before this have been frozen on this table
-#       frozenxid (COUNTER)
-#           All txid before this have been frozen on this table
-#       age (GAUGE)
-#           Age of this table in vacuum cycles
-#       ncols (GAUGE)
-#           Number of columns in the table
-#       seq_scan (COUNTER)
-#           Number of sequential scans initiated on this table
-#       seq_tup_read (COUNTER)
-#           Number of live rows fetched by sequential scans
-#       idx_scan (COUNTER)
-#           Number of index scans initiated on this table
-#       idx_tup_fetch (COUNTER)
-#           Number of live rows fetched by index scans
-#       tbl_scan (COUNTER)
-#           Number of scans initiated on this table
-#       tup_read (COUNTER)
-#           Number of live rows fetched by scans
-#       n_tup_ins (COUNTER)
-#           Number of rows inserted
-#       n_tup_upd (COUNTER)
-#           Number of rows updated (includes HOT updated rows)
-#       n_tup_del (COUNTER)
-#           Number of rows deleted
-#       n_tup_mod (COUNTER)
-#           Number of rows modified (insert + update + delete)
-#       n_tup_hot_upd (COUNTER)
-#           Number of rows HOT updated (i.e with no separate index update required)
-#       n_live_tup (GAUGE)
-#           Estimated number of live rows
-#       n_dead_tup (GAUGE)
-#           Estimated number of dead rows
-#       n_mod_since_analyze (GAUGE)
-#           Estimated number of rows modified since this table was last analyzed
-#       last_vacuum (DISCARD)
-#           Last time at which this table was manually vacuumed (not counting VACUUM FULL)
-#       last_autovacuum (DISCARD)
-#           Last time at which this table was vacuumed by the autovacuum daemon
-#       last_analyze (DISCARD)
-#           Last time at which this table was manually analyzed
-#       last_autoanalyze (DISCARD)
-#           Last time at which this table was analyzed by the autovacuum daemon
-#       vacuum_count (COUNTER)
-#           Number of times this table has been manually vacuumed (not counting VACUUM FULL)
-#       autovacuum_count (COUNTER)
-#           Number of times this table has been vacuumed by the autovacuum daemon
-#       analyze_count (COUNTER)
-#           Number of times this table has been manually analyzed
-#       autoanalyze_count (COUNTER)
-#           Number of times this table has been analyzed by the autovacuum daemon
-#       heap_blks_read (COUNTER)
-#           Number of disk blocks read from this table
-#       heap_blks_hit (COUNTER)
-#           Number of buffer hits in this table
-#       idx_blks_read (COUNTER)
-#           Number of disk blocks read from all indexes on this table
-#       idx_blks_hit (COUNTER)
-#           Number of buffer hits in all indexes on this table
-#       toast_blks_read (DISCARD)
-#           Number of disk blocks read from this table's TOAST table (if any)
-#       toast_blks_hit (DISCARD)
-#           Number of buffer hits in this table's TOAST table (if any)
-#       tidx_blks_read (DISCARD)
-#           Number of disk blocks read from this table's TOAST table indexes (if any)
-#       tidx_blks_hit (DISCARD)
-#           Number of buffer hits in this table's TOAST table indexes (if any)
-#
-
+#==============================================================#
+# 700 pg_table
+#==============================================================#
 pg_table_16:
   name: pg_table
   desc: PostgreSQL table metrics (v13 with n_ins_since_vacuum)
-  query: |
+  query: |-
     SELECT CURRENT_CATALOG AS datname, relnamespace::RegNamespace || '.' || c.relname AS relname, c.oid AS relid, ascii(relkind) AS kind,
        relpages AS pages, reltuples AS tuples, relfrozenxid AS frozenxid, age(relfrozenxid) AS age, relnatts AS ncols,
        seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,seq_scan + idx_scan AS tbl_scan, seq_tup_read + idx_tup_fetch AS tup_read,
@@ -2395,7 +1717,8 @@ pg_table_16:
        vacuum_count,autovacuum_count,analyze_count,autoanalyze_count,
        heap_blks_read,heap_blks_hit,idx_blks_read,idx_blks_hit,toast_blks_read,toast_blks_hit,tidx_blks_read,tidx_blks_hit
     FROM pg_class c, LATERAL (SELECT * FROM pg_stat_user_tables WHERE relid = c.oid LIMIT 1) psut, LATERAL (SELECT * FROM pg_statio_user_tables WHERE relid = c.oid LIMIT 1) psutio
-    WHERE relnamespace = ANY (SELECT oid FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname !~ '^_' AND nspname !~ '^timescaledb' AND nspname !~ '^citus' AND nspname !~ '^columnar' AND nspname NOT IN ('pg_catalog','information_schema','pg_toast','repack','monitor')) AND relkind = ANY (ARRAY ['r', 'm', 't', 'p'])
+    WHERE relnamespace = ANY (SELECT oid FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname !~ '^_' AND nspname !~ '^timescaledb' AND nspname !~ '^citus' AND nspname !~ '^columnar' 
+          AND nspname NOT IN ('pg_catalog','information_schema','pg_toast','repack','monitor')) AND relkind = ANY (ARRAY ['r', 'm', 't', 'p'])
     ORDER BY relpages DESC LIMIT 256;
 
   ttl: 10
@@ -2445,11 +1768,10 @@ pg_table_16:
     - tidx_blks_read:      { usage: DISCARD  ,default: 0  ,description: Number of disk blocks read from this table's TOAST table indexes (if any) }
     - tidx_blks_hit:       { usage: DISCARD  ,default: 0  ,description: Number of buffer hits in this table's TOAST table indexes (if any) }
 
-
 pg_table_13:
   name: pg_table
   desc: PostgreSQL table metrics (v13 with n_ins_since_vacuum)
-  query: |
+  query: |-
     SELECT CURRENT_CATALOG AS datname, relnamespace::RegNamespace || '.' || c.relname AS relname, c.oid AS relid, ascii(relkind) AS kind,
        relpages AS pages, reltuples AS tuples, relfrozenxid AS frozenxid, age(relfrozenxid) AS age, relnatts AS ncols,
        seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,seq_scan + idx_scan AS tbl_scan, seq_tup_read + idx_tup_fetch AS tup_read,
@@ -2458,7 +1780,8 @@ pg_table_13:
        vacuum_count,autovacuum_count,analyze_count,autoanalyze_count,
        heap_blks_read,heap_blks_hit,idx_blks_read,idx_blks_hit,toast_blks_read,toast_blks_hit,tidx_blks_read,tidx_blks_hit
     FROM pg_class c, LATERAL (SELECT * FROM pg_stat_user_tables WHERE relid = c.oid LIMIT 1) psut, LATERAL (SELECT * FROM pg_statio_user_tables WHERE relid = c.oid LIMIT 1) psutio
-    WHERE relnamespace = ANY (SELECT oid FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname !~ '^_' AND nspname !~ '^timescaledb' AND nspname !~ '^citus' AND nspname !~ '^columnar' AND nspname NOT IN ('pg_catalog','information_schema','pg_toast','repack','monitor')) AND relkind = ANY (ARRAY ['r', 'm', 't', 'p'])
+    WHERE relnamespace = ANY (SELECT oid FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname !~ '^_' AND nspname !~ '^timescaledb' AND nspname !~ '^citus' 
+          AND nspname !~ '^columnar' AND nspname NOT IN ('pg_catalog','information_schema','pg_toast','repack','monitor')) AND relkind = ANY (ARRAY ['r', 'm', 't', 'p'])
     ORDER BY relpages DESC LIMIT 256;
 
   ttl: 10
@@ -2507,12 +1830,10 @@ pg_table_13:
     - tidx_blks_read:      { usage: DISCARD  ,default: 0  ,description: Number of disk blocks read from this table's TOAST table indexes (if any) }
     - tidx_blks_hit:       { usage: DISCARD  ,default: 0  ,description: Number of buffer hits in this table's TOAST table indexes (if any) }
 
-
-
-pg_table_10_12:
+pg_table_10:
   name: pg_table
   desc: PostgreSQL table metrics (9.4-12)
-  query: |
+  query: |-
     SELECT CURRENT_CATALOG AS datname, relnamespace::RegNamespace || '.' || c.relname AS relname, oid AS relid, ascii(relkind) AS kind,
        relpages AS pages, reltuples AS tuples, relfrozenxid AS frozenxid, age(relfrozenxid) AS age, relnatts AS ncols,
        seq_scan,seq_tup_read,idx_scan,idx_tup_fetch,seq_scan + idx_scan AS tbl_scan, seq_tup_read + idx_tup_fetch AS tup_read,
@@ -2521,9 +1842,9 @@ pg_table_10_12:
        vacuum_count,autovacuum_count,analyze_count,autoanalyze_count,
        heap_blks_read,heap_blks_hit,idx_blks_read,idx_blks_hit,toast_blks_read,toast_blks_hit,tidx_blks_read,tidx_blks_hit
     FROM pg_class c, LATERAL (SELECT * FROM pg_stat_user_tables WHERE relid = c.oid LIMIT 1) psut, LATERAL (SELECT * FROM pg_statio_user_tables WHERE relid = c.oid LIMIT 1) psutio
-    WHERE relnamespace = ANY (SELECT oid FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname !~ '^_' AND nspname !~ '^timescaledb' AND nspname !~ '^citus' AND nspname !~ '^columnar' AND nspname NOT IN ('pg_catalog','information_schema','pg_toast','repack','monitor')) AND relkind = ANY (ARRAY ['r', 'm', 't', 'p'])
+    WHERE relnamespace = ANY (SELECT oid FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname !~ '^_' AND nspname !~ '^timescaledb' AND nspname !~ '^citus' 
+          AND nspname !~ '^columnar' AND nspname NOT IN ('pg_catalog','information_schema','pg_toast','repack','monitor')) AND relkind = ANY (ARRAY ['r', 'm', 't', 'p'])
     ORDER BY relpages DESC LIMIT 256;
-
   ttl: 10
   timeout: 1
   min_version: 090400
@@ -2568,51 +1889,13 @@ pg_table_10_12:
     - toast_blks_hit:      { usage: DISCARD  ,default: 0  ,description: Number of buffer hits in this table's TOAST table (if any) }
     - tidx_blks_read:      { usage: DISCARD  ,default: 0  ,description: Number of disk blocks read from this table's TOAST table indexes (if any) }
     - tidx_blks_hit:       { usage: DISCARD  ,default: 0  ,description: Number of buffer hits in this table's TOAST table indexes (if any) }
-##
-# SYNOPSIS
-#       pg_index_*
-#
-# DESCRIPTION
-#       PostgreSQL index metrics
-#
-# OPTIONS
-#       Tags       []
-#       TTL        10
-#       Priority   0
-#       Timeout    1s
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     710-pg_index.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Database name of this index
-#       idxname (LABEL)
-#           Name of this index (full-qualifed schema name)
-#       relname (LABEL)
-#           Name of the table for this index (full-qualifed schema name)
-#       relid (LABEL)
-#           Relation oid of this index
-#       relpages (GAUGE)
-#           Size of the on-disk representation of this index in pages
-#       reltuples (GAUGE)
-#           Estimate relation tuples
-#       idx_scan (COUNTER)
-#           Number of index scans initiated on this index
-#       idx_tup_read (COUNTER)
-#           Number of index entries returned by scans on this index
-#       idx_tup_fetch (COUNTER)
-#           Number of live table rows fetched by simple index scans using this index
-#       idx_blks_read (COUNTER)
-#           Number of disk blocks read from this index
-#       idx_blks_hit (COUNTER)
-#           Number of buffer hits in this index
-#
-
+#==============================================================#
+# 710 pg_index
+#==============================================================#
 pg_index:
   name: pg_index
   desc: PostgreSQL index metrics
-  query: |
+  query: |-
     SELECT CURRENT_CATALOG AS datname, schemaname || '.' || indexrelname AS idxname, schemaname || '.' || relname AS relname ,indexrelid AS relid,
         relpages, reltuples, idx_scan, idx_tup_read, idx_tup_fetch, idx_blks_read, idx_blks_hit
     FROM pg_stat_user_indexes psui, LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid LIMIT 1) p2,
@@ -2623,216 +1906,71 @@ pg_index:
   ttl: 10
   timeout: 1
   min_version: 090400
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this index
-    - idxname:
-        usage: LABEL
-        description: Name of this index (full-qualifed schema name)
-    - relname:
-        usage: LABEL
-        description: Name of the table for this index (full-qualifed schema name)
-    - relid:
-        usage: LABEL
-        description: Relation oid of this index
-    - relpages:
-        usage: GAUGE
-        description: Size of the on-disk representation of this index in pages
-        # Size of the on-disk representation of this table in pages (of size BLCKSZ). This is only an estimate used by the planner. It is updated by VACUUM, ANALYZE, and a few DDL commands such as CREATE INDEX.
-    - reltuples:
-        usage: GAUGE
-        description: Estimate relation tuples
-    - idx_scan:
-        usage: COUNTER
-        description: Number of index scans initiated on this index
-    - idx_tup_read:
-        usage: COUNTER
-        description: Number of index entries returned by scans on this index
-    - idx_tup_fetch:
-        usage: COUNTER
-        description: Number of live table rows fetched by simple index scans using this index
-    - idx_blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read from this index
-    - idx_blks_hit:
-        usage: COUNTER
-        description: Number of buffer hits in this index
+    - datname:             { usage: LABEL    ,description: Database name of this index }
+    - idxname:             { usage: LABEL    ,description: Name of this index (full-qualifed schema name) }
+    - relname:             { usage: LABEL    ,description: Name of the table for this index (full-qualifed schema name) }
+    - relid:               { usage: LABEL    ,description: Relation oid of this index }
+    - relpages:            { usage: GAUGE    ,description: Size of the on-disk representation of this index in pages }
+    - reltuples:           { usage: GAUGE    ,description: Estimate relation tuples }
+    - idx_scan:            { usage: COUNTER  ,description: Number of index scans initiated on this index }
+    - idx_tup_read:        { usage: COUNTER  ,description: Number of index entries returned by scans on this index }
+    - idx_tup_fetch:       { usage: COUNTER  ,description: Number of live table rows fetched by simple index scans using this index }
+    - idx_blks_read:       { usage: COUNTER  ,description: Number of disk blocks read from this index }
+    - idx_blks_hit:        { usage: COUNTER  ,description: Number of buffer hits in this index }
 
-##
-# SYNOPSIS
-#       pg_func_*
-#
-# DESCRIPTION
-#       PostgreSQL function metrics
-#
-# OPTIONS
-#       Tags       []
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     720-pg_func.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of belonged database
-#       funcname (LABEL)
-#           Name of this function, may have multiple override
-#       calls (COUNTER)
-#           Number of times this function has been called
-#       total_time (COUNTER)
-#           Total time spent in this function and all other functions called by it, in seconds
-#       self_time (COUNTER)
-#           Total time spent in this function itself, not including other functions called by it, in seconds
-#
+
+#==============================================================#
+# 720 pg_func
+#==============================================================#
 pg_func:
   desc: PostgreSQL function metrics
   query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || funcname AS funcname, sum(calls) AS calls, sum(total_time) AS total_time, sum(self_time) AS self_time FROM pg_stat_user_functions GROUP BY 2 ORDER BY 4 DESC LIMIT 128;
   ttl: 10
   min_version: 090400
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of belonged database
-    - funcname:
-        usage: LABEL
-        description: Name of this function, may have multiple override
-    - calls:
-        usage: COUNTER
-        description: Number of times this function has been called
-    - total_time:
-        usage: COUNTER
-        description: Total time spent in this function and all other functions called by it, in ms
-    - self_time:
-        usage: COUNTER
-        description: Total time spent in this function itself, not including other functions called by it, in ms
+    - datname:             { usage: LABEL    ,description: Name of belonged database }
+    - funcname:            { usage: LABEL    ,description: Name of this function, may have multiple override }
+    - calls:               { usage: COUNTER  ,description: Number of times this function has been called }
+    - total_time:          { usage: COUNTER  ,description: Total time spent in this function and all other functions called by it, in ms }
+    - self_time:           { usage: COUNTER  ,description: Total time spent in this function itself, not including other functions called by it, in ms }
 
-##
-# SYNOPSIS
-#       pg_seq_*
-#
-# DESCRIPTION
-#       PostgreSQL sequence metrics
-#
-# OPTIONS
-#       Tags       []
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    100000 ~ higher
-#       Source     730-pg_seq.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Database name of this sequence
-#       seqname (LABEL)
-#           Fully schema qualified sequence name
-#       last_value (COUNTER)
-#           The last sequence value written to disk
-#       blks_read (COUNTER)
-#           Number of disk blocks read from this sequence
-#       blks_hit (COUNTER)
-#           Number of buffer hits in this sequence
-#
+
+#==============================================================#
+# 730 pg_seq
+#==============================================================#
 pg_seq:
   desc: PostgreSQL sequence metrics
-  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename =  sio.relname LIMIT 1) d LIMIT 128;
+  query: SELECT CURRENT_CATALOG AS datname, schemaname || '.' || sequencename AS seqname, last_value, blks_read, blks_hit FROM pg_sequences s, LATERAL (SELECT relid, blks_read, blks_hit FROM pg_statio_all_sequences sio WHERE s.schemaname = sio.schemaname AND s.sequencename = sio.relname LIMIT 1) d LIMIT 128;
   ttl: 10
   min_version: 100000
   metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this sequence
-    - seqname:
-        usage: LABEL
-        description: Fully schema qualified sequence name
-    - last_value:
-        usage: COUNTER
-        description: The last sequence value written to disk
-        # The last sequence value written to disk. If caching is used, this value can be greater than the last value handed out from the sequence.
-        # Null if the sequence has not been read from yet. Also, if the current user does not have USAGE or SELECT privilege on the sequence, the value is null.
-    - blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read from this sequence
-    - blks_hit:
-        usage: COUNTER
-        description: Number of buffer hits in this sequence
+    - datname:             { usage: LABEL    ,description: Database name of this sequence }
+    - seqname:             { usage: LABEL    ,description: Fully schema qualified sequence name }
+    - last_value:          { usage: COUNTER  ,description: The last sequence value written to disk }
+    - blks_read:           { usage: COUNTER  ,description: Number of disk blocks read from this sequence }
+    - blks_hit:            { usage: COUNTER  ,description: Number of buffer hits in this sequence }
 
 
-##
-# SYNOPSIS
-#       pg_relkind_*
-#
-# DESCRIPTION
-#       Postgres relation count by kind (category, r,i,m,t,...)
-#
-# OPTIONS
-#       Tags       []
-#       TTL        60
-#       Priority   0
-#       Timeout    1s
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     740-pg_relkind.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of database
-#       relkind (LABEL)
-#           Kind of this relation, could be r,i,S,t,v,m,c,f,p,I
-#       count (GAUGE)
-#           Number of relations of corresponding relkind
-#
+#==============================================================#
+# 740 pg_relkind
+#==============================================================#
 pg_relkind:
   name: pg_relkind
   desc: Postgres relation count by kind (category, r,i,m,t,...)
-
   query: SELECT CURRENT_CATALOG AS datname, relkind, count(*) AS count FROM pg_class GROUP BY relkind;
   ttl: 60
   timeout: 1
   min_version: 090400
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of database
-    - relkind:
-        usage: LABEL
-        description: Kind of this relation, could be r,i,S,t,v,m,c,f,p,I
-    - count:
-        usage: GAUGE
-        description: Number of relations of corresponding relkind
+    - datname:             { usage: LABEL    ,description: Name of database }
+    - relkind:             { usage: LABEL    ,description: Kind of this relation, could be r,i,S,t,v,m,c,f,p,I }
+    - count:               { usage: GAUGE    ,description: Number of relations of corresponding relkind }
 
 
-##
-# SYNOPSIS
-#       pg_defpart_*
-#
-# DESCRIPTION
-#       PostgreSQL default partition tuples
-#
-# OPTIONS
-#       Tags       []
-#       TTL        60
-#       Priority   0
-#       Timeout    1s
-#       Fatal      false
-#       Version    110000 ~ higher
-#       Source     750-pg_defpart.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Database name of this default partition
-#       relname (LABEL)
-#           Schema qualified default partition relation name
-#       tuples (GAUGE)
-#           Number of tuples in this default partition
-#
+#==============================================================#
+# 750 pg_defpart
+#==============================================================#
 pg_defpart:
   name: pg_defpart
   desc: PostgreSQL default partition tuples
@@ -2840,52 +1978,18 @@ pg_defpart:
   ttl: 60
   timeout: 1
   min_version: 110000
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this default partition
-    - relname:
-        usage: LABEL
-        description: Schema qualified default partition relation name
-    - tuples:
-        usage: GAUGE
-        description: Number of tuples in this default partition
+    - datname:             { usage: LABEL    ,description: Database name of this default partition }
+    - relname:             { usage: LABEL    ,description: Schema qualified default partition relation name }
+    - tuples:              { usage: GAUGE    ,description: Number of tuples in this default partition }
 
 
-##
-# SYNOPSIS
-#       pg_table_size_*
-#
-# DESCRIPTION
-#       PostgreSQL table size metrics, quite slow
-#
-# OPTIONS
-#       Tags       []
-#       TTL        300
-#       Priority   0
-#       Timeout    2s
-#       Fatal      false
-#       Version    100000 ~ higher
-#       Source     810-pg_table_size.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Database name of this table
-#       relname (LABEL)
-#           Schema qualified table name
-#       bytes (GAUGE)
-#           Total bytes of this table (including toast, index, toast index)
-#       relsize (GAUGE)
-#           Bytes of this table itself (main, vm, fsm)
-#       indexsize (GAUGE)
-#           Bytes of all related indexes of this table
-#       toastsize (GAUGE)
-#           Bytes of toast tables of this table
-#
+#==============================================================#
+# 810 pg_table_size
+#==============================================================#
 pg_table_size:
   desc: PostgreSQL table size metrics, quite slow
-  query: |
+  query: |-
     SELECT CURRENT_CATALOG AS datname, nsp.nspname || '.' || rel.relname AS relname,
        pg_total_relation_size(rel.oid)       AS bytes,
        pg_relation_size(rel.oid)             AS relsize,
@@ -2894,1098 +1998,358 @@ pg_table_size:
     FROM pg_namespace nsp JOIN pg_class rel ON nsp.oid = rel.relnamespace
     WHERE nspname <> ALL(ARRAY['pg_catalog', 'information_schema']) AND rel.relkind = 'r'
     ORDER BY 3 DESC NULLS LAST LIMIT 256;
+
   ttl: 300
   timeout: 2
   min_version: 100000
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this table
-    - relname:
-        usage: LABEL
-        description: Schema qualified table name
-    - bytes:
-        usage: GAUGE
-        default: 0
-        description: Total bytes of this table (including toast, index, toast index)
-    - relsize:
-        usage: GAUGE
-        default: 0
-        description: Bytes of this table itself (main, vm, fsm)
-    - indexsize:
-        usage: GAUGE
-        default: 0
-        description: Bytes of all related indexes of this table
-    - toastsize:
-        usage: GAUGE
-        default: 0
-        description: Bytes of toast tables of this table
+    - datname:             { usage: LABEL    ,description: Database name of this table }
+    - relname:             { usage: LABEL    ,description: Schema qualified table name }
+    - bytes:               { usage: GAUGE    ,default: 0  ,description: Total bytes of this table (including toast, index, toast index) }
+    - relsize:             { usage: GAUGE    ,default: 0  ,description: Bytes of this table itself (main, vm, fsm) }
+    - indexsize:           { usage: GAUGE    ,default: 0  ,description: Bytes of all related indexes of this table }
+    - toastsize:           { usage: GAUGE    ,default: 0  ,description: Bytes of toast tables of this table }
 
-
+#==============================================================#
+# 820 pg_table_bloat
+#==============================================================#
 # pg_table_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
-# ----------------------------------------------------------------------
-# -- Table bloat estimate
-# ----------------------------------------------------------------------
-# CREATE OR REPLACE VIEW monitor.pg_table_bloat AS
-#     SELECT CURRENT_CATALOG AS datname, nspname, relname , bs * tblpages AS size,
-#            CASE WHEN tblpages - est_tblpages_ff > 0 THEN (tblpages - est_tblpages_ff)/tblpages::FLOAT ELSE 0 END AS ratio
-#     FROM (
-#              SELECT ceil( reltuples / ( (bs-page_hdr)*fillfactor/(tpl_size*100) ) ) + ceil( toasttuples / 4 ) AS est_tblpages_ff,
-#                     tblpages, fillfactor, bs, tblid, nspname, relname, is_na
-#              FROM (
-#                       SELECT
-#                           ( 4 + tpl_hdr_size + tpl_data_size + (2 * ma)
-#                               - CASE WHEN tpl_hdr_size % ma = 0 THEN ma ELSE tpl_hdr_size % ma END
-#                               - CASE WHEN ceil(tpl_data_size)::INT % ma = 0 THEN ma ELSE ceil(tpl_data_size)::INT % ma END
-#                               ) AS tpl_size, (heappages + toastpages) AS tblpages, heappages,
-#                           toastpages, reltuples, toasttuples, bs, page_hdr, tblid, nspname, relname, fillfactor, is_na
-#                       FROM (
-#                                SELECT
-#                                    tbl.oid AS tblid, ns.nspname , tbl.relname, tbl.reltuples,
-#                                    tbl.relpages AS heappages, coalesce(toast.relpages, 0) AS toastpages,
-#                                    coalesce(toast.reltuples, 0) AS toasttuples,
-#                                    coalesce(substring(array_to_string(tbl.reloptions, ' ') FROM 'fillfactor=([0-9]+)')::smallint, 100) AS fillfactor,
-#                                    current_setting('block_size')::numeric AS bs,
-#                                    CASE WHEN version()~'mingw32' OR version()~'64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END AS ma,
-#                                    24 AS page_hdr,
-#                                    23 + CASE WHEN MAX(coalesce(s.null_frac,0)) > 0 THEN ( 7 + count(s.attname) ) / 8 ELSE 0::int END
-#                                        + CASE WHEN bool_or(att.attname = 'oid' and att.attnum < 0) THEN 4 ELSE 0 END AS tpl_hdr_size,
-#                                    sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 0) ) AS tpl_data_size,
-#                                    bool_or(att.atttypid = 'pg_catalog.name'::regtype)
-#                                        OR sum(CASE WHEN att.attnum > 0 THEN 1 ELSE 0 END) <> count(s.attname) AS is_na
-#                                FROM pg_attribute AS att
-#                                         JOIN pg_class AS tbl ON att.attrelid = tbl.oid
-#                                         JOIN pg_namespace AS ns ON ns.oid = tbl.relnamespace
-#                                         LEFT JOIN pg_stats AS s ON s.schemaname=ns.nspname AND s.tablename = tbl.relname AND s.inherited=false AND s.attname=att.attname
-#                                         LEFT JOIN pg_class AS toast ON tbl.reltoastrelid = toast.oid
-#                                WHERE NOT att.attisdropped AND tbl.relkind = 'r' AND nspname NOT IN ('pg_catalog','information_schema')
-#                                GROUP BY 1,2,3,4,5,6,7,8,9,10
-#                            ) AS s
-#                   ) AS s2
-#          ) AS s3
-#     WHERE NOT is_na;
-# COMMENT ON VIEW monitor.pg_table_bloat IS 'postgres table bloat estimate';
-
 pg_table_bloat:
   name: pg_table_bloat
   desc: PostgreSQL table bloat metrics, require auxiliary view pg_table_bloat to work
   query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM pg_table_bloat ORDER BY size DESC LIMIT 64;
-
   ttl: 300
   timeout: 2
   min_version: 090400
   skip: true
-  tags: []
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this table
-    - relname:
-        usage: LABEL
-        description: Schema qualified name of this table
-    - size:
-        usage: GAUGE
-        description: Total bytes of this table
-    - ratio:
-        usage: GAUGE
-        description: Estimated bloat ratio of this table from 0 to 1
+    - datname:             { usage: LABEL    ,description: Database name of this table }
+    - relname:             { usage: LABEL    ,description: Schema qualified name of this table }
+    - size:                { usage: GAUGE    ,description: Total bytes of this table }
+    - ratio:               { usage: GAUGE    ,description: Estimated bloat ratio of this table from 0 to 1 }
 
 
-# -- pg_index_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
-# ----------------------------------------------------------------------
-# -- Index bloat estimate
-# ----------------------------------------------------------------------
-# CREATE OR REPLACE VIEW monitor.pg_index_bloat AS
-#     SELECT CURRENT_CATALOG AS datname, nspname, idxname AS relname, relpages::BIGINT * bs AS size,
-#            COALESCE((relpages - ( reltuples * (6 + ma - (CASE WHEN index_tuple_hdr % ma = 0 THEN ma ELSE index_tuple_hdr % ma END)
-#                                                    + nulldatawidth + ma - (CASE WHEN nulldatawidth % ma = 0 THEN ma ELSE nulldatawidth % ma END))
-#                                       / (bs - pagehdr)::FLOAT  + 1 )), 0) / relpages::FLOAT AS ratio
-#     FROM (
-#              SELECT nspname,
-#                     idxname,
-#                     reltuples,
-#                     relpages,
-#                     current_setting('block_size')::INTEGER                                                               AS bs,
-#                     (CASE WHEN version() ~ 'mingw32' OR version() ~ '64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END)  AS ma,
-#                     24                                                                                                   AS pagehdr,
-#                     (CASE WHEN max(COALESCE(pg_stats.null_frac, 0)) = 0 THEN 2 ELSE 6 END)                               AS index_tuple_hdr,
-#                     sum((1.0 - COALESCE(pg_stats.null_frac, 0.0)) *
-#                         COALESCE(pg_stats.avg_width, 1024))::INTEGER                                                     AS nulldatawidth
-#              FROM pg_attribute
-#                       JOIN (
-#                  SELECT pg_namespace.nspname,
-#                         ic.relname                                                   AS idxname,
-#                         ic.reltuples,
-#                         ic.relpages,
-#                         pg_index.indrelid,
-#                         pg_index.indexrelid,
-#                         tc.relname                                                   AS tablename,
-#                         regexp_split_to_table(pg_index.indkey::TEXT, ' ') :: INTEGER AS attnum,
-#                         pg_index.indexrelid                                          AS index_oid
-#                  FROM pg_index
-#                           JOIN pg_class ic ON pg_index.indexrelid = ic.oid
-#                           JOIN pg_class tc ON pg_index.indrelid = tc.oid
-#                           JOIN pg_namespace ON pg_namespace.oid = ic.relnamespace
-#                           JOIN pg_am ON ic.relam = pg_am.oid
-#                  WHERE pg_am.amname = 'btree' AND ic.relpages > 0 AND nspname NOT IN ('pg_catalog', 'information_schema')
-#              ) ind_atts ON pg_attribute.attrelid = ind_atts.indexrelid AND pg_attribute.attnum = ind_atts.attnum
-#                       JOIN pg_stats ON pg_stats.schemaname = ind_atts.nspname
-#                  AND ((pg_stats.tablename = ind_atts.tablename AND pg_stats.attname = pg_get_indexdef(pg_attribute.attrelid, pg_attribute.attnum, TRUE))
-#                      OR (pg_stats.tablename = ind_atts.idxname AND pg_stats.attname = pg_attribute.attname))
-#              WHERE pg_attribute.attnum > 0
-#              GROUP BY 1, 2, 3, 4, 5, 6
-#          ) est
-#     LIMIT 512;
-# COMMENT ON VIEW monitor.pg_index_bloat IS 'postgres index bloat estimate (btree-only)';
-
+#==============================================================#
+# 830 pg_index_bloat
+#==============================================================#
+# pg_index_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
 pg_index_bloat:
   name: pg_index_bloat
   desc: PostgreSQL index bloat metrics (btree only), require pg_index_bloat
   query: SELECT datname, nspname || '.' || relname AS relname, size, ratio FROM pg_index_bloat ORDER BY size DESC LIMIT 64;
-
   ttl: 300
   timeout: 2
   min_version: 090400
   skip: true
-  tags: []
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this index
-    - relname:
-        usage: LABEL
-        description: Schema qualified index name
-    - size:
-        usage: GAUGE
-        description: Total bytes of this index
-    - ratio:
-        usage: GAUGE
-        description: Estimated bloat ratio of this index, 0~1
+    - datname:             { usage: LABEL    ,description: Database name of this index }
+    - relname:             { usage: LABEL    ,description: Schema qualified index name }
+    - size:                { usage: GAUGE    ,description: Total bytes of this index }
+    - ratio:               { usage: GAUGE    ,description: Estimated bloat ratio of this index, 0~1 }
 
-##
-# SYNOPSIS
-#       pgbouncer_list_*
-#
-# DESCRIPTION
-#       Pgbouncer entry list
-#
-# OPTIONS
-#       Tags       [pgbouncer]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      true
-#       Version    10800 ~ higher
-#       Source     910-pgbouncer_list.yml
-#
-# METRICS
-#       list (LABEL)
-#           Pgbouncer internal list name
-#       items (GAUGE)
-#           Number of corresponding pgbouncer object
-#
+
+#==============================================================#
+# 910 pgbouncer_list
+#==============================================================#
+# http://www.pgbouncer.org/usage.html#show-lists
 pgbouncer_list:
   name: pgbouncer_list
-  desc: Pgbouncer entry list # http://www.pgbouncer.org/usage.html#show-lists
+  desc: Pgbouncer entry list
   query: SHOW LISTS;
   ttl: 10
   min_version: 10800
   fatal: true
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - list:
-        usage: LABEL
-        description: Pgbouncer internal list name
-    - items:
-        usage: GAUGE
-        description: Number of corresponding pgbouncer object
+    - list:                { usage: LABEL                 ,description: Pgbouncer internal list name }
+    - items:               { usage: GAUGE                 ,description: Number of corresponding pgbouncer object }
 
-##
-# SYNOPSIS
-#       pgbouncer_database.pgbouncer_database_116_*
-#
-# DESCRIPTION
-#       Pgbouncer database stats (since 1.16)
-#
-# OPTIONS
-#       Tags       [pgbouncer]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    11600 ~ higher
-#       Source     920-pgbouncer_database.yml
-#
-# METRICS
-#       name (LABEL)
-#           Name of configured database entry
-#       host (LABEL)
-#           Host that pgbouncer will connects to
-#       port (LABEL)
-#           Port that pgbouncer will connects to
-#       database (LABEL)
-#           The real database name pgbouncer connects to
-#       force_user (DISCARD)
-#           N/A
-#       pool_size (GAUGE)
-#           Maximum number of server connections
-#       min_pool_size (GAUGE)
-#           Minimum number of server connections
-#       reserve_pool (GAUGE)
-#           Maximum number of additional connections for this database
-#       pool_mode (DISCARD)
-#           N/A
-#       max_connections (GAUGE)
-#           Maximum number of allowed connections for this database
-#       current_connections (GAUGE)
-#           Current number of connections for this database
-#       paused (GAUGE)
-#           True(1) if this database is currently paused, else 0
-#       disabled (GAUGE)
-#           True(1) if this database is currently disabled, else 0
-#
+#==============================================================#
+# 920 pgbouncer_database
+#==============================================================#
+# http://www.pgbouncer.org/usage.html#show-databases
 pgbouncer_database_124:
   name: pgbouncer_database
-  desc: Pgbouncer database stats (since 1.24) # http://www.pgbouncer.org/usage.html#show-databases
+  desc: Pgbouncer database stats (since 1.24)
   query: SHOW DATABASES;
   ttl: 10
   min_version: 12400
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - name:
-        usage: LABEL
-        rename: datname
-        description: Name of configured database entry
-    - host:
-        usage: LABEL
-        description: Host that pgbouncer will connects to
-    - port:
-        usage: LABEL
-        description: Port that pgbouncer will connects to
-    - database:
-        usage: LABEL
-        rename: real_datname
-        description: The real database name pgbouncer connects to
-    - force_user:
-        usage: DISCARD
-    - pool_size:
-        usage: GAUGE
-        description: Maximum number of server connections
-    - min_pool_size:
-        usage: GAUGE
-        description: Minimum number of server connections
-    - reserve_pool_size:
-        usage: GAUGE
-        rename: reserve_pool
-        description: Maximum number of additional connections for this database
-    - server_lifetime:
-        usage: GAUGE
-        description: The maximum lifetime of a server connection for this database
-    - pool_mode:
-        usage: DISCARD
-    - load_balance_hosts:
-        usage: DISCARD
-    - max_connections:
-        usage: GAUGE
-        description: Maximum number of allowed connections for this database
-    - current_connections:
-        usage: GAUGE
-        description: Current number of connections for this database
-    - max_client_connections:
-        usage: GAUGE
-        description: Maximum number of allowed client connections for this pgbouncer instance
-    - current_client_connections:
-        usage: GAUGE
-        description: Current number of client connections for this database
-    - paused:
-        usage: GAUGE
-        description: True(1) if this database is currently paused, else 0
-    - disabled:
-        usage: GAUGE
-        description: True(1) if this database is currently disabled, else 0
-
+    - name:                       { usage: LABEL  ,rename: datname       ,description: Name of configured database entry }
+    - host:                       { usage: LABEL                         ,description: Host that pgbouncer will connects to }
+    - port:                       { usage: LABEL                         ,description: Port that pgbouncer will connects to }
+    - database:                   { usage: LABEL  ,rename: real_datname  ,description: The real database name pgbouncer connects to }
+    - force_user:                 { usage: DISCARD }
+    - pool_size:                  { usage: GAUGE                         ,description: Maximum number of server connections }
+    - min_pool_size:              { usage: GAUGE                         ,description: Minimum number of server connections }
+    - reserve_pool_size:          { usage: GAUGE  ,rename: reserve_pool  ,description: Maximum number of additional connections for this database }
+    - server_lifetime:            { usage: GAUGE                         ,description: The maximum lifetime of a server connection for this database }
+    - pool_mode:                  { usage: DISCARD }
+    - load_balance_hosts:         { usage: DISCARD }
+    - max_connections:            { usage: GAUGE                         ,description: Maximum number of allowed connections for this database }
+    - current_connections:        { usage: GAUGE                         ,description: Current number of connections for this database }
+    - max_client_connections:     { usage: GAUGE                         ,description: Maximum number of allowed client connections for this pgbouncer instance }
+    - current_client_connections: { usage: GAUGE                         ,description: Current number of client connections for this database }
+    - paused:                     { usage: GAUGE                         ,description: True(1) if this database is currently paused, else 0 }
+    - disabled:                   { usage: GAUGE                         ,description: True(1) if this database is currently disabled, else 0 }
 
 pgbouncer_database_123:
   name: pgbouncer_database
-  desc: Pgbouncer database stats (1.23) # http://www.pgbouncer.org/usage.html#show-databases
+  desc: Pgbouncer database stats 1.23
   query: SHOW DATABASES;
   ttl: 10
   min_version: 12300
   max_version: 12400
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - name:
-        usage: LABEL
-        rename: datname
-        description: Name of configured database entry
-    - host:
-        usage: LABEL
-        description: Host that pgbouncer will connects to
-    - port:
-        usage: LABEL
-        description: Port that pgbouncer will connects to
-    - database:
-        usage: LABEL
-        rename: real_datname
-        description: The real database name pgbouncer connects to
-    - force_user:
-        usage: DISCARD
-    - pool_size:
-        usage: GAUGE
-        description: Maximum number of server connections
-    - min_pool_size:
-        usage: GAUGE
-        description: Minimum number of server connections
-    - reserve_pool:
-        usage: GAUGE
-        description: Maximum number of additional connections for this database
-    - server_lifetime:
-        usage: GAUGE
-        description: The maximum lifetime of a server connection for this database
-    - pool_mode:
-        usage: DISCARD
-    - max_connections:
-        usage: GAUGE
-        description: Maximum number of allowed connections for this database
-    - current_connections:
-        usage: GAUGE
-        description: Current number of connections for this database
-    - paused:
-        usage: GAUGE
-        description: True(1) if this database is currently paused, else 0
-    - disabled:
-        usage: GAUGE
-        description: True(1) if this database is currently disabled, else 0
+    - name:                { usage: LABEL ,rename: datname      ,description: Name of configured database entry }
+    - host:                { usage: LABEL                       ,description: Host that pgbouncer will connects to }
+    - port:                { usage: LABEL                       ,description: Port that pgbouncer will connects to }
+    - database:            { usage: LABEL ,rename: real_datname ,description: The real database name pgbouncer connects to }
+    - force_user:          { usage: DISCARD }
+    - pool_size:           { usage: GAUGE                       ,description: Maximum number of server connections }
+    - min_pool_size:       { usage: GAUGE                       ,description: Minimum number of server connections }
+    - reserve_pool:        { usage: GAUGE                       ,description: Maximum number of additional connections for this database }
+    - server_lifetime:     { usage: GAUGE                       ,description: The maximum lifetime of a server connection for this database }
+    - pool_mode:           { usage: DISCARD }
+    - max_connections:     { usage: GAUGE                       ,description: Maximum number of allowed connections for this database }
+    - current_connections: { usage: GAUGE                       ,description: Current number of connections for this database }
+    - paused:              { usage: GAUGE                       ,description: True(1) if this database is currently paused, else 0 }
+    - disabled:            { usage: GAUGE                       ,description: True(1) if this database is currently disabled, else 0 }
 
-
-
-pgbouncer_database_116_122:
+pgbouncer_database_116:
   name: pgbouncer_database
-  desc: Pgbouncer database stats (1.16-1.22) # http://www.pgbouncer.org/usage.html#show-databases
+  desc: Pgbouncer database stats (1.16-1.22)
   query: SHOW DATABASES;
   ttl: 10
   min_version: 11600
   max_version: 12300
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - name:
-        usage: LABEL
-        rename: datname
-        description: Name of configured database entry
-    - host:
-        usage: LABEL
-        description: Host that pgbouncer will connects to
-    - port:
-        usage: LABEL
-        description: Port that pgbouncer will connects to
-    - database:
-        usage: LABEL
-        rename: real_datname
-        description: The real database name pgbouncer connects to
-    - force_user:
-        usage: DISCARD
-    - pool_size:
-        usage: GAUGE
-        description: Maximum number of server connections
-    - min_pool_size:
-        usage: GAUGE
-        description: Minimum number of server connections
-    - reserve_pool:
-        usage: GAUGE
-        description: Maximum number of additional connections for this database
-    - pool_mode:
-        usage: DISCARD
-    - max_connections:
-        usage: GAUGE
-        description: Maximum number of allowed connections for this database
-    - current_connections:
-        usage: GAUGE
-        description: Current number of connections for this database
-    - paused:
-        usage: GAUGE
-        description: True(1) if this database is currently paused, else 0
-    - disabled:
-        usage: GAUGE
-        description: True(1) if this database is currently disabled, else 0
+    - name:                { usage: LABEL ,rename: datname      ,description: Name of configured database entry }
+    - host:                { usage: LABEL                       ,description: Host that pgbouncer will connects to }
+    - port:                { usage: LABEL                       ,description: Port that pgbouncer will connects to }
+    - database:            { usage: LABEL ,rename: real_datname ,description: The real database name pgbouncer connects to }
+    - force_user:          { usage: DISCARD }
+    - pool_size:           { usage: GAUGE                       ,description: Maximum number of server connections }
+    - min_pool_size:       { usage: GAUGE                       ,description: Minimum number of server connections }
+    - reserve_pool:        { usage: GAUGE                       ,description: Maximum number of additional connections for this database }
+    - pool_mode:           { usage: DISCARD }
+    - max_connections:     { usage: GAUGE                       ,description: Maximum number of allowed connections for this database }
+    - current_connections: { usage: GAUGE                       ,description: Current number of connections for this database }
+    - paused:              { usage: GAUGE                       ,description: True(1) if this database is currently paused, else 0 }
+    - disabled:            { usage: GAUGE                       ,description: True(1) if this database is currently disabled, else 0 }
 
-##
-# SYNOPSIS
-#       pgbouncer_database.pgbouncer_database_108_115_*
-#
-# DESCRIPTION
-#       Pgbouncer database stats (1.08-1.15)
-#
-# OPTIONS
-#       Tags       [pgbouncer]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    10800 ~ 11600
-#       Source     920-pgbouncer_database.yml
-#
-# METRICS
-#       name (LABEL)
-#           Name of configured database entry
-#       host (LABEL)
-#           Host that pgbouncer will connects to
-#       port (LABEL)
-#           Port that pgbouncer will connects to
-#       database (LABEL)
-#           The real database name pgbouncer connects to
-#       force_user (DISCARD)
-#           N/A
-#       pool_size (COUNTER)
-#           Maximum number of server connections
-#       reserve_pool (GAUGE)
-#           Maximum number of additional connections for this database
-#       pool_mode (DISCARD)
-#           N/A
-#       max_connections (GAUGE)
-#           Maximum number of allowed connections for this database
-#       current_connections (GAUGE)
-#           Current number of connections for this database
-#       paused (GAUGE)
-#           True(1) if this database is currently paused, else 0
-#       disabled (GAUGE)
-#           True(1) if this database is currently disabled, else 0
-#
-pgbouncer_database_108_115:
+pgbouncer_database_108:
   name: pgbouncer_database
-  desc: Pgbouncer database stats (1.08-1.15) # http://www.pgbouncer.org/usage.html#show-databases
+  desc: Pgbouncer database stats (1.08-1.15)
   query: SHOW DATABASES;
   ttl: 10
   min_version: 10800
   max_version: 11600
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - name:
-        usage: LABEL
-        rename: datname
-        description: Name of configured database entry
-    - host:
-        usage: LABEL
-        description: Host that pgbouncer will connects to
-    - port:
-        usage: LABEL
-        description: Port that pgbouncer will connects to
-    - database:
-        usage: LABEL
-        rename: real_datname
-        description: The real database name pgbouncer connects to
-    - force_user:
-        usage: DISCARD
-    - pool_size:
-        usage: COUNTER
-        description: Maximum number of server connections
-    - reserve_pool:
-        usage: GAUGE
-        description: Maximum number of additional connections for this database
-    - pool_mode:
-        usage: DISCARD
-    - max_connections:
-        usage: GAUGE
-        description: Maximum number of allowed connections for this database
-    - current_connections:
-        usage: GAUGE
-        description: Current number of connections for this database
-    - paused:
-        usage: GAUGE
-        description: True(1) if this database is currently paused, else 0
-    - disabled:
-        usage: GAUGE
-        description: True(1) if this database is currently disabled, else 0
-
-
-##
-# SYNOPSIS
-#       pgbouncer_stat_*
-#
-# DESCRIPTION
-#       Pgbouncer stats per database
-#
-# OPTIONS
-#       Tags       [pgbouncer]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    10800 ~ higher
-#       Source     930-pgbouncer_stat.yml
-#
-# METRICS
-#       database (LABEL)
-#           Name of database
-#       total_xact_count (GAUGE)
-#           Total number of SQL transactions pooled by pgbouncer
-#       total_query_count (GAUGE)
-#           Total number of SQL queries pooled by pgbouncer
-#       total_received (COUNTER)
-#           Total volume in bytes of network traffic received by pgbouncer
-#       total_sent (COUNTER)
-#           Total volume in bytes of network traffic sent by pgbouncer
-#       total_xact_time (COUNTER)
-#           Total number of seconds spent when in a transaction
-#       total_query_time (COUNTER)
-#           Total number of seconds spent when executing queries
-#       total_wait_time (COUNTER)
-#           Time spent by clients waiting for a server, in seconds
-#       avg_xact_count (GAUGE)
-#           Average transactions per second in last stat period
-#       avg_query_count (GAUGE)
-#           Average queries per second in last stat period
-#       avg_recv (GAUGE)
-#           Average received (from clients) bytes per second
-#       avg_sent (GAUGE)
-#           Average sent (to clients) bytes per second
-#       avg_xact_time (GAUGE)
-#           Average transaction duration, in seconds
-#       avg_query_time (GAUGE)
-#           Average query duration, in seconds
-#       avg_wait_time (GAUGE)
-#           Time spent by clients waiting for a server, in seconds (average per second).
-#
+    - name:                { usage: LABEL ,rename: datname      ,description: Name of configured database entry }
+    - host:                { usage: LABEL                       ,description: Host that pgbouncer will connects to }
+    - port:                { usage: LABEL                       ,description: Port that pgbouncer will connects to }
+    - database:            { usage: LABEL ,rename: real_datname ,description: The real database name pgbouncer connects to }
+    - force_user:          { usage: DISCARD }
+    - pool_size:           { usage: COUNTER                     ,description: Maximum number of server connections }
+    - reserve_pool:        { usage: GAUGE                       ,description: Maximum number of additional connections for this database }
+    - pool_mode:           { usage: DISCARD }
+    - max_connections:     { usage: GAUGE                       ,description: Maximum number of allowed connections for this database }
+    - current_connections: { usage: GAUGE                       ,description: Current number of connections for this database }
+    - paused:              { usage: GAUGE                       ,description: True(1) if this database is currently paused, else 0 }
+    - disabled:            { usage: GAUGE                       ,description: True(1) if this database is currently disabled, else 0 }
+#==============================================================#
+# 930 pgbouncer_stat
+#==============================================================#
+# http://www.pgbouncer.org/usage.html#show-stats
 pgbouncer_stat_124:
   name: pgbouncer_stat
-  desc: Pgbouncer stats per database (since 1.24)   # http://www.pgbouncer.org/usage.html#show-stats
+  desc: Pgbouncer stats per database (since 1.24)
   query: SHOW STATS;
   ttl: 10
   min_version: 12400
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - database:
-        usage: LABEL
-        rename: datname
-        description: Name of database
-    - total_xact_count:
-        usage: COUNTER
-        description: Total number of SQL transactions pooled by pgbouncer
-    - total_query_count:
-        usage: COUNTER
-        description: Total number of SQL queries pooled by pgbouncer
-    - total_server_assignment_count:
-        usage: COUNTER
-        description: Total times a server was assigned to a client
-    - total_received:
-        usage: COUNTER
-        description: Total volume in bytes of network traffic received by pgbouncer
-    - total_sent:
-        usage: COUNTER
-        description: Total volume in bytes of network traffic sent by pgbouncer
-    - total_xact_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Total number of seconds spent when in a transaction
-    - total_query_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Total number of seconds spent when executing queries
-    - total_wait_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Time spent by clients waiting for a server, in seconds
-    - total_client_parse_count:
-        usage: COUNTER
-        description: Total number of prepared statements created by clients
-    - total_server_parse_count:
-        usage: COUNTER
-        description: Total number of prepared statements created on a server.
-    - total_bind_count:
-        usage: COUNTER
-        description: Total number of prepared statements readied for execution by clients and forwarded to postgres
-    - avg_xact_count:
-        usage: GAUGE
-        description: Average transactions per second in last stat period
-    - avg_query_count:
-        usage: GAUGE
-        description: Average queries per second in last stat period
-    - avg_server_assignment_count:
-        usage: GAUGE
-        description: Average number of times a server as assigned to a client per second in the last stat period.
-    - avg_recv:
-        usage: GAUGE
-        description: Average received (from clients) bytes per second
-    - avg_sent:
-        usage: GAUGE
-        description: Average sent (to clients) bytes per second
-    - avg_xact_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Average transaction duration, in seconds
-    - avg_query_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Average query duration, in seconds
-    - avg_wait_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Time spent by clients waiting for a server, in seconds (average per second).
-    - avg_client_parse_count:
-        usage: COUNTER
-        description: Average number of prepared statements created by clients
-    - avg_server_parse_count:
-        usage: COUNTER
-        description: Average number of prepared statements created on a server.
-    - avg_bind_count:
-        usage: COUNTER
-        description: Average number of prepared statements readied for execution by clients and forwarded to postgres
-
+    - database:                      { usage: LABEL   ,rename: datname ,description: Name of database }
+    - total_xact_count:              { usage: COUNTER                  ,description: Total number of SQL transactions pooled by pgbouncer }
+    - total_query_count:             { usage: COUNTER                  ,description: Total number of SQL queries pooled by pgbouncer }
+    - total_server_assignment_count: { usage: COUNTER                  ,description: Total times a server was assigned to a client }
+    - total_received:                { usage: COUNTER                  ,description: Total volume in bytes of network traffic received by pgbouncer }
+    - total_sent:                    { usage: COUNTER                  ,description: Total volume in bytes of network traffic sent by pgbouncer }
+    - total_xact_time:               { usage: COUNTER ,scale: 1e-6     ,description: Total number of seconds spent when in a transaction }
+    - total_query_time:              { usage: COUNTER ,scale: 1e-6     ,description: Total number of seconds spent when executing queries }
+    - total_wait_time:               { usage: COUNTER ,scale: 1e-6     ,description: Time spent by clients waiting for a server, in seconds }
+    - total_client_parse_count:      { usage: COUNTER                  ,description: Total number of prepared statements created by clients }
+    - total_server_parse_count:      { usage: COUNTER                  ,description: Total number of prepared statements created on a server. }
+    - total_bind_count:              { usage: COUNTER                  ,description: Total number of prepared statements readied for execution by clients and forwarded to postgres }
+    - avg_xact_count:                { usage: GAUGE                    ,description: Average transactions per second in last stat period }
+    - avg_query_count:               { usage: GAUGE                    ,description: Average queries per second in last stat period }
+    - avg_server_assignment_count:   { usage: GAUGE                    ,description: Average number of times a server as assigned to a client per second in the last stat period. }
+    - avg_recv:                      { usage: GAUGE                    ,description: Average received (from clients) bytes per second }
+    - avg_sent:                      { usage: GAUGE                    ,description: Average sent (to clients) bytes per second }
+    - avg_xact_time:                 { usage: GAUGE   ,scale: 1e-6     ,description: Average transaction duration, in seconds }
+    - avg_query_time:                { usage: GAUGE   ,scale: 1e-6     ,description: Average query duration, in seconds }
+    - avg_wait_time:                 { usage: GAUGE   ,scale: 1e-6     ,description: Time spent by clients waiting for a server, in seconds (average per second). }
+    - avg_client_parse_count:        { usage: COUNTER                  ,description: Average number of prepared statements created by clients }
+    - avg_server_parse_count:        { usage: COUNTER                  ,description: Average number of prepared statements created on a server. }
+    - avg_bind_count:                { usage: COUNTER                  ,description: Average number of prepared statements readied for execution by clients and forwarded to postgres }
 
 pgbouncer_stat_123:
   name: pgbouncer_stat
-  desc: Pgbouncer stats per database (1.23)   # http://www.pgbouncer.org/usage.html#show-stats
+  desc: Pgbouncer stats per database (1.23)
   query: SHOW STATS;
   ttl: 10
   min_version: 12300
   max_version: 12400
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - database:
-        usage: LABEL
-        rename: datname
-        description: Name of database
-    - total_xact_count:
-        usage: COUNTER
-        description: Total number of SQL transactions pooled by pgbouncer
-    - total_query_count:
-        usage: COUNTER
-        description: Total number of SQL queries pooled by pgbouncer
-    - total_server_assignment_count:
-        usage: COUNTER
-        description: Total times a server was assigned to a client
-    - total_received:
-        usage: COUNTER
-        description: Total volume in bytes of network traffic received by pgbouncer
-    - total_sent:
-        usage: COUNTER
-        description: Total volume in bytes of network traffic sent by pgbouncer
-    - total_xact_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Total number of seconds spent when in a transaction
-    - total_query_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Total number of seconds spent when executing queries
-    - total_wait_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Time spent by clients waiting for a server, in seconds
-    - avg_xact_count:
-        usage: GAUGE
-        description: Average transactions per second in last stat period
-    - avg_query_count:
-        usage: GAUGE
-        description: Average queries per second in last stat period
-    - avg_server_assignment_count:
-        usage: GAUGE
-        description: Average number of times a server as assigned to a client per second in the last stat period.
-    - avg_recv:
-        usage: GAUGE
-        description: Average received (from clients) bytes per second
-    - avg_sent:
-        usage: GAUGE
-        description: Average sent (to clients) bytes per second
-    - avg_xact_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Average transaction duration, in seconds
-    - avg_query_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Average query duration, in seconds
-    - avg_wait_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Time spent by clients waiting for a server, in seconds (average per second).
+    - database:                      { usage: LABEL   ,rename: datname ,description: Name of database }
+    - total_xact_count:              { usage: COUNTER                  ,description: Total number of SQL transactions pooled by pgbouncer }
+    - total_query_count:             { usage: COUNTER                  ,description: Total number of SQL queries pooled by pgbouncer }
+    - total_server_assignment_count: { usage: COUNTER                  ,description: Total times a server was assigned to a client }
+    - total_received:                { usage: COUNTER                  ,description: Total volume in bytes of network traffic received by pgbouncer }
+    - total_sent:                    { usage: COUNTER                  ,description: Total volume in bytes of network traffic sent by pgbouncer }
+    - total_xact_time:               { usage: COUNTER ,scale: 1e-6     ,description: Total number of seconds spent when in a transaction }
+    - total_query_time:              { usage: COUNTER ,scale: 1e-6     ,description: Total number of seconds spent when executing queries }
+    - total_wait_time:               { usage: COUNTER ,scale: 1e-6     ,description: Time spent by clients waiting for a server, in seconds }
+    - avg_xact_count:                { usage: GAUGE                    ,description: Average transactions per second in last stat period }
+    - avg_query_count:               { usage: GAUGE                    ,description: Average queries per second in last stat period }
+    - avg_server_assignment_count:   { usage: GAUGE                    ,description: Average number of times a server as assigned to a client per second in the last stat period. }
+    - avg_recv:                      { usage: GAUGE                    ,description: Average received (from clients) bytes per second }
+    - avg_sent:                      { usage: GAUGE                    ,description: Average sent (to clients) bytes per second }
+    - avg_xact_time:                 { usage: GAUGE   ,scale: 1e-6     ,description: Average transaction duration, in seconds }
+    - avg_query_time:                { usage: GAUGE   ,scale: 1e-6     ,description: Average query duration, in seconds }
+    - avg_wait_time:                 { usage: GAUGE   ,scale: 1e-6     ,description: Time spent by clients waiting for a server, in seconds (average per second). }
 
-pgbouncer_stat_108_122:
+pgbouncer_stat_108:
   name: pgbouncer_stat
-  desc: Pgbouncer stats per database (1.08 - 1.22)   # http://www.pgbouncer.org/usage.html#show-stats
+  desc: Pgbouncer stats per database (1.08 - 1.22)
   query: SHOW STATS;
   ttl: 10
   min_version: 10800
   max_version: 12300
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - database:
-        usage: LABEL
-        rename: datname
-        description: Name of database
-    - total_xact_count:
-        usage: COUNTER
-        description: Total number of SQL transactions pooled by pgbouncer
-    - total_query_count:
-        usage: COUNTER
-        description: Total number of SQL queries pooled by pgbouncer
-    - total_received:
-        usage: COUNTER
-        description: Total volume in bytes of network traffic received by pgbouncer
-    - total_sent:
-        usage: COUNTER
-        description: Total volume in bytes of network traffic sent by pgbouncer
-    - total_xact_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Total number of seconds spent when in a transaction
-    - total_query_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Total number of seconds spent when executing queries
-    - total_wait_time:
-        usage: COUNTER
-        scale: 1e-6
-        description: Time spent by clients waiting for a server, in seconds
-    - avg_xact_count:
-        usage: GAUGE
-        description: Average transactions per second in last stat period
-    - avg_query_count:
-        usage: GAUGE
-        description: Average queries per second in last stat period
-    - avg_recv:
-        usage: GAUGE
-        description: Average received (from clients) bytes per second
-    - avg_sent:
-        usage: GAUGE
-        description: Average sent (to clients) bytes per second
-    - avg_xact_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Average transaction duration, in seconds
-    - avg_query_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Average query duration, in seconds
-    - avg_wait_time:
-        usage: GAUGE
-        scale: 1e-6
-        description: Time spent by clients waiting for a server, in seconds (average per second).
+    - database:                      { usage: LABEL   ,rename: datname ,description: Name of database }
+    - total_xact_count:              { usage: COUNTER                  ,description: Total number of SQL transactions pooled by pgbouncer }
+    - total_query_count:             { usage: COUNTER                  ,description: Total number of SQL queries pooled by pgbouncer }
+    - total_received:                { usage: COUNTER                  ,description: Total volume in bytes of network traffic received by pgbouncer }
+    - total_sent:                    { usage: COUNTER                  ,description: Total volume in bytes of network traffic sent by pgbouncer }
+    - total_xact_time:               { usage: COUNTER ,scale: 1e-6     ,description: Total number of seconds spent when in a transaction }
+    - total_query_time:              { usage: COUNTER ,scale: 1e-6     ,description: Total number of seconds spent when executing queries }
+    - total_wait_time:               { usage: COUNTER ,scale: 1e-6     ,description: Time spent by clients waiting for a server, in seconds }
+    - avg_xact_count:                { usage: GAUGE                    ,description: Average transactions per second in last stat period }
+    - avg_query_count:               { usage: GAUGE                    ,description: Average queries per second in last stat period }
+    - avg_recv:                      { usage: GAUGE                    ,description: Average received (from clients) bytes per second }
+    - avg_sent:                      { usage: GAUGE                    ,description: Average sent (to clients) bytes per second }
+    - avg_xact_time:                 { usage: GAUGE   ,scale: 1e-6     ,description: Average transaction duration, in seconds }
+    - avg_query_time:                { usage: GAUGE   ,scale: 1e-6     ,description: Average query duration, in seconds }
+    - avg_wait_time:                 { usage: GAUGE   ,scale: 1e-6     ,description: Time spent by clients waiting for a server, in seconds (average per second). }
 
-##
-# SYNOPSIS
-#       pgbouncer_pool.pgbouncer_pool_108_115_*
-#
-# DESCRIPTION
-#       Pgbouncer pool stats (1.08-1.15)
-#
-# OPTIONS
-#       Tags       [pgbouncer]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    10800 ~ 11600
-#       Source     940-pgbouncer_pool.yml
-#
-# METRICS
-#       database (LABEL)
-#           Database name of this pool
-#       user (LABEL)
-#           User name of this pool
-#       cl_active (GAUGE)
-#           Client connections that are linked to server connection and can process queries
-#       cl_waiting (GAUGE)
-#           Client connections that have sent queries but have not yet got a server connection
-#       sv_active (GAUGE)
-#           Server connections that are linked to a client
-#       sv_idle (GAUGE)
-#           Server connections that are unused and immediately usable for client queries
-#       sv_used (GAUGE)
-#           Server connections that have been idle for more than server_check_delay (means have to run check query)
-#       sv_tested (GAUGE)
-#           Server connections that are currently running reset or check query
-#       sv_login (GAUGE)
-#           Server connections currently in the process of logging in
-#       maxwait (GAUGE)
-#           How long the first(oldest) client in the queue has waited, in seconds, key metric
-#       maxwait_us (GAUGE)
-#           Microsecond part of the maximum waiting time.
-#       pool_mode (LABEL)
-#           Pooling mode in use
-#
+
+#==============================================================#
+# 940 pgbouncer_pool
+#==============================================================#
+# http://www.pgbouncer.org/usage.html#show-pools
 pgbouncer_pool_124:
   name: pgbouncer_pool
-  desc: Pgbouncer pool stats (1.24+)    # http://www.pgbouncer.org/usage.html#show-pools
+  desc: Pgbouncer pool stats (1.24+)
   query: SHOW POOLS;
   ttl: 10
   min_version: 12400
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - database:
-        usage: LABEL
-        rename: datname
-        description: Database name of this pool
-    - user:
-        usage: LABEL
-        description: User name of this pool
-    - cl_active:
-        usage: GAUGE
-        rename: active_clients
-        description: Client connections that are linked to server connection and can process queries
-    - cl_waiting:
-        usage: GAUGE
-        rename: waiting_clients
-        description: Client connections that have sent queries but have not yet got a server connection
-    - cl_active_cancel_req:
-        usage: GAUGE
-        rename: active_cancel_clients
-        description: Client connections that have forwarded query cancellations to the server and are waiting for the server response.
-    - cl_waiting_cancel_req:
-        usage: GAUGE
-        rename: cancel_clients
-        description: Client connections that have not forwarded query cancellations to the server yet.
-    - sv_active:
-        usage: GAUGE
-        rename: active_servers
-        description: Server connections that are linked to a client
-    - sv_active_cancel:
-        usage: GAUGE
-        rename: active_cancel_servers
-        description: Server connections that are currently forwarding a cancel request
-    - sv_being_canceled:
-        usage: GAUGE
-        rename: cancel_servers
-        description: cancel requests have completed that were sent to cancel a query on this server
-    - sv_idle:
-        usage: GAUGE
-        rename: idle_servers
-        description: Server connections that are unused and immediately usable for client queries
-    - sv_used:
-        usage: GAUGE
-        rename: used_servers
-        description: Server connections that have been idle for more than server_check_delay (means have to run check query)
-    - sv_tested:
-        usage: GAUGE
-        rename: tested_servers
-        description: Server connections that are currently running reset or check query
-    - sv_login:
-        usage: GAUGE
-        rename: login_servers
-        description: Server connections currently in the process of logging in
-    - maxwait:
-        usage: GAUGE
-        description: How long the first(oldest) client in the queue has waited, in seconds, key metric
-    - maxwait_us:
-        usage: GAUGE
-        description: Microsecond part of the maximum waiting time.
-    - pool_mode:
-        usage: LABEL
-        description: Pooling mode in use
-    - load_balance_hosts:
-        usage: LABEL
-        description: The load_balance_hosts in use
+    - database:              { usage: LABEL, rename: datname,                description: Database name of this pool }
+    - user:                  { usage: LABEL,                                 description: User name of this pool }
+    - cl_active:             { usage: GAUGE, rename: active_clients,         description: Client connections that are linked to server connection and can process queries }
+    - cl_waiting:            { usage: GAUGE, rename: waiting_clients,        description: Client connections that have sent queries but have not yet got a server connection }
+    - cl_active_cancel_req:  { usage: GAUGE, rename: active_cancel_clients,  description: Client connections that have forwarded query cancellations to the server and are waiting for the server response. }
+    - cl_waiting_cancel_req: { usage: GAUGE, rename: cancel_clients,         description: Client connections that have not forwarded query cancellations to the server yet. }
+    - sv_active:             { usage: GAUGE, rename: active_servers,         description: Server connections that are linked to a client }
+    - sv_active_cancel:      { usage: GAUGE, rename: active_cancel_servers,  description: Server connections that are currently forwarding a cancel request }
+    - sv_being_canceled:     { usage: GAUGE, rename: cancel_servers,         description: cancel requests have completed that were sent to cancel a query on this server }
+    - sv_idle:               { usage: GAUGE, rename: idle_servers,           description: Server connections that are unused and immediately usable for client queries }
+    - sv_used:               { usage: GAUGE, rename: used_servers,           description: Server connections that have been idle for more than server_check_delay (means have to run check query) }
+    - sv_tested:             { usage: GAUGE, rename: tested_servers,         description: Server connections that are currently running reset or check query }
+    - sv_login:              { usage: GAUGE, rename: login_servers,          description: Server connections currently in the process of logging in }
+    - maxwait:               { usage: GAUGE,                                 description: How long the first(oldest) client in the queue has waited, in seconds, key metric }
+    - maxwait_us:            { usage: GAUGE,                                 description: Microsecond part of the maximum waiting time. }
+    - pool_mode:             { usage: LABEL,                                 description: Pooling mode in use }
+    - load_balance_hosts:    { usage: LABEL,                                 description: The load_balance_hosts in use }
 
-pgbouncer_pool_118_123:
+pgbouncer_pool_118:
   name: pgbouncer_pool
-  desc: Pgbouncer pool stats (1.18-1.23)    # http://www.pgbouncer.org/usage.html#show-pools
+  desc: Pgbouncer pool stats (1.18-1.23)
   query: SHOW POOLS;
   ttl: 10
   min_version: 11800
   max_version: 12400
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - database:
-        usage: LABEL
-        rename: datname
-        description: Database name of this pool
-    - user:
-        usage: LABEL
-        description: User name of this pool
-    - cl_active:
-        usage: GAUGE
-        rename: active_clients
-        description: Client connections that are linked to server connection and can process queries
-    - cl_waiting:
-        usage: GAUGE
-        rename: waiting_clients
-        description: Client connections that have sent queries but have not yet got a server connection
-    - cl_active_cancel_req:
-        usage: GAUGE
-        rename: active_cancel_clients
-        description: Client connections that have forwarded query cancellations to the server and are waiting for the server response.
-    - cl_waiting_cancel_req:
-        usage: GAUGE
-        rename: cancel_clients
-        description: Client connections that have not forwarded query cancellations to the server yet.
-    - sv_active:
-        usage: GAUGE
-        rename: active_servers
-        description: Server connections that are linked to a client
-    - sv_active_cancel:
-        usage: GAUGE
-        rename: active_cancel_servers
-        description: Server connections that are currently forwarding a cancel request
-    - sv_being_canceled:
-        usage: GAUGE
-        rename: cancel_servers
-        description: cancel requests have completed that were sent to cancel a query on this server
-    - sv_idle:
-        usage: GAUGE
-        rename: idle_servers
-        description: Server connections that are unused and immediately usable for client queries
-    - sv_used:
-        usage: GAUGE
-        rename: used_servers
-        description: Server connections that have been idle for more than server_check_delay (means have to run check query)
-    - sv_tested:
-        usage: GAUGE
-        rename: tested_servers
-        description: Server connections that are currently running reset or check query
-    - sv_login:
-        usage: GAUGE
-        rename: login_servers
-        description: Server connections currently in the process of logging in
-    - maxwait:
-        usage: GAUGE
-        description: How long the first(oldest) client in the queue has waited, in seconds, key metric
-    - maxwait_us:
-        usage: GAUGE
-        description: Microsecond part of the maximum waiting time.
-    - pool_mode:
-        usage: LABEL
-        description: Pooling mode in use
+    - database:              { usage: LABEL, rename: datname,                description: Database name of this pool }
+    - user:                  { usage: LABEL,                                 description: User name of this pool }
+    - cl_active:             { usage: GAUGE, rename: active_clients,         description: Client connections that are linked to server connection and can process queries }
+    - cl_waiting:            { usage: GAUGE, rename: waiting_clients,        description: Client connections that have sent queries but have not yet got a server connection }
+    - cl_active_cancel_req:  { usage: GAUGE, rename: active_cancel_clients,  description: Client connections that have forwarded query cancellations to the server and are waiting for the server response. }
+    - cl_waiting_cancel_req: { usage: GAUGE, rename: cancel_clients,         description: Client connections that have not forwarded query cancellations to the server yet. }
+    - sv_active:             { usage: GAUGE, rename: active_servers,         description: Server connections that are linked to a client }
+    - sv_active_cancel:      { usage: GAUGE, rename: active_cancel_servers,  description: Server connections that are currently forwarding a cancel request }
+    - sv_being_canceled:     { usage: GAUGE, rename: cancel_servers,         description: cancel requests have completed that were sent to cancel a query on this server }
+    - sv_idle:               { usage: GAUGE, rename: idle_servers,           description: Server connections that are unused and immediately usable for client queries }
+    - sv_used:               { usage: GAUGE, rename: used_servers,           description: Server connections that have been idle for more than server_check_delay (means have to run check query) }
+    - sv_tested:             { usage: GAUGE, rename: tested_servers,         description: Server connections that are currently running reset or check query }
+    - sv_login:              { usage: GAUGE, rename: login_servers,          description: Server connections currently in the process of logging in }
+    - maxwait:               { usage: GAUGE,                                 description: How long the first(oldest) client in the queue has waited, in seconds, key metric }
+    - maxwait_us:            { usage: GAUGE,                                 description: Microsecond part of the maximum waiting time. }
+    - pool_mode:             { usage: LABEL,                                 description: Pooling mode in use }
 
-
-
-pgbouncer_pool_116_118:
+pgbouncer_pool_116:
   name: pgbouncer_pool
-  desc: Pgbouncer pool stats (1.16-1.17)    # http://www.pgbouncer.org/usage.html#show-pools
+  desc: Pgbouncer pool stats (1.16-1.17)
   query: SHOW POOLS;
   ttl: 10
   min_version: 11600
   max_version: 11800
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - database:
-        usage: LABEL
-        rename: datname
-        description: Database name of this pool
-    - user:
-        usage: LABEL
-        description: User name of this pool
-    - cl_active:
-        usage: GAUGE
-        rename: active_clients
-        description: Client connections that are linked to server connection and can process queries
-    - cl_waiting:
-        usage: GAUGE
-        rename: waiting_clients
-        description: Client connections that have sent queries but have not yet got a server connection
-    - cl_cancel_req:
-        usage: GAUGE
-        rename: cancel_clients
-        description: Client connections that have not forwarded query cancellations to the server yet.
-    - sv_active:
-        usage: GAUGE
-        rename: active_servers
-        description: Server connections that are linked to a client
-    - sv_idle:
-        usage: GAUGE
-        rename: idle_servers
-        description: Server connections that are unused and immediately usable for client queries
-    - sv_used:
-        usage: GAUGE
-        rename: used_servers
-        description: Server connections that have been idle for more than server_check_delay (means have to run check query)
-    - sv_tested:
-        usage: GAUGE
-        rename: tested_servers
-        description: Server connections that are currently running reset or check query
-    - sv_login:
-        usage: GAUGE
-        rename: login_servers
-        description: Server connections currently in the process of logging in
-    - maxwait:
-        usage: GAUGE
-        description: How long the first(oldest) client in the queue has waited, in seconds, key metric
-    - maxwait_us:
-        usage: GAUGE
-        description: Microsecond part of the maximum waiting time.
-    - pool_mode:
-        usage: LABEL
-        description: Pooling mode in use
+    - database:              { usage: LABEL, rename: datname,          description: Database name of this pool }
+    - user:                  { usage: LABEL,                           description: User name of this pool }
+    - cl_active:             { usage: GAUGE, rename: active_clients,   description: Client connections that are linked to server connection and can process queries }
+    - cl_waiting:            { usage: GAUGE, rename: waiting_clients,  description: Client connections that have sent queries but have not yet got a server connection }
+    - cl_cancel_req:         { usage: GAUGE, rename: cancel_clients,   description: Client connections that have not forwarded query cancellations to the server yet. }
+    - sv_active:             { usage: GAUGE, rename: active_servers,   description: Server connections that are linked to a client }
+    - sv_idle:               { usage: GAUGE, rename: idle_servers,     description: Server connections that are unused and immediately usable for client queries }
+    - sv_used:               { usage: GAUGE, rename: used_servers,     description: Server connections that have been idle for more than server_check_delay (means have to run check query) }
+    - sv_tested:             { usage: GAUGE, rename: tested_servers,   description: Server connections that are currently running reset or check query }
+    - sv_login:              { usage: GAUGE, rename: login_servers,    description: Server connections currently in the process of logging in }
+    - maxwait:               { usage: GAUGE,                           description: How long the first(oldest) client in the queue has waited, in seconds, key metric }
+    - maxwait_us:            { usage: GAUGE,                           description: Microsecond part of the maximum waiting time. }
+    - pool_mode:             { usage: LABEL,                           description: Pooling mode in use }
 
-
-
-
-pgbouncer_pool_108_115:
+pgbouncer_pool_108:
   name: pgbouncer_pool
-  desc: Pgbouncer pool stats (1.08-1.15)   # http://www.pgbouncer.org/usage.html#show-pools
+  desc: Pgbouncer pool stats (1.08-1.15)
   query: SHOW POOLS;
   ttl: 10
   min_version: 10800
   max_version: 11600
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - database:
-        usage: LABEL
-        rename: datname
-        description: Database name of this pool
-    - user:
-        usage: LABEL
-        description: User name of this pool
-    - cl_active:
-        usage: GAUGE
-        rename: active_clients
-        description: Client connections that are linked to server connection and can process queries
-    - cl_waiting:
-        usage: GAUGE
-        rename: waiting_clients
-        description: Client connections that have sent queries but have not yet got a server connection
-    - sv_active:
-        usage: GAUGE
-        rename: active_servers
-        description: Server connections that are linked to a client
-    - sv_idle:
-        usage: GAUGE
-        rename: idle_servers
-        description: Server connections that are unused and immediately usable for client queries
-    - sv_used:
-        usage: GAUGE
-        rename: used_servers
-        description: Server connections that have been idle for more than server_check_delay (means have to run check query)
-    - sv_tested:
-        usage: GAUGE
-        rename: tested_servers
-        description: Server connections that are currently running reset or check query
-    - sv_login:
-        usage: GAUGE
-        rename: login_servers
-        description: Server connections currently in the process of logging in
-    - maxwait:
-        usage: GAUGE
-        description: How long the first(oldest) client in the queue has waited, in seconds, key metric
-    - maxwait_us:
-        usage: GAUGE
-        description: Microsecond part of the maximum waiting time.
-    - pool_mode:
-        usage: LABEL
-        description: Pooling mode in use
+    - database:              { usage: LABEL, rename: datname,          description: Database name of this pool }
+    - user:                  { usage: LABEL,                           description: User name of this pool }
+    - cl_active:             { usage: GAUGE, rename: active_clients,   description: Client connections that are linked to server connection and can process queries }
+    - cl_waiting:            { usage: GAUGE, rename: waiting_clients,  description: Client connections that have sent queries but have not yet got a server connection }
+    - sv_active:             { usage: GAUGE, rename: active_servers,   description: Server connections that are linked to a client }
+    - sv_idle:               { usage: GAUGE, rename: idle_servers,     description: Server connections that are unused and immediately usable for client queries }
+    - sv_used:               { usage: GAUGE, rename: used_servers,     description: Server connections that have been idle for more than server_check_delay (means have to run check query) }
+    - sv_tested:             { usage: GAUGE, rename: tested_servers,   description: Server connections that are currently running reset or check query }
+    - sv_login:              { usage: GAUGE, rename: login_servers,    description: Server connections currently in the process of logging in }
+    - maxwait:               { usage: GAUGE,                           description: How long the first(oldest) client in the queue has waited, in seconds, key metric }
+    - maxwait_us:            { usage: GAUGE,                           description: Microsecond part of the maximum waiting time. }
+    - pool_mode:             { usage: LABEL,                           description: Pooling mode in use }
+
 

@@ -1,40 +1,16 @@
-##
-# SYNOPSIS
-#       pgbouncer_list_*
-#
-# DESCRIPTION
-#       Pgbouncer entry list
-#
-# OPTIONS
-#       Tags       [pgbouncer]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      true
-#       Version    10800 ~ higher
-#       Source     910-pgbouncer_list.yml
-#
-# METRICS
-#       list (LABEL)
-#           Pgbouncer internal list name
-#       items (GAUGE)
-#           Number of corresponding pgbouncer object
-#
+#==============================================================#
+# 910 pgbouncer_list
+#==============================================================#
+# http://www.pgbouncer.org/usage.html#show-lists
 pgbouncer_list:
   name: pgbouncer_list
-  desc: Pgbouncer entry list # http://www.pgbouncer.org/usage.html#show-lists
+  desc: Pgbouncer entry list
   query: SHOW LISTS;
   ttl: 10
   min_version: 10800
   fatal: true
-  tags:
-    - pgbouncer
-
+  tags: [ pgbouncer ]
   metrics:
-    - list:
-        usage: LABEL
-        description: Pgbouncer internal list name
-    - items:
-        usage: GAUGE
-        description: Number of corresponding pgbouncer object
+    - list:                { usage: LABEL                 ,description: Pgbouncer internal list name }
+    - items:               { usage: GAUGE                 ,description: Number of corresponding pgbouncer object }
 

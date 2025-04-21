@@ -1,45 +1,16 @@
-##
-# SYNOPSIS
-#       pg_relkind_*
-#
-# DESCRIPTION
-#       Postgres relation count by kind (category, r,i,m,t,...)
-#
-# OPTIONS
-#       Tags       []
-#       TTL        60
-#       Priority   0
-#       Timeout    1s
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     740-pg_relkind.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of database
-#       relkind (LABEL)
-#           Kind of this relation, could be r,i,S,t,v,m,c,f,p,I
-#       count (GAUGE)
-#           Number of relations of corresponding relkind
-#
+#==============================================================#
+# 740 pg_relkind
+#==============================================================#
 pg_relkind:
   name: pg_relkind
   desc: Postgres relation count by kind (category, r,i,m,t,...)
-
   query: SELECT CURRENT_CATALOG AS datname, relkind, count(*) AS count FROM pg_class GROUP BY relkind;
   ttl: 60
   timeout: 1
   min_version: 090400
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of database
-    - relkind:
-        usage: LABEL
-        description: Kind of this relation, could be r,i,S,t,v,m,c,f,p,I
-    - count:
-        usage: GAUGE
-        description: Number of relations of corresponding relkind
+    - datname:             { usage: LABEL    ,description: Name of database }
+    - relkind:             { usage: LABEL    ,description: Kind of this relation, could be r,i,S,t,v,m,c,f,p,I }
+    - count:               { usage: GAUGE    ,description: Number of relations of corresponding relkind }
 
 

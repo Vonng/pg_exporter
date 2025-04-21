@@ -1,106 +1,40 @@
-##
-# SYNOPSIS
-#       pg_db_confl_*
-#
-# DESCRIPTION
-#       PostgreSQL database conflicts metrics (only available on replica)
-#
-# OPTIONS
-#       Tags       [cluster, replica]
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    90100 ~ higher
-#       Source     620-pg_db_conf.yml
-#
-# METRICS
-#       datid (DISCARD)
-#           N/A
-#       datname (LABEL)
-#           Name of this database
-#       confl_tablespace (COUNTER)
-#           Number of queries in this database that have been canceled due to dropped tablespaces
-#       confl_lock (COUNTER)
-#           Number of queries in this database that have been canceled due to lock timeouts
-#       confl_snapshot (COUNTER)
-#           Number of queries in this database that have been canceled due to old snapshots
-#       confl_bufferpin (COUNTER)
-#           Number of queries in this database that have been canceled due to pinned buffers
-#       confl_deadlock (COUNTER)
-#           Number of queries in this database that have been canceled due to deadlocks
-#
+#==============================================================#
+# 620 pg_db_confl
+#==============================================================#
+# https://pgpedia.info/p/pg_stat_database_conflicts.html
+
 pg_db_confl_16:
   name: pg_db_confl
-  desc: PostgreSQL database conflicts metrics (PG16+, only available on replica)
-  # https://pgpedia.info/p/pg_stat_database_conflicts.html
+  desc: PostgreSQL database conflicts metrics for PG16+
   query: SELECT * FROM pg_stat_database_conflicts;
-
   ttl: 10
   min_version: 160000
-  tags:
-    - cluster
-    - replica
-
+  tags: [ cluster, replica ]
   metrics:
-    - datid:
-        usage: DISCARD
-    - datname:
-        usage: LABEL
-        description: Name of this database
-    - confl_tablespace:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to dropped tablespaces
-    - confl_lock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to lock timeouts
-    - confl_snapshot:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to old snapshots
-    - confl_bufferpin:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to pinned buffers
-    - confl_deadlock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to deadlocks
-    - confl_active_logicalslot:
-        usage: COUNTER
-        description: Number of uses of logical slots in this database that have been canceled due to old snapshots or too low a wal_level on the primary
-
+    - datid:                { usage: DISCARD }
+    - datname:              { usage: LABEL  ,description: Name of this database }
+    - confl_tablespace:     { usage: COUNTER ,description: Number of queries in this database that have been canceled due to dropped tablespaces }
+    - confl_lock:           { usage: COUNTER ,description: Number of queries in this database that have been canceled due to lock timeouts }
+    - confl_snapshot:       { usage: COUNTER ,description: Number of queries in this database that have been canceled due to old snapshots }
+    - confl_bufferpin:      { usage: COUNTER ,description: Number of queries in this database that have been canceled due to pinned buffers }
+    - confl_deadlock:       { usage: COUNTER ,description: Number of queries in this database that have been canceled due to deadlocks }
+    - confl_active_logicalslot: { usage: COUNTER ,description: Number of uses of logical slots in this database that have been canceled due to old snapshots or too low a wal_level on the primary }
 
 pg_db_confl_15:
   name: pg_db_confl
-  desc: PostgreSQL database conflicts metrics (only available on replica)
-  # https://pgpedia.info/p/pg_stat_database_conflicts.html
+  desc: PostgreSQL database conflicts metrics for pg 9.1 - 16
   query: SELECT * FROM pg_stat_database_conflicts;
-
   ttl: 10
   min_version: 90100
   max_version: 160000
-  tags:
-    - cluster
-    - replica
-
+  tags: [ cluster, replica ]
   metrics:
-    - datid:
-        usage: DISCARD
-    - datname:
-        usage: LABEL
-        description: Name of this database
-    - confl_tablespace:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to dropped tablespaces
-    - confl_lock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to lock timeouts
-    - confl_snapshot:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to old snapshots
-    - confl_bufferpin:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to pinned buffers
-    - confl_deadlock:
-        usage: COUNTER
-        description: Number of queries in this database that have been canceled due to deadlocks
+    - datid:                { usage: DISCARD }
+    - datname:              { usage: LABEL  ,description: Name of this database }
+    - confl_tablespace:     { usage: COUNTER ,description: Number of queries in this database that have been canceled due to dropped tablespaces }
+    - confl_lock:           { usage: COUNTER ,description: Number of queries in this database that have been canceled due to lock timeouts }
+    - confl_snapshot:       { usage: COUNTER ,description: Number of queries in this database that have been canceled due to old snapshots }
+    - confl_bufferpin:      { usage: COUNTER ,description: Number of queries in this database that have been canceled due to pinned buffers }
+    - confl_deadlock:       { usage: COUNTER ,description: Number of queries in this database that have been canceled due to deadlocks }
 
 

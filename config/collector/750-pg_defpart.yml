@@ -1,27 +1,6 @@
-##
-# SYNOPSIS
-#       pg_defpart_*
-#
-# DESCRIPTION
-#       PostgreSQL default partition tuples
-#
-# OPTIONS
-#       Tags       []
-#       TTL        60
-#       Priority   0
-#       Timeout    1s
-#       Fatal      false
-#       Version    110000 ~ higher
-#       Source     750-pg_defpart.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Database name of this default partition
-#       relname (LABEL)
-#           Schema qualified default partition relation name
-#       tuples (GAUGE)
-#           Number of tuples in this default partition
-#
+#==============================================================#
+# 750 pg_defpart
+#==============================================================#
 pg_defpart:
   name: pg_defpart
   desc: PostgreSQL default partition tuples
@@ -29,16 +8,9 @@ pg_defpart:
   ttl: 60
   timeout: 1
   min_version: 110000
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this default partition
-    - relname:
-        usage: LABEL
-        description: Schema qualified default partition relation name
-    - tuples:
-        usage: GAUGE
-        description: Number of tuples in this default partition
+    - datname:             { usage: LABEL    ,description: Database name of this default partition }
+    - relname:             { usage: LABEL    ,description: Schema qualified default partition relation name }
+    - tuples:              { usage: GAUGE    ,description: Number of tuples in this default partition }
 
 

@@ -1,43 +1,15 @@
-##
-# SYNOPSIS
-#       pg_pubrel_*
-#
-# DESCRIPTION
-#       PostgreSQL publication and relation count
-#
-# OPTIONS
-#       Tags       []
-#       TTL        10
-#       Priority   0
-#       Timeout    100ms
-#       Fatal      false
-#       Version    100000 ~ higher
-#       Source     640-pg_pubrel.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Name of the database which publication belonged
-#       pubname (LABEL)
-#           Name of the publication
-#       count (GAUGE)
-#           Count of relation in the publication
-#
+#==============================================================#
+# 640 pg_pubrel
+#==============================================================#
 pg_pubrel:
   name: pg_pubrel
   desc: PostgreSQL publication and relation count
   query: SELECT CURRENT_CATALOG AS datname, pubname, count(*) AS count FROM pg_publication p, LATERAL pg_get_publication_tables(pubname) GROUP BY pubname;
   ttl: 10
   min_version: 100000
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Name of the database which publication belonged
-    - pubname:
-        usage: LABEL
-        description: Name of the publication
-    - count:
-        usage: GAUGE
-        description: Count of relation in the publication
+    - datname:              { usage: LABEL  ,description: Name of the database which publication belonged }
+    - pubname:              { usage: LABEL  ,description: Name of the publication }
+    - count:                { usage: GAUGE  ,description: Count of relation in the publication }
 
 

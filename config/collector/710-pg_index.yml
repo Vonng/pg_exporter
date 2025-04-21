@@ -1,48 +1,10 @@
-##
-# SYNOPSIS
-#       pg_index_*
-#
-# DESCRIPTION
-#       PostgreSQL index metrics
-#
-# OPTIONS
-#       Tags       []
-#       TTL        10
-#       Priority   0
-#       Timeout    1s
-#       Fatal      false
-#       Version    90400 ~ higher
-#       Source     710-pg_index.yml
-#
-# METRICS
-#       datname (LABEL)
-#           Database name of this index
-#       idxname (LABEL)
-#           Name of this index (full-qualifed schema name)
-#       relname (LABEL)
-#           Name of the table for this index (full-qualifed schema name)
-#       relid (LABEL)
-#           Relation oid of this index
-#       relpages (GAUGE)
-#           Size of the on-disk representation of this index in pages
-#       reltuples (GAUGE)
-#           Estimate relation tuples
-#       idx_scan (COUNTER)
-#           Number of index scans initiated on this index
-#       idx_tup_read (COUNTER)
-#           Number of index entries returned by scans on this index
-#       idx_tup_fetch (COUNTER)
-#           Number of live table rows fetched by simple index scans using this index
-#       idx_blks_read (COUNTER)
-#           Number of disk blocks read from this index
-#       idx_blks_hit (COUNTER)
-#           Number of buffer hits in this index
-#
-
+#==============================================================#
+# 710 pg_index
+#==============================================================#
 pg_index:
   name: pg_index
   desc: PostgreSQL index metrics
-  query: |
+  query: |-
     SELECT CURRENT_CATALOG AS datname, schemaname || '.' || indexrelname AS idxname, schemaname || '.' || relname AS relname ,indexrelid AS relid,
         relpages, reltuples, idx_scan, idx_tup_read, idx_tup_fetch, idx_blks_read, idx_blks_hit
     FROM pg_stat_user_indexes psui, LATERAL (SELECT idx_blks_read, idx_blks_hit FROM pg_statio_user_indexes psio WHERE psio.indexrelid = psui.indexrelid LIMIT 1) p2,
@@ -53,40 +15,17 @@ pg_index:
   ttl: 10
   timeout: 1
   min_version: 090400
-
   metrics:
-    - datname:
-        usage: LABEL
-        description: Database name of this index
-    - idxname:
-        usage: LABEL
-        description: Name of this index (full-qualifed schema name)
-    - relname:
-        usage: LABEL
-        description: Name of the table for this index (full-qualifed schema name)
-    - relid:
-        usage: LABEL
-        description: Relation oid of this index
-    - relpages:
-        usage: GAUGE
-        description: Size of the on-disk representation of this index in pages
-        # Size of the on-disk representation of this table in pages (of size BLCKSZ). This is only an estimate used by the planner. It is updated by VACUUM, ANALYZE, and a few DDL commands such as CREATE INDEX.
-    - reltuples:
-        usage: GAUGE
-        description: Estimate relation tuples
-    - idx_scan:
-        usage: COUNTER
-        description: Number of index scans initiated on this index
-    - idx_tup_read:
-        usage: COUNTER
-        description: Number of index entries returned by scans on this index
-    - idx_tup_fetch:
-        usage: COUNTER
-        description: Number of live table rows fetched by simple index scans using this index
-    - idx_blks_read:
-        usage: COUNTER
-        description: Number of disk blocks read from this index
-    - idx_blks_hit:
-        usage: COUNTER
-        description: Number of buffer hits in this index
+    - datname:             { usage: LABEL    ,description: Database name of this index }
+    - idxname:             { usage: LABEL    ,description: Name of this index (full-qualifed schema name) }
+    - relname:             { usage: LABEL    ,description: Name of the table for this index (full-qualifed schema name) }
+    - relid:               { usage: LABEL    ,description: Relation oid of this index }
+    - relpages:            { usage: GAUGE    ,description: Size of the on-disk representation of this index in pages }
+    - reltuples:           { usage: GAUGE    ,description: Estimate relation tuples }
+    - idx_scan:            { usage: COUNTER  ,description: Number of index scans initiated on this index }
+    - idx_tup_read:        { usage: COUNTER  ,description: Number of index entries returned by scans on this index }
+    - idx_tup_fetch:       { usage: COUNTER  ,description: Number of live table rows fetched by simple index scans using this index }
+    - idx_blks_read:       { usage: COUNTER  ,description: Number of disk blocks read from this index }
+    - idx_blks_hit:        { usage: COUNTER  ,description: Number of buffer hits in this index }
+
 
