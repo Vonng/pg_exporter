@@ -1,9 +1,8 @@
-PG_EXPORTER_URL='postgres://:5432/?sslmode=disable&host=/var/run/postgresql'
+PG_EXPORTER_URL='postgres://:5432/?sslmode=disable'
 PG_EXPORTER_CONFIG=/etc/pg_exporter.yml
 PG_EXPORTER_LABEL=""
 PG_EXPORTER_TAG=""
 PG_EXPORTER_DISABLE_CACHE=false
-PG_EXPORTER_DISABLE_DEFAULT_METRICS=false
 PG_EXPORTER_AUTO_DISCOVERY=true
 PG_EXPORTER_EXCLUDE_DATABASE="template0,template1,postgres"
 PG_EXPORTER_INCLUDE_DATABASE=""

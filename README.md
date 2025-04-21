@@ -1,4 +1,8 @@
-# PG Exporter
+<p align="center">
+  <img src="doc/logo.png" alt="PG Exporter Logo" height="128" align="middle">
+</p>
+
+# PG EXPORTER
 
 [![Webite: pigsty](https://img.shields.io/badge/website-pigsty.io-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io)
 [![Version: v0.8.1](https://img.shields.io/badge/version-v0.8.1-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v0.8.1)
@@ -8,8 +12,10 @@
 
 > **Advanced [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [Prometheus](https://prometheus.io/)**
 
-PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **declarative YAML configuration**, **dynamic query planning**, and **customizable metrics collection**. 
-Powering [**Pigsty**](https://pigsty.io)'s monitoring system, it delivers more metrics with customize capabilities.
+PG Exporter brings ultimate monitoring experience to your PostgreSQL with **declarative config**, **dynamic planning**, and **customizable collectors**. 
+It provides **600+** metrics and ~3K time series per instance, covers everything you'll need for PostgreSQL observability.
+
+Check [**https://demo.pigsty.cc**](https://demo.pigsty.cc) for live demo, which is build upon this exporter by [**Pigsty**](https://pigsty.io).
 
 <div align="center">
     <a href="#quick-start">Quick Start</a> •
@@ -43,6 +49,8 @@ Powering [**Pigsty**](https://pigsty.io)'s monitoring system, it delivers more m
 
 ## Quick Start
 
+RPM / DEB / Tarball available in the Github [release page](https://github.com/pgsty/pg_exporter/releases), and Pigsty's [YUM](https://pigsty.io/ext/repo/yum/) / [APT](https://pigsty.io/ext/repo/apt/) [repo](https://pigsty.io/ext/repo/).
+
 To run this exporter, you need to pass the postgres/pgbouncer URL via env or arg:
 
 ```bash
@@ -50,33 +58,15 @@ PG_EXPORTER_URL='postgres://user:pass@host:port/postgres' pg_exporter
 curl http://localhost:9630/metrics   # access metrics
 ```
 
-There are 4 built-in metrics `pg_up`, `pg_version`, `pg_in_recovery`, `pg_exporter_build_info`. **All other metrics are defined in [`pg_exporter.yml`](pg_exporter.yml)**.
+There are 4 built-in metrics `pg_up`, `pg_version`, `pg_in_recovery`, `pg_exporter_build_info`. 
+
+**All other metrics are defined in the [`pg_exporter.yml`](pg_exporter.yml) config file**.
 
 
 
 --------
 
 ## Usage
-
-Parameters could be given via command-line args or environment variables. 
-
-* `--web.listen-address` is the web endpoint listen address, `:9630` by default, this parameter can not be changed via environment variable.
-* `--web.telemetry-path` or `PG_EXPORTER_TELEMETRY_PATH` is the URL path under which to expose metrics.
-* `--url` or `PG_EXPORTER_URL` defines **where** to scrape, it should be a valid DSN or URL. (note that `sslmode=disable` must be specifed explicitly for database that does not using SSL)
-* `--config` or `PG_EXPORTER_CONFIG` defines **how** to scrape. It could be a single YAML file or a directory containing a series of separated YAML configs, which config will be loaded in alphabetic order.
-* `--label` or `PG_EXPORTER_LABEL` defines **constant labels** that are added to all metrics. It should be a comma-separated list of `label=value` pairs.
-* `--tag` or `PG_EXPORTER_TAG` will mark this exporter with given tags. Tags are a comma-separated-value list of strings. which could be used for query filtering and execution control.
-* `--disable-cache` or `PG_EXPORTER_DISABLE_CACHE` will disable metric cache.
-* `--auto-discovery` or `PG_EXPORTER_AUTO_DISCOVERY` will automatically spawn peripheral servers for other databases in the target PostgreSQL server. except for those listed in `--exclude-database`. (Not implemented yet)
-* `--exclude-database` or `PG_EXPORTER_EXCLUDE_DATABASE` is a comma-separated list of the database name. Which are not scrapped when `--auto-discovery` is enabled
-* `--namespace` or `PG_EXPORTER_NAMESPACE` defined **internal metrics prefix**, by default `pg|pgbouncer`.
-* `--fail-fast` or `PG_EXPORTER_FAIL_FAST` is a flag. During start-up, `pg_exporter` will wait if the target is down. with `--fail-fast=true`, `pg_exporter` will fail instead of waiting on the start-up procedure if the target is down
-* `--connect-timeout` or `PG_EXPORTER_CONNECT_TIMEOUT` is the timeout for connecting to the target.
-* `--dry-run` will print configuration files
-* `--explain` will actually connect to the target server and plan queries for it. Then explain which queries are installed.
-* `--log.level` will set logging level: one of `debug`, `info`, `warn`, `error`.
-
-
 
 ```bash
 usage: pg_exporter [<flags>]
@@ -108,6 +98,29 @@ Flags:
       --log.format="logfmt"  log format: logfmt|json
       --[no-]version         Show application version.
 ```
+
+Parameters could be given via command-line args or environment variables. 
+
+| CLI Arg                | Environment Variable           | Default Value     |
+|------------------------|--------------------------------|-------------------|
+| `--url`                | `PG_EXPORTER_URL`              | `postgres:///`    |
+| `--config`             | `PG_EXPORTER_CONFIG`           | `pg_exporter.yml` |
+| `--label`              | `PG_EXPORTER_LABEL`            |                   |
+| `--tag`                | `PG_EXPORTER_TAG`              |                   |
+| `--auto-discovery`     | `PG_EXPORTER_AUTO_DISCOVERY`   | `true`            |
+| `--disable-cache`      | `PG_EXPORTER_DISABLE_CACHE`    | `false`           |
+| `--fail-fast`          | `PG_EXPORTER_FAIL_FAST`        | `false`           |
+| `--exclude-database`   | `PG_EXPORTER_EXCLUDE_DATABASE` |                   |
+| `--include-database`   | `PG_EXPORTER_INCLUDE_DATABASE` |                   |
+| `--namespace`          | `PG_EXPORTER_NAMESPACE`        | `pg\|pgbouncer`   |
+| `--connect-timeout`    | `PG_EXPORTER_CONNECT_TIMEOUT`  | `100`             |
+| `--dry-run`            |                                | `false`           |
+| `--explain`            |                                | `false`           |
+| `--log.level`          |                                | `info`            |
+| `--log.format`         |                                | `logfmt`          |
+| `--web.listen-address` |                                | `:9630`           |
+| `--web.config.file`    |                                | `""`              |
+| `--web.telemetry-path` | `PG_EXPORTER_TELEMETRY_PATH`   | `/metrics`        |
 
 
 ------
@@ -212,12 +225,6 @@ Configs lie in the core of `pg_exporter`. Actually, this project contains more l
 
 Current `pg_exporter` is shipped with the following metrics collector definition files
 
-> #### Note
->
-> Supported version: PostgreSQL 10, 11, 12, 13, 14, 15, 16, 17+
->
-> But you can still get PostgreSQL 9.4, 9.5, 9.6 support by switching to the older version collector definition
-
 - [0000-doc.yml](config/collector/0000-doc.yml)
 - [0110-pg.yml](config/collector/0110-pg.yml)
 - [0120-pg_meta.yml](config/collector/0120-pg_meta.yml)
@@ -271,9 +278,20 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 - [1010-pg_citus.yml](config/collector/1010-pg_citus.yml)
 - [2000-pg_heartbeat.yml](config/collector/2000-pg_heartbeat.yml)
 
-`pg_exporter` will generate approximately 200~300 metrics for a completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate several 1k ~ 10k metrics. You may need to modify or disable some database-level metrics on a database with several thousand or more tables in order to complete the scrape in time.
 
-Config files are using YAML format, there are lots of examples in the [conf](https://github.com/pgsty/pg_exporter/tree/master/config/collector) dir. and here is a [sample](config/collector/000-doc.yml) config.
+> #### Note
+>
+> Supported version: PostgreSQL 10, 11, 12, 13, 14, 15, 16, 17+
+>
+> But you can still get PostgreSQL 9.4, 9.5, 9.6 support by switching to the older version collector definition
+
+
+`pg_exporter` will generate approximately 600 metrics for a completely new database cluster.
+For a real-world database with 10 ~ 100 tables, it may generate several 1k ~ 10k metrics. 
+
+You may need to modify or disable some database-level metrics on a database with several thousand or more tables in order to complete the scrape in time.
+
+Config files are using YAML format, there are lots of examples in the [conf](https://github.com/pgsty/pg_exporter/tree/main/config/collector) dir. and here is a [sample](config/collector/0000-doc.yml) config.
 
 ```
 #==============================================================#
