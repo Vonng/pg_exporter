@@ -6,9 +6,9 @@
 [![GitHub Stars](https://img.shields.io/github/stars/pgsty/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#pgsty/pg_exporter&Date)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pgsty/pg_exporter)](https://goreportcard.com/report/github.com/pgsty/pg_exporter)
 
-> **The ultimate [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [Prometheus](https://prometheus.io/) with complete customizability and unparalleled observability.**
+> **Advanced [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [Prometheus](https://prometheus.io/)**
 
-PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **declarative YAML configuration**, **dynamic query planning**, and **customizable metrics collection**. Powering [**Pigsty**](https://pigsty.io)'s unparalleled PostgreSQL observability, it delivers monitoring that the community has always needed.
+PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **declarative YAML configuration**, **dynamic query planning**, and **customizable metrics collection**. Powering [**Pigsty**](https://pigsty.io)'s unparalleled PostgreSQL observability, it delivers unparalleled metrics that the community has always needed.
 
 <div align="center">
     <a href="#quick-start">Quick Start</a> •
@@ -18,7 +18,7 @@ PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **
     <a href="#deployment">Deployment</a> •
     <a href="#collectors">Collectors</a> •
     <a href="https://demo.pigsty.cc">Demo</a>
-</div>
+</div><br><br>
 
 [![pigsty-dashboard](https://pigsty.io/img/pigsty/dashboard.jpg)](https://demo.pigsty.cc)
 
@@ -31,7 +31,7 @@ PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **
 - **Full Coverage**: Monitor both PostgreSQL (10-17+) and pgBouncer (1.8-1.24+) with a single exporter
 - **Fine-grained Control**: Configure timeout, caching, skip conditions, and fatality per collector
 - **Dynamic Planning**: Define multiple query branches based on different conditions
-- **Self-monitoring**: Rich [metrics about pg_exporter itself](https://demo.pigsty.cc/d/pgsql-exporter) for complete observability
+- **Self-monitoring**: Rich metrics about pg_exporter [itself](https://demo.pigsty.cc/d/pgsql-exporter) for complete observability
 - **Production-Ready**: Battle-tested in real-world environments across 12K+ cores for 6+ years
 - **Auto-discovery**: Automatically discover and monitor multiple databases within an instance
 - **Health Check APIs**: Comprehensive HTTP endpoints for service health and traffic routing
@@ -49,7 +49,7 @@ PG_EXPORTER_URL='postgres://user:pass@host:port/postgres' pg_exporter
 curl http://localhost:9630/metrics   # access metrics
 ```
 
-PG Exporter provides only 3 built-in metrics (`pg_up`, `pg_version`, `pg_in_recovery`). **All other metrics are defined in configuration files**, with comprehensive defaults in the included [`pg_exporter.yml`](pg_exporter.yml).
+PG Exporter provides only 4 built-in metrics (`pg_up`, `pg_version`, `pg_in_recovery`, `pg_exporter_build_info`). **All other metrics are defined in configuration files**, with comprehensive defaults in the included [`pg_exporter.yml`](pg_exporter.yml).
 
 
 

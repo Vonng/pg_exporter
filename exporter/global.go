@@ -13,9 +13,9 @@ var Version = "0.9.0"
 
 // Build information. Populated at build-time.
 var (
-	Branch    = "HEAD"
-	Revision  = "unknown"
-	BuildDate = "unknown"
+	Branch    = "main"
+	Revision  = "HEAD"
+	BuildDate = "20250421212100"
 	GoVersion = runtime.Version()
 	GOOS      = runtime.GOOS
 	GOARCH    = runtime.GOARCH
