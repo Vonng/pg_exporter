@@ -3,29 +3,54 @@
 #==============================================================#
 pg_setting:
   name: pg_setting
-  desc: Important postgres setting entries that must kept same on entire cluster
+  desc: Important postgres setting parameters
   query: |
     SELECT
       current_setting('max_connections')           AS max_connections,
       current_setting('max_prepared_transactions') AS max_prepared_transactions,
+      current_setting('max_locks_per_transaction') AS max_locks_per_transaction,
       current_setting('max_worker_processes')      AS max_worker_processes,
       current_setting('max_replication_slots')     AS max_replication_slots,
       current_setting('max_wal_senders')           AS max_wal_senders,
-      current_setting('max_locks_per_transaction') AS max_locks_per_transaction,
       current_setting('block_size')                AS block_size,
+      current_setting('wal_block_size')            AS wal_block_size,
+      pg_size_bytes(current_setting('segment_size')) AS segment_size,
+      pg_size_bytes(current_setting('wal_segment_size')) AS wal_segment_size,
       CASE current_setting('data_checksums') WHEN 'on' THEN 1 ELSE 0 END AS data_checksums,
-      CASE current_setting('wal_log_hints') WHEN 'on' THEN 1 ELSE 0 END AS wal_log_hints;
+      CASE current_setting('wal_log_hints') WHEN 'on' THEN 1 ELSE 0 END AS wal_log_hints,
+      CASE current_setting('wal_level') WHEN 'logical' THEN 3 WHEN 'replica' THEN 2 WHEN 'minimal' THEN 1 ELSE 0 END AS wal_level,
+      pg_size_bytes(current_setting('work_mem', true)) AS work_memory_size,
+      pg_size_bytes(current_setting('shared_memory_size', true)) AS shared_memory_size,
+      CASE current_setting('huge_pages_status', true) WHEN 'on' THEN 1 WHEN 'off' THEN 0 WHEN 'unknown' THEN -1 ELSE -2 END AS hugepage_status,
+      current_setting('shared_memory_size_in_huge_pages', true) AS hugepage_count,
+      pg_size_bytes(current_setting('min_wal_size')) AS min_wal_size,
+      pg_size_bytes(current_setting('max_wal_size')) AS max_wal_size,
+      pg_size_bytes(current_setting('max_slot_wal_keep_size', true)) AS max_slot_wal_keep_size,
+      CASE current_setting('archive_mode') WHEN 'off' THEN 0 WHEN 'on' THEN 1 WHEN 'always' THEN 2 ELSE -1 END AS archive_mode;
   ttl: 10
   min_version: 090600
   tags: [ cluster ]
   metrics:
     - max_connections:           { usage: GAUGE ,description: number of concurrent connections to the database server }
     - max_prepared_transactions: { usage: GAUGE ,description: maximum number of transactions that can be in the prepared state simultaneously }
+    - max_locks_per_transaction: { usage: GAUGE ,description: no more than this many distinct objects can be locked at any one time }
     - max_worker_processes:      { usage: GAUGE ,description: maximum number of background processes that the system can support }
     - max_replication_slots:     { usage: GAUGE ,description: maximum number of replication slots }
     - max_wal_senders:           { usage: GAUGE ,description: maximum number of concurrent connections from standby servers }
-    - max_locks_per_transaction: { usage: GAUGE ,description: no more than this many distinct objects can be locked at any one time }
     - block_size:                { usage: GAUGE ,description: pg page block size, 8192 by default }
+    - wal_block_size:            { usage: GAUGE ,description: block size in WAL files }
+    - segment_size:              { usage: GAUGE ,description: segment size for database files }
+    - wal_segment_size:          { usage: GAUGE ,description: segment size for WAL files }
     - data_checksums:            { usage: GAUGE ,description: whether data checksum is enabled, 1 enabled 0 disabled }
     - wal_log_hints:             { usage: GAUGE ,description: whether wal_log_hints is enabled, 1 enabled 0 disabled }
+    - wal_level:                 { usage: GAUGE ,description: WAL level, 1=minimal, 2=replica, 3=logical }
+    - work_memory_size:          { usage: GAUGE ,description: size of work memory in bytes }
+    - shared_memory_size:        { usage: GAUGE ,description: size of shared memory segment in bytes }
+    - hugepage_count:            { usage: GAUGE ,description: Reports the number of huge pages that are needed for the main shared memory area }
+    - hugepage_status:           { usage: GAUGE ,description: huge pages configuration status, 0=off, 1=on, -1=unknown }
+    - min_wal_size:              { usage: GAUGE ,description: minimum size that the WAL will shrink to in bytes }
+    - max_wal_size:              { usage: GAUGE ,description: maximum size that the WAL will grow to in bytes }
+    - max_slot_wal_keep_size:    { usage: GAUGE ,description: maximum WAL size that replication slots are allowed to retain in bytes, -1 means no limit }
+    - archive_mode:              { usage: GAUGE ,description: archive mode status, 0=off, 1=on, 2=always, -1=other }
+
 
