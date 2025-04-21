@@ -1,4 +1,4 @@
-module github.com/pgsty/pg_exporter
+module pg_exporter
 
 go 1.24.0
 

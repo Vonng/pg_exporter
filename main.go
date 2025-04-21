@@ -17,7 +17,7 @@ limitations under the License.
 
 package main
 
-import "github.com/pgsty/pg_exporter/exporter"
+import "pg_exporter/exporter"
 
 func main() {
 	exporter.Run()
