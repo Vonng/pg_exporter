@@ -20,7 +20,7 @@ pg_recv_13:
     - sender_port:         { usage: LABEL   ,description: Port number of the PostgreSQL instance this WAL receiver is connected to. }
     - slot_name:           { usage: LABEL   ,description: Replication slot name used by this WAL receiver }
     - pid:                 { usage: GAUGE   ,description: Process ID of the WAL receiver process }
-    - state:               { usage: LABEL   ,description: Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping }
+    - state:               { usage: GAUGE   ,description: Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping }
     - init_lsn:            { usage: COUNTER ,description: First write-ahead log location used when WAL receiver is started }
     - init_tli:            { usage: COUNTER ,description: First timeline number used when WAL receiver is started }
     - flush_lsn:           { usage: COUNTER ,description: Last write-ahead log location already received and flushed to disk }
@@ -52,7 +52,7 @@ pg_recv_11:
     - sender_port:         { usage: LABEL   ,description: Port number of the PostgreSQL instance this WAL receiver is connected to. }
     - slot_name:           { usage: LABEL   ,description: Replication slot name used by this WAL receiver }
     - pid:                 { usage: GAUGE   ,description: Process ID of the WAL receiver process }
-    - state:               { usage: LABEL   ,description: Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping }
+    - state:               { usage: GAUGE   ,description: Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping }
     - init_lsn:            { usage: COUNTER ,description: First write-ahead log location used when WAL receiver is started }
     - init_tli:            { usage: COUNTER ,description: First timeline number used when WAL receiver is started }
     - flush_lsn:           { usage: COUNTER ,description: Last write-ahead log location already received and flushed to disk }
@@ -83,7 +83,7 @@ pg_recv_10:
     - sender_port:         { usage: LABEL   ,description: Port number of the PostgreSQL instance this WAL receiver is connected to. }
     - slot_name:           { usage: LABEL   ,description: Replication slot name used by this WAL receiver }
     - pid:                 { usage: GAUGE   ,description: Process ID of the WAL receiver process }
-    - state:               { usage: LABEL   ,description: Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping }
+    - state:               { usage: GAUGE   ,description: Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping }
     - init_lsn:            { usage: COUNTER ,description: First write-ahead log location used when WAL receiver is started }
     - init_tli:            { usage: COUNTER ,description: First timeline number used when WAL receiver is started }
     - flush_lsn:           { usage: COUNTER ,description: Last write-ahead log location already received and flushed to disk }

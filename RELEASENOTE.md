@@ -10,10 +10,12 @@
 * restrict pg_clustering, pg_indexing, pg_vacuuming run on primary
 * mark all `reset_time` as `GAUGE` rather than `COUNTER`
 * fix `pg_recovery_prefetch_skip_fpw` type from `GAUGE` to `COUNTER`
+* fix `pg_recv.state` type from `LABEL` to `GAUGE`
 * normalize collector branch name with min pg ver suffix
 * Format collector in compact mode
 * Add license file to binary packages
 * move `Vonng/pg_exporter` repo to `pgsty/pg_exporter`
+
 
 https://github.com/Vonng/pg_exporter/releases/tag/v0.9.0
 
