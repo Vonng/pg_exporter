@@ -87,7 +87,7 @@ darwin-arm64: clean build-darwin-arm64
 # generate merged config from separated configuration
 conf:
 	rm -rf pg_exporter.yml
-	cat config/collector/*.yml >> pg_exporter.yml
+	cat config/*.yml >> pg_exporter.yml
 
 
 ###############################################################
