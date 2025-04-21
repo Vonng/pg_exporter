@@ -2433,6 +2433,7 @@ pg_tsdb_hypertable:
     FROM timescaledb_information.hypertables;
 
   ttl: 60
+  timeout: 2
   min_version: 100000
   tags: [ "extension:timescaledb", "schema:timescaledb_information" ]
   metrics:
