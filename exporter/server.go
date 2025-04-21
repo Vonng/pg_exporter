@@ -161,24 +161,53 @@ func ParseSemver(semverStr string) int {
 // PostgresPrecheck checks postgres connection and gathering facts
 // if any important fact changed, it will trigger a plan before next scrape
 func PostgresPrecheck(s *Server) (err error) {
-	if s.DB == nil { // if db is not initialized, create a new DB
-		if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
-			s.UP = false
-			return
-		}
-		s.DB.SetMaxIdleConns(1)
-		s.DB.SetMaxOpenConns(1)
-		s.DB.SetConnMaxLifetime(connMaxLifeTime)
+	if err = ensureDBConnection(s); err != nil {
+		return err
 	}
 
-	// retrieve version info
+	// Check version info and set UP status
+	if err = checkServerVersion(s); err != nil {
+		return err
+	}
+
+	// Set application name
+	if err = setApplicationName(s); err != nil {
+		return err
+	}
+
+	// Get important server metadata
+	return gatherServerMetadata(s)
+}
+
+// ensureDBConnection ensures the database connection is initialized
+func ensureDBConnection(s *Server) error {
+	if s.DB != nil {
+		return nil
+	}
+
+	var err error
+	if s.DB, err = sql.Open("postgres", s.dsn); err != nil {
+		s.UP = false
+		return err
+	}
+
+	s.DB.SetMaxIdleConns(1)
+	s.DB.SetMaxOpenConns(1)
+	s.DB.SetConnMaxLifetime(connMaxLifeTime)
+	return nil
+}
+
+// checkServerVersion checks the PostgreSQL server version
+func checkServerVersion(s *Server) error {
 	var version int
 	ctx, cancel := context.WithTimeout(context.Background(), s.GetConnectTimeout())
 	defer cancel()
-	if err = s.DB.QueryRowContext(ctx, `SHOW server_version_num;`).Scan(&version); err != nil {
+
+	if err := s.DB.QueryRowContext(ctx, `SHOW server_version_num;`).Scan(&version); err != nil {
 		s.UP = false
 		return fmt.Errorf("fail fetching server version: %w", err)
 	}
+
 	s.UP = true
 	// fact change triggers a new planning
 	if s.Version != version {
@@ -186,33 +215,46 @@ func PostgresPrecheck(s *Server) (err error) {
 		s.Planned = false
 	}
 	s.Version = version
+	return nil
+}
 
-	// do not check here
-	if _, err = s.DB.Exec(`SET application_name = pg_exporter;`); err != nil {
+// setApplicationName sets the application name for the connection
+func setApplicationName(s *Server) error {
+	if _, err := s.DB.Exec(`SET application_name = pg_exporter;`); err != nil {
 		s.UP = false
 		return fmt.Errorf("fail settting application name: %w", err)
 	}
+	return nil
+}
 
-	// get important metadata
+// gatherServerMetadata gathers important metadata from the server
+func gatherServerMetadata(s *Server) error {
 	var recovery bool
 	var datname, username string
 	var databases, namespaces, extensions []string
+
 	precheckSQL := `SELECT current_catalog, current_user, pg_catalog.pg_is_in_recovery(),
 	(SELECT pg_catalog.array_agg(d.datname)::text[] AS databases FROM pg_catalog.pg_database d WHERE d.datallowconn AND NOT d.datistemplate),
 	(SELECT pg_catalog.array_agg(n.nspname)::text[] AS namespaces FROM pg_catalog.pg_namespace n),
 	(SELECT pg_catalog.array_agg(e.extname)::text[] AS extensions FROM pg_catalog.pg_extension e);`
-	ctx, cancel2 := context.WithTimeout(context.Background(), s.GetConnectTimeout())
-	defer cancel2()
-	if err = s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions)); err != nil {
+
+	ctx, cancel := context.WithTimeout(context.Background(), s.GetConnectTimeout())
+	defer cancel()
+
+	if err := s.DB.QueryRowContext(ctx, precheckSQL).Scan(&datname, &username, &recovery, pq.Array(&databases), pq.Array(&namespaces), pq.Array(&extensions)); err != nil {
 		s.UP = false
-		return fmt.Errorf("fail fetching server version: %w", err)
+		return fmt.Errorf("fail fetching server metadata: %w", err)
 	}
+
+	// Update recovery status
 	if s.Recovery != recovery {
 		logInfof("server [%s] recovery status changed: from [%v] to [%v]", s.Name(), s.Recovery, recovery)
 		s.Planned = false
 	}
 	s.Recovery = recovery
 	s.Username = username
+
+	// Update database name
 	if s.Database != datname {
 		logInfof("server [%s] datname changed: from [%s] to [%s]", s.Name(), s.Database, datname)
 		s.Planned = false
@@ -220,21 +262,36 @@ func PostgresPrecheck(s *Server) (err error) {
 	s.Database = datname
 	s.Databases[datname] = true
 
-	// update schema & extension list
+	// Update schema & extension lists
+	updateSchemaAndExtensionLists(s, namespaces, extensions)
+
+	// Detect database changes
+	detectDatabaseChanges(s, databases)
+
+	return nil
+}
+
+// updateSchemaAndExtensionLists updates the lists of schemas and extensions
+func updateSchemaAndExtensionLists(s *Server, namespaces, extensions []string) {
 	s.Namespaces = make(map[string]bool, len(namespaces))
 	for _, nsname := range namespaces {
 		s.Namespaces[nsname] = true
 	}
+
 	s.Extensions = make(map[string]bool, len(extensions))
 	for _, extname := range extensions {
 		s.Extensions[extname] = true
 	}
+}
 
-	// detect db change
+// detectDatabaseChanges detects changes in the database list and calls onDatabaseChange if needed
+func detectDatabaseChanges(s *Server, databases []string) {
 	s.dblistLock.Lock()
 	defer s.dblistLock.Unlock()
+
 	newDBList := make(map[string]bool, len(databases))
 	changes := make(map[string]bool)
+
 	// if new db is not found in old db list, add a change entry [NewDBName:true]
 	for _, dbname := range databases {
 		newDBList[dbname] = true
@@ -243,6 +300,7 @@ func PostgresPrecheck(s *Server) (err error) {
 			changes[dbname] = true
 		}
 	}
+
 	// if old db is not found in new db list, add a change entry [OldDBName:false]
 	for dbname := range s.Databases {
 		if _, found := newDBList[dbname]; !found {
@@ -250,13 +308,14 @@ func PostgresPrecheck(s *Server) (err error) {
 			changes[dbname] = false
 		}
 	}
+
 	// invoke hook if there are changes on database list
 	if len(changes) > 0 && s.onDatabaseChange != nil {
 		logDebugf("server [%s] auto discovery database list change : %v", s.Name(), changes)
 		s.onDatabaseChange(changes) // if doing something long, launch another goroutine
 	}
+
 	s.Databases = newDBList
-	return nil
 }
 
 // Plan will install queries that compatible with server fact (version, level, recovery, plugin, tags,...)
@@ -327,90 +386,141 @@ func (s *Server) Compatible(query *Query) (res bool, reason string) {
 	}
 
 	// check mode
+	if ok, reason := s.checkMode(query); !ok {
+		return false, reason
+	}
+
+	// check version
+	if ok, reason := s.checkVersion(query); !ok {
+		return false, reason
+	}
+
+	// check query side tags
+	return s.checkTags(query)
+}
+
+// checkMode checks if query mode is compatible with server mode (pgbouncer vs postgres)
+func (s *Server) checkMode(query *Query) (bool, string) {
 	if pgbouncerQuery := query.HasTag("pgbouncer"); pgbouncerQuery != s.PgbouncerMode {
 		if s.PgbouncerMode {
 			return false, fmt.Sprintf("pgbouncer server doese not match with normal postgres query %s", query.Name)
 		}
 		return false, fmt.Sprintf("pgbouncer query %s does not match with normal postgres server", query.Name)
 	}
+	return true, ""
+}
 
-	// check version
-	if s.Version != 0 { // if version is not determined yet, just let it go
-		if query.MinVersion != 0 && s.Version < query.MinVersion {
-			return false, fmt.Sprintf("server version %v lower than query min version %v", s.Version, query.MinVersion)
-		}
-		if query.MaxVersion != 0 && s.Version >= query.MaxVersion { // exclude
-			return false, fmt.Sprintf("server version %v higher than query max version %v", s.Version, query.MaxVersion)
-		}
+// checkVersion checks if query version requirements match with server version
+func (s *Server) checkVersion(query *Query) (bool, string) {
+	if s.Version == 0 {
+		// if version is not determined yet, just let it go
+		return true, ""
 	}
 
-	// check query side tags
+	if query.MinVersion != 0 && s.Version < query.MinVersion {
+		return false, fmt.Sprintf("server version %v lower than query min version %v", s.Version, query.MinVersion)
+	}
+
+	if query.MaxVersion != 0 && s.Version >= query.MaxVersion { // exclude
+		return false, fmt.Sprintf("server version %v higher than query max version %v", s.Version, query.MaxVersion)
+	}
+
+	return true, ""
+}
+
+// checkTags will check if server has all tags required by query
+func (s *Server) checkTags(query *Query) (bool, string) {
 	for _, tag := range query.Tags {
-		// check extension is installed on target database
-		if strings.HasPrefix(tag, "extension:") {
-			if _, found := s.Extensions[strings.TrimPrefix(tag, "extension:")]; !found {
-				return false, fmt.Sprintf("server [%s] does not have extension %s", s.Name(), tag)
-			}
+		if ok, reason := s.checkPrefixTag(tag, query); !ok {
+			return false, reason
+		} else if strings.HasPrefix(tag, "extension:") ||
+			strings.HasPrefix(tag, "schema:") ||
+			strings.HasPrefix(tag, "dbname:") ||
+			strings.HasPrefix(tag, "username:") ||
+			strings.HasPrefix(tag, "not:") {
 			continue
 		}
 
-		// check schema exist on target database
-		if strings.HasPrefix(tag, "schema:") {
-			if _, found := s.Namespaces[strings.TrimPrefix(tag, "schema:")]; !found {
-				return false, fmt.Sprintf("server [%s] does not have schema %s", s.Name(), tag)
-			}
+		if ok, reason := s.checkStandardTag(tag, query); !ok {
+			return false, reason
+		} else if tag == "cluster" || tag == "primary" || tag == "master" ||
+			tag == "leader" || tag == "standby" || tag == "replica" ||
+			tag == "slave" || tag == "pgbouncer" {
 			continue
 		}
+		if !s.HasTag(tag) {
+			return false, fmt.Sprintf("server [%s] does not have tag %s required by query %s",
+				s.Name(), tag, query.Name)
+		}
+	}
+	return true, ""
+}
 
-		// check if dbname prefix tag match server.Database
-		if strings.HasPrefix(tag, "dbname:") {
-			if s.Database != strings.TrimPrefix(tag, "dbname:") {
-				return false, fmt.Sprintf("server [%s] dbname does %s not match with query tag %s", s.Name(), s.Database, tag)
-			}
-			continue
+// checkPrefixTag checks tags with special prefixes (extension:, schema:, etc)
+func (s *Server) checkPrefixTag(tag string, query *Query) (bool, string) {
+	// check extension is installed on target database
+	if strings.HasPrefix(tag, "extension:") {
+		if _, found := s.Extensions[strings.TrimPrefix(tag, "extension:")]; !found {
+			return false, fmt.Sprintf("server [%s] does not have extension %s", s.Name(), tag)
 		}
+		return true, ""
+	}
 
-		// check if username prefix tag match server.Username
-		if strings.HasPrefix(tag, "username:") {
-			if s.Username != strings.TrimPrefix(tag, "username:") {
-				return false, fmt.Sprintf("server [%s] username [%s] does not match %s", s.Name(), s.Username, tag)
-			}
-			continue
+	// check schema exist on target database
+	if strings.HasPrefix(tag, "schema:") {
+		if _, found := s.Namespaces[strings.TrimPrefix(tag, "schema:")]; !found {
+			return false, fmt.Sprintf("server [%s] does not have schema %s", s.Name(), tag)
 		}
+		return true, ""
+	}
 
-		// check server does not have given tag
-		if strings.HasPrefix(tag, "not:") {
-			if negTag := strings.TrimPrefix(tag, "not:"); s.HasTag(negTag) {
-				return false, fmt.Sprintf("server [%s] has tag %s that query %s forbid", s.Name(), negTag, query.Name)
-			}
-			continue
+	// check if dbname prefix tag match server.Database
+	if strings.HasPrefix(tag, "dbname:") {
+		if s.Database != strings.TrimPrefix(tag, "dbname:") {
+			return false, fmt.Sprintf("server [%s] dbname does %s not match with query tag %s", s.Name(), s.Database, tag)
 		}
+		return true, ""
+	}
 
-		// check 3 default tags: cluster, primary, standby|replica
-		switch tag {
-		case "cluster":
-			if s.Forked {
-				return false, fmt.Sprintf("cluster level query %s will not run on forked server %v", query.Name, s.Name())
-			}
-			continue
-		case "primary", "master", "leader":
-			if s.Recovery {
-				return false, fmt.Sprintf("primary-only query %s will not run on standby server %v", query.Name, s.Name())
-			}
-			continue
-		case "standby", "replica", "slave":
-			if !s.Recovery {
-				return false, fmt.Sprintf("standby-only query %s will not run on primary server %v", query.Name, s.Name())
-			}
-			continue
-		case "pgbouncer":
-			continue
-		default:
-			// if this tag is nether a pre-defined tag nor a prefixed pattern tag, check whether server have that tag
-			if !s.HasTag(tag) {
-				return false, fmt.Sprintf("server [%s] does not have tag %s that query %s require", s.Name(), tag, query.Name)
-			}
+	// check if username prefix tag match server.Username
+	if strings.HasPrefix(tag, "username:") {
+		if s.Username != strings.TrimPrefix(tag, "username:") {
+			return false, fmt.Sprintf("server [%s] username [%s] does not match %s", s.Name(), s.Username, tag)
 		}
+		return true, ""
+	}
+
+	// check server does not have given tag
+	if strings.HasPrefix(tag, "not:") {
+		if negTag := strings.TrimPrefix(tag, "not:"); s.HasTag(negTag) {
+			return false, fmt.Sprintf("server [%s] has tag %s that query %s forbid", s.Name(), negTag, query.Name)
+		}
+		return true, ""
+	}
+
+	return true, ""
+}
+
+// checkStandardTag checks standard tags (cluster, primary, standby)
+func (s *Server) checkStandardTag(tag string, query *Query) (bool, string) {
+	switch tag {
+	case "cluster":
+		if s.Forked {
+			return false, fmt.Sprintf("cluster level query %s will not run on forked server %v", query.Name, s.Name())
+		}
+	case "primary", "master", "leader":
+		if s.Recovery {
+			return false, fmt.Sprintf("primary-only query %s will not run on standby server %v", query.Name, s.Name())
+		}
+	case "standby", "replica", "slave":
+		if !s.Recovery {
+			return false, fmt.Sprintf("standby-only query %s will not run on primary server %v", query.Name, s.Name())
+		}
+	case "pgbouncer":
+		// This is handled by checkMode, just skip it here
+	default:
+		// Non-standard tag, will be checked by caller
+		return true, ""
 	}
 	return true, ""
 }

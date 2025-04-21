@@ -15,7 +15,26 @@
 * Format collector in compact mode
 * Add license file to binary packages
 * move `Vonng/pg_exporter` repo to `pgsty/pg_exporter`
-
+* add `server_encoding` to `pg_meta` collector
+* add 12 new setting metrics to `pg_setting` collector
+  - wal_block_size
+  - segment_size
+  - wal_segment_size
+  - wal_level
+  - wal_log_hints
+  - work_mem
+  - hugepage_count
+  - hugepage_status
+  - max_wal_size
+  - min_wal_size
+  - max_slot_wal_keep_size
+* add wal file name metrics to `pg_archiver` collector
+* refactor `server.go` to reduce `Compatible` and `PostgresPrecheck` complexity
+* rename metrics collector with extra number prefix for better sorting
+* new metrics collector for timescaledb hypertable
+* new metrics collector for citus dist node
+* bump dependencies to the latest version
+* new default metric `pg_exporter_build_info` / `pgbouncer_exporter_build_info`
 
 https://github.com/Vonng/pg_exporter/releases/tag/v0.9.0
 
