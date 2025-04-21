@@ -1,6 +1,6 @@
 /***********************************************************************\
 Copyright © 2019-2025 Ruohang Feng <rh@vonng.com>
-Contributors: https://github.com/Vonng/pg_exporter/graphs/contributors
+Contributors: https://github.com/pgsty/pg_exporter/graphs/contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ limitations under the License.
 
 package main
 
-import "github.com/Vonng/pg_exporter/exporter"
+import "github.com/pgsty/pg_exporter/exporter"
 
 func main() {
 	exporter.Run()

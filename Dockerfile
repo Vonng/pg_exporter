@@ -24,12 +24,12 @@ RUN \
   CGO_ENABLED=0 GOOS=linux go build -a -o /pg_exporter .
 
 FROM scratch
-LABEL org.opencontainers.image.authors="Vonng <rh@vonng.com>, Craig Ringer <craig.ringer@enterprisedb.com>" \
-      org.opencontainers.image.url="https://github.com/Vonng/pg_exporter" \
-      org.opencontainers.image.source="https://github.com/Vonng/pg_exporter" \
+LABEL org.opencontainers.image.authors="Ruohang Feng <rh@vonng.com>, Craig Ringer <craig.ringer@enterprisedb.com>" \
+      org.opencontainers.image.url="https://github.com/pgsty/pg_exporter" \
+      org.opencontainers.image.source="https://github.com/pgsty/pg_exporter" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.title="pg_exporter" \
-      org.opencontainers.image.description="PostgreSQL metrics exporter for Prometheus"
+      org.opencontainers.image.description="PostgreSQL/Pgbouncer metrics exporter for Prometheus"
 
 WORKDIR /bin
 COPY --from=builder-env /pg_exporter /bin/pg_exporter

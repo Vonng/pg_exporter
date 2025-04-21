@@ -1,4 +1,4 @@
-module github.com/Vonng/pg_exporter
+module github.com/pgsty/pg_exporter
 
 go 1.24.0
 

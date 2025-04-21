@@ -2,9 +2,9 @@
 
 
 [![Webite: pigsty](https://img.shields.io/badge/website-pigsty.io-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io)
-[![Version: v0.8.1](https://img.shields.io/badge/version-v0.8.1-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/Vonng/pg_exporter/releases/tag/v0.8.1)
-[![License: Apache-2.0](https://img.shields.io/github/license/Vonng/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/Vonng/pg_exporter/blob/main/LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/Vonng/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#Vonng/pg_exporter&Date)
+[![Version: v0.8.1](https://img.shields.io/badge/version-v0.8.1-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v0.8.1)
+[![License: Apache-2.0](https://img.shields.io/github/license/pgsty/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/pgsty/pg_exporter/blob/main/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/pgsty/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#pgsty/pg_exporter&Date)
 
 [Prometheus](https://prometheus.io/) [Exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics.
 
@@ -12,7 +12,7 @@ PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty
 
 PG Exporter is fully **customizable**: it defines almost all metrics with declarative YAML [configuration](pg_exporter.yml) files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
 
-The latest stable version is [`0.8.1`](https://github.com/Vonng/pg_exporter/releases/tag/v0.8.1), which support PostgreSQL 10 ~ 17+ and Pgbouncer 1.8 ~ 1.24+. 
+The latest stable version is [`0.8.1`](https://github.com/pgsty/pg_exporter/releases/tag/v0.8.1), which support PostgreSQL 10 ~ 17+ and Pgbouncer 1.8 ~ 1.24+. 
 
 [![pigsty-dashboard](https://pigsty.io/img/pigsty/dashboard.jpg)](https://demo.pigsty.cc)
 
@@ -48,7 +48,7 @@ pg_exporter
 ```
 
 `pg_exporter` only built-in with 3 metrics: `pg_up`,`pg_version` , and  `pg_in_recovery`. **All other metrics are defined in configuration files**. 
-You could use the pre-defined configuration file: [`pg_exporter.yml`](pg_exporter.yml) or use separated metric query in [conf](https://github.com/Vonng/pg_exporter/tree/master/config/collector)  dir.
+You could use the pre-defined configuration file: [`pg_exporter.yml`](pg_exporter.yml) or use separated metric query in [conf](https://github.com/pgsty/pg_exporter/tree/master/config/collector)  dir.
 
 
 
@@ -176,7 +176,7 @@ To build a docker image, use:
 make docker
 ```
 
-Or [download](https://github.com/Vonng/pg_exporter/releases) the latest prebuilt binaries, rpms, debs from release pages.
+Or [download](https://github.com/pgsty/pg_exporter/releases) the latest prebuilt binaries, rpms, debs from release pages.
 
 
 
@@ -263,7 +263,7 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 
 `pg_exporter` will generate approximately 200~300 metrics for a completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate several 1k ~ 10k metrics. You may need to modify or disable some database-level metrics on a database with several thousand or more tables in order to complete the scrape in time.
 
-Config files are using YAML format, there are lots of examples in the [conf](https://github.com/Vonng/pg_exporter/tree/master/config/collector) dir. and here is a [sample](config/collector/000-doc.yml) config.
+Config files are using YAML format, there are lots of examples in the [conf](https://github.com/pgsty/pg_exporter/tree/master/config/collector) dir. and here is a [sample](config/collector/000-doc.yml) config.
 
 ```
 #==============================================================#
@@ -490,7 +490,7 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 
 Author: [Vonng](https://vonng.com/en) ([rh@vonng.com](mailto:rh@vonng.com))
 
-Contributors: https://github.com/Vonng/pg_exporter/graphs/contributors
+Contributors: https://github.com/pgsty/pg_exporter/graphs/contributors
 
 License: [Apache License Version 2.0](LICENSE)
 
