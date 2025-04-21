@@ -172,7 +172,7 @@ pg_slot_13:
 
 pg_slot_10:
   name: pg_slot
-  desc: PostgreSQL replication slot metrics v10 v11 v12
+  desc: PostgreSQL replication slot metrics 10 ~ 12
   query: |-
     SELECT slot_name, slot_type, plugin, database AS datname,datoid,active_pid,
       active,temporary,xmin::TEXT::BIGINT AS xmin,catalog_xmin::TEXT::BIGINT  AS catalog_xmin,
