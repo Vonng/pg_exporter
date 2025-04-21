@@ -4,21 +4,23 @@
 pg_primary_only:
   name: pg
   desc: PostgreSQL basic information (on primary)
-  query: |
-    SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-           extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
-           extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
-           pg_current_wal_lsn() - '0/0'                           AS lsn,
-           pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
-           pg_current_wal_lsn() - '0/0'                           AS write_lsn,
-           pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
-           NULL::BIGINT                                           AS receive_lsn,
-           NULL::BIGINT                                           AS replay_lsn,
-           extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
-           NULL::FLOAT                                            AS last_replay_time,
-           0::FLOAT                                               AS lag,
-           pg_is_in_recovery()                                    AS is_in_recovery,
-           FALSE                                                  AS is_wal_replay_paused;
+  query: |-
+    SELECT 
+      extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
+      extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
+      extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
+      pg_current_wal_lsn() - '0/0'                           AS lsn,
+      pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
+      pg_current_wal_lsn() - '0/0'                           AS write_lsn,
+      pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
+      NULL::BIGINT                                           AS receive_lsn,
+      NULL::BIGINT                                           AS replay_lsn,
+      extract(EPOCH FROM pg_conf_load_time())                AS reload_time,
+      extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
+      NULL::FLOAT                                            AS last_replay_time,
+      0::FLOAT                                               AS lag,
+      pg_is_in_recovery()                                    AS is_in_recovery,
+      FALSE                                                  AS is_wal_replay_paused;
   tags: [ cluster, primary ]
   ttl: 1
   min_version: 100000
@@ -34,6 +36,7 @@ pg_primary_only:
     - flush_lsn:            { usage: COUNTER ,description: primary only, location of current wal syncing }
     - receive_lsn:          { usage: COUNTER ,description: replica only, location of wal synced to disk }
     - replay_lsn:           { usage: COUNTER ,description: replica only, location of wal applied }
+    - reload_time:          { usage: GAUGE   ,description: time when configuration was last reloaded }
     - conf_reload_time:     { usage: GAUGE   ,description: seconds since last configuration reload }
     - last_replay_time:     { usage: GAUGE   ,description: time when last transaction been replayed }
     - lag:                  { usage: GAUGE   ,description: replica only, replication lag in seconds }
@@ -43,23 +46,25 @@ pg_primary_only:
 pg_replica_only:
   name: pg
   desc: PostgreSQL basic information (on replica)
-  query: |
-    SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                                    AS timestamp,
-           extract(EPOCH FROM now() - pg_postmaster_start_time())                   AS uptime,
-           extract(EPOCH FROM pg_postmaster_start_time())                           AS boot_time,
-           pg_last_wal_replay_lsn() - '0/0'                                         AS lsn,
-           NULL::BIGINT                                                             AS insert_lsn,
-           NULL::BIGINT                                                             AS write_lsn,
-           NULL::BIGINT                                                             AS flush_lsn,
-           pg_last_wal_receive_lsn() - '0/0'                                        AS receive_lsn,
-           pg_last_wal_replay_lsn() - '0/0'                                         AS replay_lsn,
-           extract(EPOCH FROM now() - pg_conf_load_time())                          AS conf_reload_time,
-           extract(EPOCH FROM pg_last_xact_replay_timestamp())                      AS last_replay_time,
-           CASE
-               WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
-               ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()) END AS lag,
-           pg_is_in_recovery()                                                      AS is_in_recovery,
-           pg_is_wal_replay_paused()                                                AS is_wal_replay_paused;
+  query: |-
+    SELECT 
+      extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
+      extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
+      extract(EPOCH FROM pg_postmaster_start_time())         AS boot_time,
+      pg_last_wal_replay_lsn() - '0/0'                       AS lsn,
+      NULL::BIGINT                                           AS insert_lsn,
+      NULL::BIGINT                                           AS write_lsn,
+      NULL::BIGINT                                           AS flush_lsn,
+      pg_last_wal_receive_lsn() - '0/0'                      AS receive_lsn,
+      pg_last_wal_replay_lsn() - '0/0'                       AS replay_lsn,
+      extract(EPOCH FROM pg_conf_load_time())                AS reload_time,
+      extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
+      extract(EPOCH FROM pg_last_xact_replay_timestamp())    AS last_replay_time,
+      CASE WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
+          ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()) END AS lag,
+      pg_is_in_recovery() AS is_in_recovery,
+      pg_is_wal_replay_paused() AS is_wal_replay_paused;
+
   tags: [ cluster, replica ]
   ttl: 1
   min_version: 100000
@@ -75,6 +80,7 @@ pg_replica_only:
     - flush_lsn:            { usage: COUNTER ,description: primary only, location of current wal syncing }
     - receive_lsn:          { usage: COUNTER ,description: replica only, location of wal synced to disk }
     - replay_lsn:           { usage: COUNTER ,description: replica only, location of wal applied }
+    - reload_time:          { usage: GAUGE   ,description: time when configuration was last reloaded }
     - conf_reload_time:     { usage: GAUGE   ,description: seconds since last configuration reload }
     - last_replay_time:     { usage: GAUGE   ,description: time when last transaction been replayed }
     - lag:                  { usage: GAUGE   ,description: replica only, replication lag in seconds }
