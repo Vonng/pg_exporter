@@ -39,7 +39,7 @@ var (
 
 // ParseArgs will parse cli args with kingpin. url and config have special treatment
 func ParseArgs() {
-	kingpin.Version(fmt.Sprintf("pg_exporter %s (built with %s)\n", Version, runtime.Version()))
+	kingpin.Version(fmt.Sprintf("pg_exporter %s (built with %s on %s/%s)\n", Version, runtime.Version(), runtime.GOOS, runtime.GOARCH))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 	Logger = configureLogger(*logLevel, *logFormat)

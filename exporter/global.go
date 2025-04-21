@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"log/slog"
+	"runtime"
 	"sync"
 )
 
@@ -9,6 +10,16 @@ import (
 
 // Version is read by make build procedure
 var Version = "0.9.0"
+
+// Build information. Populated at build-time.
+var (
+	Branch    = "HEAD"
+	Revision  = "unknown"
+	BuildDate = "unknown"
+	GoVersion = runtime.Version()
+	GOOS      = runtime.GOOS
+	GOARCH    = runtime.GOARCH
+)
 
 var defaultPGURL = "postgresql:///?sslmode=disable"
 

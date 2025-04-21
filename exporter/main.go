@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"runtime"
 	"sort"
+	"strings"
 	"syscall"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -82,12 +83,47 @@ func Reload() error {
 // DummyServer response with a dummy metrics pg_up 0 or pgbouncer_up 0
 func DummyServer() (s *http.Server, exit <-chan bool) {
 	mux := http.NewServeMux()
-	dummyMetricName := `pg_up`
+	namespace := `pg`
 	if ParseDatname(*pgURL) == `pgbouncer` {
-		dummyMetricName = `pgbouncer_up`
+		namespace = `pgbouncer`
 	}
+	// setup pg_up / pgbouncer_up metrics
+	dummyMetricName := namespace + `_up`
 	mux.HandleFunc(*metricPath, func(w http.ResponseWriter, req *http.Request) {
-		_, _ = fmt.Fprintf(w, "# HELP %s last scrape was able to connect to the server: 1 for yes, 0 for no\n# TYPE %s gauge\n%s 0", dummyMetricName, dummyMetricName, dummyMetricName)
+		userLabels := parseConstLabels(*constLabels)
+		output := fmt.Sprintf("# HELP %s last scrape was able to connect to the server: 1 for yes, 0 for no\n# TYPE %s gauge\n", dummyMetricName, dummyMetricName)
+		if len(userLabels) > 0 {
+			labelStrs := make([]string, 0, len(userLabels))
+			for k, v := range userLabels {
+				labelStrs = append(labelStrs, fmt.Sprintf("%s=%q", k, v))
+			}
+			output += fmt.Sprintf("%s{%s} 0\n", dummyMetricName, strings.Join(labelStrs, ","))
+		} else {
+			output += fmt.Sprintf("%s 0\n", dummyMetricName)
+		}
+
+		// setup build info metrics
+		buildInfoName := namespace + `_exporter_build_info`
+		output += fmt.Sprintf("# HELP %s A metric with a constant '1' value labeled with version, revision, branch, goversion, builddate, goos, and goarch from which %s_exporter was built.\n", buildInfoName, namespace)
+		output += fmt.Sprintf("# TYPE %s gauge\n", buildInfoName)
+		buildInfoLabels := map[string]string{
+			"version":   Version,
+			"revision":  Revision,
+			"branch":    Branch,
+			"goversion": GoVersion,
+			"builddate": BuildDate,
+			"goos":      GOOS,
+			"goarch":    GOARCH,
+		}
+		for k, v := range userLabels {
+			buildInfoLabels[k] = v
+		}
+		allLabelStrs := make([]string, 0, len(buildInfoLabels))
+		for k, v := range buildInfoLabels {
+			allLabelStrs = append(allLabelStrs, fmt.Sprintf("%s=%q", k, v))
+		}
+		output += fmt.Sprintf("%s{%s} 1\n", buildInfoName, strings.Join(allLabelStrs, ","))
+		_, _ = fmt.Fprint(w, output)
 	})
 
 	listenAddr := (*webConfig.WebListenAddresses)[0]

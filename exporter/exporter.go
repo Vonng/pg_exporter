@@ -47,6 +47,7 @@ type Exporter struct {
 	up               prometheus.Gauge   // cluster level: primary target server is alive
 	version          prometheus.Gauge   // cluster level: postgres main server version num
 	recovery         prometheus.Gauge   // cluster level: postgres is in recovery ?
+	buildInfo        prometheus.Gauge   // exporter level: build information
 	exporterUp       prometheus.Gauge   // exporter level: always set ot 1
 	exporterUptime   prometheus.Gauge   // exporter level: primary target server uptime (exporter itself)
 	lastScrapeTime   prometheus.Gauge   // exporter level: last scrape timestamp
@@ -247,6 +248,29 @@ func (e *Exporter) setupInternalMetrics() {
 		Name: "in_recovery", Help: "server is in recovery mode? 1 for yes 0 for no",
 	})
 
+	// build info
+	buildInfoLabels := prometheus.Labels{
+		"version":   Version,
+		"revision":  Revision,
+		"branch":    Branch,
+		"builddate": BuildDate,
+		"goversion": GoVersion,
+		"goos":      GOOS,
+		"goarch":    GOARCH,
+	}
+	// Merge with user-provided constant labels
+	for k, v := range e.constLabels {
+		buildInfoLabels[k] = v
+	}
+	e.buildInfo = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace:   e.namespace,
+		Name:        "exporter_build_info",
+		Help:        "A metric with a constant '1' value labeled with version, revision, branch, goversion, builddate, goos, and goarch from which pg_exporter was built.",
+		ConstLabels: buildInfoLabels,
+	})
+	// Set the build info value
+	e.buildInfo.Set(1)
+
 	// exporter level metrics
 	e.exporterUp = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: e.namespace, ConstLabels: e.constLabels,
@@ -329,6 +353,7 @@ func (e *Exporter) collectInternalMetrics(ch chan<- prometheus.Metric) {
 	ch <- e.version
 	ch <- e.recovery
 
+	ch <- e.buildInfo
 	ch <- e.exporterUp
 	ch <- e.exporterUptime
 	ch <- e.lastScrapeTime
@@ -658,7 +683,8 @@ func (e *Exporter) ReplicaCheckFunc(w http.ResponseWriter, r *http.Request) {
 // VersionFunc responding current pg_exporter version
 func VersionFunc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-	payload := fmt.Sprintf("version %s", Version)
+	payload := fmt.Sprintf("pg_exporter version %s\nrevision: %s\nbranch: %s\ngo version: %s\nbuild date: %s\ngoos: %s\ngoarch: %s",
+		Version, Revision, Branch, GoVersion, BuildDate, GOOS, GOARCH)
 	_, _ = w.Write([]byte(payload))
 }
 
