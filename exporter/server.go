@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"html/template"
 	"regexp"
 	"sort"
 	"strconv"
@@ -424,11 +423,11 @@ func (s *Server) Explain() string {
 	return strings.Join(res, "\n")
 }
 
-var statsTemplate, _ = template.New("Query").Parse(`
-<div style="border-style: solid; padding-left: 20px; padding-bottom: 10px;">
-{{ range .Collectors }}<tr>{{ . }}<td></td></tr>{{ end }}
-</div>
-`)
+// var statsTemplate, _ = template.New("Query").Parse(`
+// <div style="border-style: solid; padding-left: 20px; padding-bottom: 10px;">
+// {{ range .Collectors }}<tr>{{ . }}<td></td></tr>{{ end }}
+// </div>
+// `)
 
 // Stat will turn Server internal stats into HTML
 func (s *Server) Stat() string {

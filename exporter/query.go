@@ -3,6 +3,7 @@ package exporter
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"text/template"
 	"time"
 
@@ -76,10 +77,10 @@ var htmlTemplate, _ = template.New("Query").Parse(`
 
 <h2>{{ .Name }}</h2>
 <p>{{ .Desc }}</p>
-{{ if len(.PredicateQueries) > 0 }}
+{{ if len .PredicateQueries }}
 <h4>Predicate queries</h4>
 <table style="border-style: dotted;">
-<thhead><th>Name</th> <th>SQL</th> <th>Cache TTL</th></thead>
+<thead><tr><th>Name</th> <th>SQL</th> <th>Cache TTL</th></tr></thead>
 <tbody>
 {{ range .PredicateQueries }}
 <tr><td>{{ .Name }}</td><td><code>{{ html .SQL }}</code></td><td>{{if ne .TTL 0}}{{ .TTL }}s{{else}}<i>not cached</i>{{end}}</td></tr>
@@ -99,17 +100,17 @@ var htmlTemplate, _ = template.New("Query").Parse(`
 <tr><td>Version  </td> <td> {{if ne .MinVersion 0}}{{ .MinVersion }}{{else}}lower{{end}} ~ {{if ne .MaxVersion 0}}{{ .MaxVersion }}{{else}}higher{{end}} </td></tr>
 <tr><td>Tags     </td> <td> {{ .Tags }} </td></tr>
 <tr><td>Source   </td> <td> {{ .Path }} </td></tr>
-<tbody></table></code>
+</tbody></table></code>
 
 <h4>Columns</h4>
-<code><table "align="left"  style="border-style: dotted;"><thead><th>Name</th> <th>Usage</th> <th>Rename</th> <th>Bucket</th> <th>Scale</th> <th>Default</th> <th>Description</th></thead>
+<code><table align="left" style="border-style: dotted;"><thead><tr><th>Name</th> <th>Usage</th> <th>Rename</th> <th>Bucket</th> <th>Scale</th> <th>Default</th> <th>Description</th></tr></thead>
 <tbody>{{ range .ColumnList }}<tr><td>{{ .Name }}</td><td>{{ .Usage }}</td><td>{{ .Rename }}</td><td>{{ .Bucket }}</td><td>{{ .Scale }}</td><td>{{ .Default }}</td><td>{{ .Desc }}</td></tr>{{ end }}
-<tbody></table></code>
+</tbody></table></code>
 
 <h4>Metrics</h4>
-<code><table "align="left"  style="border-style: dotted;"><thead><th>Name</th> <th>Usage</th> <th>Desc</th></th></thead><tbody>
+<code><table align="left" style="border-style: dotted;"><thead><tr><th>Name</th> <th>Usage</th> <th>Desc</th></tr></thead><tbody>
 {{ range .MetricList }}<tr><td>{{ .Name }}</td><td>{{ .Column.Usage }}</td><td>{{ .Column.Desc }}</td></tr>{{ end }}
-<tbody></table></code>
+</tbody></table></code>
 </div>
 `)
 
@@ -154,12 +155,7 @@ func (q *Query) HTML() string {
 // HasTag tells whether this query have specific tag
 // since only few tags is provided, we don't really need a map here
 func (q *Query) HasTag(tag string) bool {
-	for _, t := range q.Tags {
-		if t == tag {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(q.Tags, tag)
 }
 
 // ColumnList return ordered column list
