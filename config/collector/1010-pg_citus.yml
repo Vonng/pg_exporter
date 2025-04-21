@@ -1,0 +1,33 @@
+#==============================================================#
+# 1010 pg_citus_node
+#==============================================================#
+# https://docs.citusdata.com/en/latest/develop/api_metadata.html#worker-node-table
+
+pg_citus_node:
+  name: pg_citus_node
+  desc: Citus worker coordinator node inventory
+  query: |-
+    SELECT
+      CONCAT(nodename, ':', nodeport) AS node,
+      current_database() AS datname,
+      nodeid AS id,
+      groupid AS group,
+      hasmetadata::BOOLEAN::INT AS has_meta,
+      isactive::BOOLEAN::INT AS is_active,
+      metadatasynced::BOOLEAN::INT AS meta_synced,
+      shouldhaveshards::BOOLEAN::INT AS have_shards
+    FROM pg_dist_node;
+  ttl: 60
+  min_version: 100000
+  tags: [ "extension:citus" ]
+  metrics:
+    - node:             { usage: LABEL ,description: nodename:port of the PostgreSQL instance }
+    - datname:          { usage: LABEL ,description: database name }
+    - id:               { usage: GAUGE ,description: auto‑generated node identifier }
+    - group:            { usage: GAUGE ,description: replication group id (primary + secondaries) }
+    - has_meta:         { usage: GAUGE ,description: 1 = internal use flag set }
+    - is_active:        { usage: GAUGE ,description: 1 = node currently accepts shards }
+    - meta_synced:      { usage: GAUGE ,description: 1 = metadata fully synced to node }
+    - have_shards:      { usage: GAUGE ,description: 1 = rebalancer may place shards here }
+
+
