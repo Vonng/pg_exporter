@@ -1,65 +1,68 @@
 # PG Exporter
 
-
 [![Webite: pigsty](https://img.shields.io/badge/website-pigsty.io-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io)
 [![Version: v0.8.1](https://img.shields.io/badge/version-v0.8.1-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v0.8.1)
 [![License: Apache-2.0](https://img.shields.io/github/license/pgsty/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/pgsty/pg_exporter/blob/main/LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/pgsty/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#pgsty/pg_exporter&Date)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pgsty/pg_exporter)](https://goreportcard.com/report/github.com/pgsty/pg_exporter)
 
-[Prometheus](https://prometheus.io/) [Exporter](https://prometheus.io/docs/instrumenting/exporters/) for [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics.
+> **The ultimate [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [Prometheus](https://prometheus.io/) with complete customizability and unparalleled observability.**
 
-PG Exporter aims to bring the ultimate observability for [Pigsty](https://pigsty.io), which is a **Battery-Included, Local-First PostgreSQL Distribution as an Open-Source RDS Alternative**: [Demo](https://demo.pigsty.cc) & [Gallery](https://github.com/pgsty/pigsty/wiki/Gallery)
+PG Exporter brings comprehensive monitoring to your PostgreSQL ecosystem with **declarative YAML configuration**, **dynamic query planning**, and **customizable metrics collection**. Powering [**Pigsty**](https://pigsty.io)'s unparalleled PostgreSQL observability, it delivers monitoring that the community has always needed.
 
-PG Exporter is fully **customizable**: it defines almost all metrics with declarative YAML [configuration](pg_exporter.yml) files. It's easy to add new metrics or modify existing ones. Much more that the prometheus community one.
-
-The latest stable version is [`0.8.1`](https://github.com/pgsty/pg_exporter/releases/tag/v0.8.1), which support PostgreSQL 10 ~ 17+ and Pgbouncer 1.8 ~ 1.24+. 
+<div align="center">
+    <a href="#quick-start">Quick Start</a> •
+    <a href="#features">Features</a> •
+    <a href="#usage">Usage</a> •
+    <a href="#api">API</a> •
+    <a href="#deployment">Deployment</a> •
+    <a href="#collectors">Collectors</a> •
+    <a href="https://demo.pigsty.cc">Demo</a>
+</div>
 
 [![pigsty-dashboard](https://pigsty.io/img/pigsty/dashboard.jpg)](https://demo.pigsty.cc)
 
 
-
-------
+--------
 
 ## Features
 
-* Support [Pigsty](https://pigsty.io), the PostgreSQL distribution with **ultimate observability**.
-* Support both Postgres & Pgbouncer (Pgbouncer is detected when target dbname is `pgbouncer`)
-* Flexible: Almost all metrics are defined in customizable conf files with SQL collector.
-* Schedule: Fine-grained execution control: Timeout, Cache, Skip, Fatality, etc...
-* Dynamic Planning: Define multiple branches for a collector. Install specific branch when server & exporter meet certain conditions.
-* Rich [self-monitoring](https://demo.pigsty.cc/d/pgsql-exporter) metrics about `pg_exporter` itself.
-* Auto-discovery multiple databases, and run database level collectors
-* Tested and verified in a real-world production environment: 12K+ cores for 6+ years.
+- **Highly Customizable**: Define almost all metrics through declarative YAML configs
+- **Full Coverage**: Monitor both PostgreSQL (10-17+) and pgBouncer (1.8-1.24+) with a single exporter
+- **Fine-grained Control**: Configure timeout, caching, skip conditions, and fatality per collector
+- **Dynamic Planning**: Define multiple query branches based on different conditions
+- **Self-monitoring**: Rich [metrics about pg_exporter itself](https://demo.pigsty.cc/d/pgsql-exporter) for complete observability
+- **Production-Ready**: Battle-tested in real-world environments across 12K+ cores for 6+ years
+- **Auto-discovery**: Automatically discover and monitor multiple databases within an instance
+- **Health Check APIs**: Comprehensive HTTP endpoints for service health and traffic routing
 
 
-------
+
+--------
 
 ## Quick Start
 
-To run this exporter, you will need two things:
-
-* **Where** to scrape:  A Postgres or pgbouncer URL given via `PG_EXPORTER_URL`  or `--url`.
-* **What** to scrape: A path to config file or directory, by default `./pg_exporter.yml` or `/etc/pg_exporter.yml`
+To run this exporter, you need to pass the postgres/pgbouncer URL via env or arg:
 
 ```bash
-export PG_EXPORTER_URL='postgres://postgres:password@localhost:5432/postgres'
-export PG_EXPORTER_CONFIG='/path/to/conf/file/or/dir'
-pg_exporter
+PG_EXPORTER_URL='postgres://user:pass@host:port/postgres' pg_exporter
+curl http://localhost:9630/metrics   # access metrics
 ```
 
-`pg_exporter` only built-in with 3 metrics: `pg_up`,`pg_version` , and  `pg_in_recovery`. **All other metrics are defined in configuration files**. 
-You could use the pre-defined configuration file: [`pg_exporter.yml`](pg_exporter.yml) or use separated metric query in [conf](https://github.com/pgsty/pg_exporter/tree/master/config/collector)  dir.
+PG Exporter provides only 3 built-in metrics (`pg_up`, `pg_version`, `pg_in_recovery`). **All other metrics are defined in configuration files**, with comprehensive defaults in the included [`pg_exporter.yml`](pg_exporter.yml).
 
 
 
---------------------
+
+
+--------
 
 ## Usage
 
 Parameters could be given via command-line args or environment variables. 
 
 * `--web.listen-address` is the web endpoint listen address, `:9630` by default, this parameter can not be changed via environment variable.
-* `--web.telemetry-path or `PG_EXPORTER_TELEMETRY_PATH` is the URL path under which to expose metrics.
+* `--web.telemetry-path` or `PG_EXPORTER_TELEMETRY_PATH` is the URL path under which to expose metrics.
 * `--url` or `PG_EXPORTER_URL` defines **where** to scrape, it should be a valid DSN or URL. (note that `sslmode=disable` must be specifed explicitly for database that does not using SSL)
 * `--config` or `PG_EXPORTER_CONFIG` defines **how** to scrape. It could be a single YAML file or a directory containing a series of separated YAML configs, which config will be loaded in alphabetic order.
 * `--label` or `PG_EXPORTER_LABEL` defines **constant labels** that are added to all metrics. It should be a comma-separated list of `label=value` pairs.
@@ -79,43 +82,45 @@ Parameters could be given via command-line args or environment variables.
 ```bash
 usage: pg_exporter [<flags>]
 
+
 Flags:
   -h, --[no-]help            Show context-sensitive help (also try --help-long and --help-man).
   -u, --url=URL              postgres target url
   -c, --config=CONFIG        path to config dir or file
-      --web.listen-address=:9630 ...
-                             Addresses on which to expose metrics and web interface. Repeatable for multiple addresses.
-      --web.config.file=""   [EXPERIMENTAL] Path to configuration file that can enable TLS or authentication. See: https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md
+      --web.listen-address=:9630 ...  
+                             Addresses on which to expose metrics and web interface. 
+      --web.config.file=""   Path to configuration file that can enable TLS or authentication. 
   -l, --label=""             constant lables:comma separated list of label=value pair ($PG_EXPORTER_LABEL)
   -t, --tag=""               tags,comma separated list of server tag ($PG_EXPORTER_TAG)
   -C, --[no-]disable-cache   force not using cache ($PG_EXPORTER_DISABLE_CACHE)
   -m, --[no-]disable-intro   disable collector level introspection metrics ($PG_EXPORTER_DISABLE_INTRO)
   -a, --[no-]auto-discovery  automatically scrape all database for given server ($PG_EXPORTER_AUTO_DISCOVERY)
-  -x, --exclude-database="template0,template1,postgres"
+  -x, --exclude-database="template0,template1,postgres"  
                              excluded databases when enabling auto-discovery ($PG_EXPORTER_EXCLUDE_DATABASE)
   -i, --include-database=""  included databases when enabling auto-discovery ($PG_EXPORTER_INCLUDE_DATABASE)
   -n, --namespace=""         prefix of built-in metrics, (pg|pgbouncer) by default ($PG_EXPORTER_NAMESPACE)
   -f, --[no-]fail-fast       fail fast instead of waiting during start-up ($PG_EXPORTER_FAIL_FAST)
   -T, --connect-timeout=100  connect timeout in ms, 100 by default ($PG_EXPORTER_CONNECT_TIMEOUT)
-  -P, --web.telemetry-path="/metrics"
+  -P, --web.telemetry-path="/metrics"  
                              URL path under which to expose metrics. ($PG_EXPORTER_TELEMETRY_PATH)
   -D, --[no-]dry-run         dry run and print raw configs
   -E, --[no-]explain         explain server planned queries
-      --log.level="info"     log level: debug|info|warn|error
+      --log.level="info"     log level: debug|info|warn|error]
+      --log.format="logfmt"  log format: logfmt|json
       --[no-]version         Show application version.
 ```
-
-
 
 
 ------
 
 ## API
 
+PG Exporter provides a rich set of HTTP endpoints:
+
 Here are `pg_exporter` REST APIs
 
 ```bash
-# Fetch metrics (metrics path depends on parameters)
+# Fetch metrics (customizable)
 curl localhost:9630/metrics
 
 # Reload configuration
@@ -154,7 +159,7 @@ curl localhost:9630/read
 ```
 
 
---------------------
+--------
 
 ## Build
 
@@ -181,26 +186,28 @@ Or [download](https://github.com/pgsty/pg_exporter/releases) the latest prebuilt
 
 
 
-------
+--------
 
 ## Deployment
 
-Redhat rpm and Debian/Ubuntu deb packages is made with `nfpm`.
+Redhat rpm and Debian/Ubuntu deb packages are made with `nfpm` for `x86/arm64`:
 
-* `/usr/bin/pg_exporter`: the binary file。
-* [`/etc/default/pg_exporter`](package/pg_exporter.default): the envs & options
-* [`/etc/pg_exporter.yml`](package/pg_exporter.default): the config file
+* `/usr/bin/pg_exporter`: the pg_exporter binary.
+* [`/etc/pg_exporter.yml`](pg_exporter.yml): the config file
+* [`/usr/lib/systemd/system/pg_exporter.service`](package/pg_exporter.service): systemd service file
+* [`/etc/default/pg_exporter`](package/pg_exporter.default): systemd service envs & options
 
-Which is also available on Pigsty's PGSQL repo.
+
+Which is also available on Pigsty's Infra [YUM](https://pigsty.io/ext/repo/yum/)/[APT](https://pigsty.io/ext/repo/apt/) [repo](https://pigsty.io/ext/repo/).
 
 
 ------
 
-## Configuration
+## Collectors
 
 Configs lie in the core of `pg_exporter`. Actually, this project contains more lines of YAML than go.
 
-* A monolith battery-included config file: [`pg_exporter.yml`](package/pg_exporter.yml)
+* A monolith battery-included config file: [`pg_exporter.yml`](pg_exporter.yml)
 * Separated metrics definition in [`config/collector`](config/collector)
 * Example of how to write a config file:  [`doc.yml`](config/collector/000-doc.yml)
 
@@ -212,54 +219,58 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 >
 > But you can still get PostgreSQL 9.4, 9.5, 9.6 support by switching to the older version collector definition
 
-- [`pg`](config/collector/110-pg.yml)
-- [`pg_meta`](config/collector/120-pg_meta.yml)
-- [`pg_setting`](config/collector/130-pg_setting.yml)
-- [`pg_repl`](config/collector/210-pg_repl.yml)
-- [`pg_sync_standby`](config/collector/220-pg_sync_standby.yml)
-- [`pg_downstrem`](config/collector/230-pg_downstream.yml)
-- [`pg_slot`](config/collector/240-pg_slot.yml)
-- [`pg_recv`](config/collector/250-pg_recv.yml)
-- [`pg_sub`](config/collector/260-pg_sub.yml)
-- [`pg_origin`](config/collector/270-pg_origin.yml)
-- [`pg_io`](config/collector/300-pg_io.yml)
-- [`pg_size`](config/collector/310-pg_size.yml)
-- [`pg_archiver`](config/collector/320-pg_archiver.yml)
-- [`pg_bgwriter`](config/collector/330-pg_bgwriter.yml)
-- [`pg_checkpointer`](config/collector/331-pg_checkpointer.yml)
-- [`pg_ssl`](config/collector/340-pg_ssl.yml)
-- [`pg_checkpoint`](config/collector/350-pg_checkpoint.yml)
-- [`pg_recovery`](config/collector/360-pg_recovery.yml)
-- [`pg_slru`](config/collector/370-pg_slru.yml)
-- [`pg_shmem`](config/collector/380-pg_shmem.yml)
-- [`pg_wal`](config/collector/390-pg_wal.yml)
-- [`pg_activity`](config/collector/410-pg_activity.yml)
-- [`pg_wait`](config/collector/420-pg_wait.yml)
-- [`pg_backend`](config/collector/430-pg_backend.yml)
-- [`pg_xact`](config/collector/440-pg_xact.yml)
-- [`pg_lock`](config/collector/450-pg_lock.yml)
-- [`pg_query`](config/collector/460-pg_query.yml)
-- [`pg_vacuuming`](config/collector/510-pg_vacuuming.yml)
-- [`pg_indexing`](config/collector/520-pg_indexing.yml)
-- [`pg_clustering`](config/collector/530-pg_clustering.yml)
-- [`pg_backup`](config/collector/540-pg_backup.yml)
-- [`pg_db`](config/collector/610-pg_db.yml)
-- [`pg_db_confl`](config/collector/620-pg_db_confl.yml)
-- [`pg_pubrel`](config/collector/640-pg_pubrel.yml)
-- [`pg_subrel`](config/collector/650-pg_subrel.yml)
-- [`pg_table`](config/collector/700-pg_table.yml)
-- [`pg_index`](config/collector/710-pg_index.yml)
-- [`pg_func`](config/collector/720-pg_func.yml)
-- [`pg_seq`](config/collector/730-pg_seq.yml)
-- [`pg_relkind`](config/collector/740-pg_relkind.yml)
-- [`pg_defpart`](config/collector/750-pg_defpart.yml)
-- [`pg_table_size`](config/collector/810-pg_table_size.yml)
-- [`pg_table_bloat`](config/collector/820-pg_table_bloat.yml)
-- [`pg_index_bloat`](config/collector/830-pg_index_bloat.yml)
-- [`pgbouncer_list`](config/collector/910-pgbouncer_list.yml)
-- [`pgbouncer_database`](config/collector/920-pgbouncer_database.yml)
-- [`pgbouncer_stat`](config/collector/930-pgbouncer_stat.yml)
-- [`pgbouncer_pool`](config/collector/940-pgbouncer_pool.yml)
+- [0000-doc.yml](config/collector/0000-doc.yml)
+- [0110-pg.yml](config/collector/0110-pg.yml)
+- [0120-pg_meta.yml](config/collector/0120-pg_meta.yml)
+- [0130-pg_setting.yml](config/collector/0130-pg_setting.yml)
+- [0210-pg_repl.yml](config/collector/0210-pg_repl.yml)
+- [0220-pg_sync_standby.yml](config/collector/0220-pg_sync_standby.yml)
+- [0230-pg_downstream.yml](config/collector/0230-pg_downstream.yml)
+- [0240-pg_slot.yml](config/collector/0240-pg_slot.yml)
+- [0250-pg_recv.yml](config/collector/0250-pg_recv.yml)
+- [0260-pg_sub.yml](config/collector/0260-pg_sub.yml)
+- [0270-pg_origin.yml](config/collector/0270-pg_origin.yml)
+- [0300-pg_io.yml](config/collector/0300-pg_io.yml)
+- [0310-pg_size.yml](config/collector/0310-pg_size.yml)
+- [0320-pg_archiver.yml](config/collector/0320-pg_archiver.yml)
+- [0330-pg_bgwriter.yml](config/collector/0330-pg_bgwriter.yml)
+- [0331-pg_checkpointer.yml](config/collector/0331-pg_checkpointer.yml)
+- [0340-pg_ssl.yml](config/collector/0340-pg_ssl.yml)
+- [0350-pg_checkpoint.yml](config/collector/0350-pg_checkpoint.yml)
+- [0360-pg_recovery.yml](config/collector/0360-pg_recovery.yml)
+- [0370-pg_slru.yml](config/collector/0370-pg_slru.yml)
+- [0380-pg_shmem.yml](config/collector/0380-pg_shmem.yml)
+- [0390-pg_wal.yml](config/collector/0390-pg_wal.yml)
+- [0410-pg_activity.yml](config/collector/0410-pg_activity.yml)
+- [0420-pg_wait.yml](config/collector/0420-pg_wait.yml)
+- [0430-pg_backend.yml](config/collector/0430-pg_backend.yml)
+- [0440-pg_xact.yml](config/collector/0440-pg_xact.yml)
+- [0450-pg_lock.yml](config/collector/0450-pg_lock.yml)
+- [0460-pg_query.yml](config/collector/0460-pg_query.yml)
+- [0510-pg_vacuuming.yml](config/collector/0510-pg_vacuuming.yml)
+- [0520-pg_indexing.yml](config/collector/0520-pg_indexing.yml)
+- [0530-pg_clustering.yml](config/collector/0530-pg_clustering.yml)
+- [0540-pg_backup.yml](config/collector/0540-pg_backup.yml)
+- [0610-pg_db.yml](config/collector/0610-pg_db.yml)
+- [0620-pg_db_confl.yml](config/collector/0620-pg_db_confl.yml)
+- [0640-pg_pubrel.yml](config/collector/0640-pg_pubrel.yml)
+- [0650-pg_subrel.yml](config/collector/0650-pg_subrel.yml)
+- [0700-pg_table.yml](config/collector/0700-pg_table.yml)
+- [0710-pg_index.yml](config/collector/0710-pg_index.yml)
+- [0720-pg_func.yml](config/collector/0720-pg_func.yml)
+- [0730-pg_seq.yml](config/collector/0730-pg_seq.yml)
+- [0740-pg_relkind.yml](config/collector/0740-pg_relkind.yml)
+- [0750-pg_defpart.yml](config/collector/0750-pg_defpart.yml)
+- [0810-pg_table_size.yml](config/collector/0810-pg_table_size.yml)
+- [0820-pg_table_bloat.yml](config/collector/0820-pg_table_bloat.yml)
+- [0830-pg_index_bloat.yml](config/collector/0830-pg_index_bloat.yml)
+- [0910-pgbouncer_list.yml](config/collector/0910-pgbouncer_list.yml)
+- [0920-pgbouncer_database.yml](config/collector/0920-pgbouncer_database.yml)
+- [0930-pgbouncer_stat.yml](config/collector/0930-pgbouncer_stat.yml)
+- [0940-pgbouncer_pool.yml](config/collector/0940-pgbouncer_pool.yml)
+- [1000-pg_tsdb_hypertable.yml](config/collector/1000-pg_tsdb_hypertable.yml)
+- [1010-pg_citus.yml](config/collector/1010-pg_citus.yml)
+- [2000-pg_heartbeat.yml](config/collector/2000-pg_heartbeat.yml)
 
 `pg_exporter` will generate approximately 200~300 metrics for a completely new database cluster. For a real-world database with 10 ~ 100 tables, it may generate several 1k ~ 10k metrics. You may need to modify or disable some database-level metrics on a database with several thousand or more tables in order to complete the scrape in time.
 
@@ -298,10 +309,10 @@ Config files are using YAML format, there are lots of examples in the [conf](htt
 #    query: |                                                        # Metrics Query SQL
 #
 #      SELECT extract(EPOCH FROM CURRENT_TIMESTAMP)                  AS timestamp,
-#             pg_current_wal_lsn() - `0/0`                           AS lsn,
-#             pg_current_wal_insert_lsn() - `0/0`                    AS insert_lsn,
-#             pg_current_wal_lsn() - `0/0`                           AS write_lsn,
-#             pg_current_wal_flush_lsn() - `0/0`                     AS flush_lsn,
+#             pg_current_wal_lsn() - '0/0'                           AS lsn,
+#             pg_current_wal_insert_lsn() - '0/0'                    AS insert_lsn,
+#             pg_current_wal_lsn() - '0/0'                           AS write_lsn,
+#             pg_current_wal_flush_lsn() - '0/0'                     AS flush_lsn,
 #             extract(EPOCH FROM now() - pg_postmaster_start_time()) AS uptime,
 #             extract(EPOCH FROM now() - pg_conf_load_time())        AS conf_reload_time,
 #             pg_is_in_backup()                                      AS is_in_backup,
@@ -492,6 +503,6 @@ Author: [Vonng](https://vonng.com/en) ([rh@vonng.com](mailto:rh@vonng.com))
 
 Contributors: https://github.com/pgsty/pg_exporter/graphs/contributors
 
-License: [Apache License Version 2.0](LICENSE)
+License: [Apache-2.0](LICENSE)
 
 Copyright: 2018-2025 rh@vonng.com

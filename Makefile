@@ -95,11 +95,12 @@ release-clean:
 	rm -rf dist/$(VERSION)
 
 # build docker image
-docker: build-linux docker-build
+docker: docker-build
 docker-build:
 	docker build -t pgsty/pg_exporter .
 	docker image tag pgsty/pg_exporter pgsty/pg_exporter:$(VERSION)
 	docker image tag pgsty/pg_exporter pgsty/pg_exporter:latest
+docker-push:
 	docker image push --all-tags pgsty/pg_exporter
 
 ###############################################################
@@ -124,5 +125,5 @@ upload:
 	./upload.sh
 
 .PHONY: build clean build-darwin build-linux\
- release release-darwin release-linux release-windows docker\
+ release release-darwin release-linux release-windows docker docker-build docker-push \
  install uninstall debug curl upload
