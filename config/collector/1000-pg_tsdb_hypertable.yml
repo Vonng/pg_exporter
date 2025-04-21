@@ -1,0 +1,28 @@
+#==============================================================#
+# 1000 pg_tsdb_hypertable
+#==============================================================#
+# this collector reqires timescaledb extension to be installed
+pg_tsdb_hypertable:
+  name: pg_tsdb_hypertable
+  desc: TimescaleDB hypertable overview
+  query: |-
+    SELECT 
+      current_database() AS datname,
+      format('%I.%I', hypertable_schema, hypertable_name) AS relname,
+      num_dimensions AS dimensions, num_chunks AS chunks,
+      compression_enabled::BOOLEAN::int AS compressed,
+      hypertable_size(format('"%I"."%I"', hypertable_schema, hypertable_name)::RegClass) AS bytes
+    FROM timescaledb_information.hypertables;
+
+  ttl: 60
+  min_version: 100000
+  tags: [ "extension:timescaledb", "schema:timescaledb_information" ]
+  metrics:
+    - datname:         { usage: LABEL ,description: database name }
+    - relname:         { usage: LABEL ,description: Hypertable relation name }
+    - dimensions:      { usage: GAUGE ,description: Number of partitioning dimensions }
+    - chunks:          { usage: GAUGE ,description: Total chunks of this hypertable }
+    - compressed:      { usage: GAUGE ,description: 1 if compression enabled }
+    - bytes:           { usage: GAUGE ,description: Total size of hypertable in bytes }
+
+
