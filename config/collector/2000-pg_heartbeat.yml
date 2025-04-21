@@ -1,0 +1,24 @@
+#==============================================================#
+# 1000 heartbeat
+#==============================================================#
+# this is a example of application monitoring and predicate queries
+pg_heartbeat:
+  name: pg_heartbeat
+  desc: monitoring heartbeat in monitor.heartbeat table
+  predicate_queries:
+    - name: if heartbeat table exists
+      predicate_query: |
+        SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'monitor' AND table_name = 'heartbeat');
+  query: |-
+    SELECT id AS cluster_name, extract(EPOCH FROM ts) AS ts, lsn, txid FROM monitor.heartbeat;
+
+  ttl: 10
+  min_version: 090100
+  tags: [ "dbname:postgres", "schema:monitor" ]
+  metrics:
+    - cluster_name:          { usage: LABEL, description: cluster_name param of this database cluster }
+    - ts:                    { usage: GAUGE, description: unix timestamp of the heartbeat }
+    - lsn:                   { usage: GAUGE, description: lsn of the heartbeat }
+    - txid:                  { usage: GAUGE, description: txid of the heartbeat }
+
+
