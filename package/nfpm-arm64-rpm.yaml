@@ -11,7 +11,7 @@ description: |
   with ultimate observability support: https://pigsty.cc
 
 vendor: "Vonng"
-homepage: "https://github.com/Vonng/pg_exporter"
+homepage: "https://github.com/pgsty/pg_exporter"
 license: "Apache-2.0 License"
 
 rpm:
@@ -25,7 +25,7 @@ contents:
     file_info:
       mode: 0755
 
-  - src: package/pg_exporter.yml
+  - src: pg_exporter.yml
     dst: /etc/pg_exporter.yml
     type: config|noreplace
     file_info:
@@ -44,6 +44,11 @@ contents:
   - src: package/pg_exporter.service
     dst: /usr/lib/systemd/system/pg_exporter.service
     type: config
+
+  - src: LICENSE
+    dst: /usr/share/doc/pg_exporter/LICENSE
+    file_info:
+      mode: 0644
 
 scripts:
   preinstall: package/preinstall.sh

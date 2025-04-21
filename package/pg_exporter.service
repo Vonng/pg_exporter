@@ -2,7 +2,7 @@
 
 [Unit]
 Description=Prometheus exporter for PostgreSQL/Pgbouncer server metrics
-Documentation=https://github.com/Vonng/pg_exporter
+Documentation=https://github.com/pgsty/pg_exporter
 After=network.target
 
 [Service]

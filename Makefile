@@ -1,7 +1,7 @@
 #==============================================================#
 # File      :   Makefile
 # Mtime     :   2025-02-14
-# License   :   Apache-2.0 @ https://github.com/Vonng/pg_exporter
+# License   :   Apache-2.0 @ https://github.com/pgsty/pg_exporter
 # Copyright :   2018-2025  Ruohang Feng / Vonng (rh@vonng.com)
 #==============================================================#
 
@@ -92,9 +92,9 @@ release-clean:
 # build docker image
 docker: build-linux docker-build
 docker-build:
-	docker build -t vonng/pg_exporter .
-	docker image tag vonng/pg_exporter vonng/pg_exporter:$(VERSION)
-	docker image push --all-tags vonng/pg_exporter
+	docker build -t pgsty/pg_exporter .
+	docker image tag pgsty/pg_exporter pgsty/pg_exporter:$(VERSION)
+	docker image push --all-tags pgsty/pg_exporter
 
 ###############################################################
 #                         Develop                             #
