@@ -48,7 +48,7 @@ Check [**https://demo.pigsty.cc**](https://demo.pigsty.cc) for live demo, which 
 
 ## Quick Start
 
-RPM / DEB / Tarball available in the Github [release page](https://github.com/pgsty/pg_exporter/releases), and Pigsty's [YUM](https://pigsty.io/ext/repo/yum/) / [APT](https://pigsty.io/ext/repo/apt/) [repo](https://pigsty.io/ext/repo/).
+RPM / DEB / Tarball available in the GitHub [release page](https://github.com/pgsty/pg_exporter/releases), and Pigsty's [YUM](https://pigsty.io/ext/repo/yum/) / [APT](https://pigsty.io/ext/repo/apt/) [repo](https://pigsty.io/ext/repo/).
 
 To run this exporter, you need to pass the postgres/pgbouncer URL via env or arg:
 
@@ -61,6 +61,9 @@ There are 4 built-in metrics `pg_up`, `pg_version`, `pg_in_recovery`, `pg_export
 
 **All other metrics are defined in the [`pg_exporter.yml`](pg_exporter.yml) config file**.
 
+There are two monitoring dashboard in the [`monitor/`](monitor/) directory.
+
+You can just use [**Pigsty**](https://pigsty.io) to monitor existing PostgreSQL cluster or RDS, it will setup pg_exporter for you. 
 
 
 --------
