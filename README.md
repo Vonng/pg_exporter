@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="doc/logo.png" alt="PG Exporter Logo" height="128" align="middle">
+  <img src="logo.png" alt="PG Exporter Logo" height="128" align="middle">
 </p>
 
 # PG EXPORTER
@@ -35,7 +35,7 @@ Check [**https://demo.pigsty.cc**](https://demo.pigsty.cc) for live demo, which 
 ## Features
 
 - **Highly Customizable**: Define almost all metrics through declarative YAML configs
-- **Full Coverage**: Monitor both PostgreSQL (10-17+) and pgBouncer (1.8-1.24+) with a single exporter
+- **Full Coverage**: Monitor both PostgreSQL (10-17+) and pgBouncer (1.8-1.24+) in single exporter
 - **Fine-grained Control**: Configure timeout, caching, skip conditions, and fatality per collector
 - **Dynamic Planning**: Define multiple query branches based on different conditions
 - **Self-monitoring**: Rich metrics about pg_exporter [itself](https://demo.pigsty.cc/d/pgsql-exporter) for complete observability
