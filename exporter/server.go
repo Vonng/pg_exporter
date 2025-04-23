@@ -165,9 +165,15 @@ func PostgresPrecheck(s *Server) (err error) {
 			s.UP = false
 			return
 		}
-		s.DB.SetMaxIdleConns(1)
-		s.DB.SetMaxOpenConns(1)
-		s.DB.SetConnMaxLifetime(connMaxLifeTime)
+		if s.Forked {
+			s.DB.SetMaxIdleConns(1)
+			s.DB.SetMaxOpenConns(1)
+			s.DB.SetConnMaxLifetime(connMaxLifeTime)
+		} else {
+			s.DB.SetMaxIdleConns(3)
+			s.DB.SetMaxOpenConns(3)
+			s.DB.SetConnMaxLifetime(1 * time.Minute)
+		}
 	}
 
 	// retrieve version info

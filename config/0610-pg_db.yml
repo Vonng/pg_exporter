@@ -135,3 +135,5 @@ pg_db_10:
     - blk_read_time:       { usage: COUNTER ,scale: 1e-3 ,description: Time spent reading data file blocks by backends in this database, in seconds }
     - blk_write_time:      { usage: COUNTER ,scale: 1e-3 ,description: Time spent writing data file blocks by backends in this database, in seconds }
     - reset_time:          { usage: GAUGE   ,description: Time at which database statistics were last reset }
+
+

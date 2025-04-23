@@ -2,7 +2,7 @@
 # Desc      :   pg_exporter metrics collector definition
 # Ver       :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9~1.24+
 # Ctime     :   2019-12-09
-# Mtime     :   2025-04-21
+# Mtime     :   2025-04-23
 # Homepage  :   https://pigsty.io
 # Author    :   Ruohang Feng (rh@vonng.com)
 # License   :   Apache-2.0 @ https://github.com/pgsty/pg_exporter
@@ -1694,6 +1694,8 @@ pg_db_10:
     - blk_read_time:       { usage: COUNTER ,scale: 1e-3 ,description: Time spent reading data file blocks by backends in this database, in seconds }
     - blk_write_time:      { usage: COUNTER ,scale: 1e-3 ,description: Time spent writing data file blocks by backends in this database, in seconds }
     - reset_time:          { usage: GAUGE   ,description: Time at which database statistics were last reset }
+
+
 #==============================================================#
 # 620 pg_db_confl
 #==============================================================#
@@ -1952,6 +1954,8 @@ pg_table_10:
     - toast_blks_hit:      { usage: DISCARD  ,default: 0  ,description: Number of buffer hits in this table's TOAST table (if any) }
     - tidx_blks_read:      { usage: DISCARD  ,default: 0  ,description: Number of disk blocks read from this table's TOAST table indexes (if any) }
     - tidx_blks_hit:       { usage: DISCARD  ,default: 0  ,description: Number of buffer hits in this table's TOAST table indexes (if any) }
+
+
 #==============================================================#
 # 710 pg_index
 #==============================================================#
@@ -2225,6 +2229,8 @@ pgbouncer_database_108:
     - current_connections: { usage: GAUGE                       ,description: Current number of connections for this database }
     - paused:              { usage: GAUGE                       ,description: True(1) if this database is currently paused, else 0 }
     - disabled:            { usage: GAUGE                       ,description: True(1) if this database is currently disabled, else 0 }
+
+
 #==============================================================#
 # 930 pgbouncer_stat
 #==============================================================#
