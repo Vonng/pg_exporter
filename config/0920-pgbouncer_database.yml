@@ -96,3 +96,5 @@ pgbouncer_database_108:
     - current_connections: { usage: GAUGE                       ,description: Current number of connections for this database }
     - paused:              { usage: GAUGE                       ,description: True(1) if this database is currently paused, else 0 }
     - disabled:            { usage: GAUGE                       ,description: True(1) if this database is currently disabled, else 0 }
+
+

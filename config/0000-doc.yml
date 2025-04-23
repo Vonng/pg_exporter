@@ -2,7 +2,7 @@
 # Desc      :   pg_exporter metrics collector definition
 # Ver       :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9~1.24+
 # Ctime     :   2019-12-09
-# Mtime     :   2025-04-21
+# Mtime     :   2025-04-23
 # Homepage  :   https://pigsty.io
 # Author    :   Ruohang Feng (rh@vonng.com)
 # License   :   Apache-2.0 @ https://github.com/pgsty/pg_exporter
