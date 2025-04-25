@@ -1,5 +1,5 @@
 #==============================================================#
-# 820 pg_table_bloat
+# 0820 pg_table_bloat
 #==============================================================#
 # pg_table_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
 pg_table_bloat:

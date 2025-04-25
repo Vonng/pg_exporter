@@ -1,5 +1,5 @@
 #==============================================================#
-# 270 pg_origin
+# 0270 pg_origin
 #==============================================================#
 # skip by default, require additional privilege setup
 # GRANT SELECT ON pg_replication_origin, pg_replication_origin_status TO pg_monitor;

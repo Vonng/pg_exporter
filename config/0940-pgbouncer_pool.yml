@@ -1,5 +1,5 @@
 #==============================================================#
-# 940 pgbouncer_pool
+# 0940 pgbouncer_pool
 #==============================================================#
 # http://www.pgbouncer.org/usage.html#show-pools
 pgbouncer_pool_124:

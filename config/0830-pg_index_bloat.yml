@@ -1,5 +1,5 @@
 #==============================================================#
-# 830 pg_index_bloat
+# 0830 pg_index_bloat
 #==============================================================#
 # pg_index_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
 pg_index_bloat:

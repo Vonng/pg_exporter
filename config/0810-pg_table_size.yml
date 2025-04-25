@@ -1,5 +1,5 @@
 #==============================================================#
-# 810 pg_table_size
+# 0810 pg_table_size
 #==============================================================#
 pg_table_size:
   desc: PostgreSQL table size metrics, quite slow

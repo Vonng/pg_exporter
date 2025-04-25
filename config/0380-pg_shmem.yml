@@ -1,5 +1,5 @@
 #==============================================================#
-# 380 pg_shmem
+# 0380 pg_shmem
 #==============================================================#
 # pg_shmem require su privilege to work. Disable it or create auxiliary function with su before use:
 # CREATE OR REPLACE FUNCTION monitor.pg_shmem() RETURNS SETOF pg_shmem_allocations AS $$ SELECT * FROM pg_shmem_allocations;$$ LANGUAGE SQL SECURITY DEFINER;
