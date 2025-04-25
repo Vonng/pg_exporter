@@ -1,5 +1,5 @@
 #==============================================================#
-# 1010 pg_citus_node
+# 1900 pg_citus_node
 #==============================================================#
 # https://docs.citusdata.com/en/latest/develop/api_metadata.html#worker-node-table
 pg_citus_node:

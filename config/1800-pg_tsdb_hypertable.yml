@@ -1,5 +1,5 @@
 #==============================================================#
-# 1000 pg_tsdb_hypertable
+# 1700 pg_tsdb_hypertable
 #==============================================================#
 # this collector reqires timescaledb extension to be installed
 pg_tsdb_hypertable:
