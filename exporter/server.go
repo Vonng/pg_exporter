@@ -51,6 +51,7 @@ type Server struct {
 	ExcludeDbnames  []string // if ExcludeDbnames is provided, Auto Database Discovery is enabled
 	Forked          bool     // is this a forked server ? (does not run cluster level query)
 	Planned         bool     // if false, server will trigger a plan before collect
+	MaxConn         int      // max connection for this server
 	ConnectTimeout  int      // connect timeout for this server in ms
 	ConnMaxLifetime int      // connection max lifetime for this server in seconds
 
@@ -166,10 +167,12 @@ func PostgresPrecheck(s *Server) (err error) {
 			return
 		}
 		if s.Forked {
+			s.MaxConn = 1
 			s.DB.SetMaxIdleConns(1)
 			s.DB.SetMaxOpenConns(1)
 			s.DB.SetConnMaxLifetime(connMaxLifeTime)
 		} else {
+			s.MaxConn = 3
 			s.DB.SetMaxIdleConns(3)
 			s.DB.SetMaxOpenConns(3)
 			s.DB.SetConnMaxLifetime(1 * time.Minute)
@@ -429,12 +432,6 @@ func (s *Server) Explain() string {
 	return strings.Join(res, "\n")
 }
 
-// var statsTemplate, _ = template.New("Query").Parse(`
-// <div style="border-style: solid; padding-left: 20px; padding-bottom: 10px;">
-// {{ range .Collectors }}<tr>{{ . }}<td></td></tr>{{ end }}
-// </div>
-// `)
-
 // Stat will turn Server internal stats into HTML
 func (s *Server) Stat() string {
 	buf := new(bytes.Buffer)
@@ -492,37 +489,14 @@ func (s *Server) Collect(ch chan<- prometheus.Metric) {
 		s.Plan()
 	}
 
-	for _, query := range s.Collectors {
-		query.Collect(ch)
-		s.queryCacheTTL[query.Name] = query.cacheTTL()
-		s.queryScrapeTotalCount[query.Name]++
-		s.queryScrapeMetricCount[query.Name] = float64(query.ResultSize())
-		s.queryScrapeDuration[query.Name] = query.scrapeDuration.Seconds() // use the real exec as duration
-		if query.Error() != nil {
-			s.queryScrapeErrorCount[query.Name]++
-			if query.Fatal { // treat as fatal error
-				logErrorf("query [%s] error: %s", query.Name, query.Error())
-				s.err = query.Error()
-				goto final
-			} else { // skip this error according to config
-				logWarnf("query [%s] error skipped: %s", query.Name, query.Error())
-				continue
-			}
-		} else {
-			if query.CacheHit() {
-				s.queryScrapeHitCount[query.Name]++
-			}
-		}
-		// TODO: add label for which predicate caused skip?
-		if len(query.PredicateQueries) > 0 {
-			skipped, _ := query.PredicateSkip()
-			if skipped {
-				s.queryScrapePredicateSkipCount[query.Name]++
-			} else {
-				s.queryScrapePredicateSkipCount[query.Name] = 0
-			}
-		}
+	// First pass: execute all queries with Fatal flag
+	if err := s.collectFatalQueries(ch); err != nil {
+		s.err = err
+		goto final
 	}
+
+	// Second pass: execute remaining non-Fatal queries
+	s.collectNonFatalQueries(ch)
 
 final:
 	s.scrapeDone = time.Now() // This ts is used for cache expiration check
@@ -537,6 +511,64 @@ final:
 		logDebugf("server [%s] scraped in %v",
 			s.Name(), s.scrapeDone.Sub(s.scrapeBegin).Seconds())
 	}
+}
+
+// collectFatalQueries executes all queries with Fatal flag and returns on first error
+func (s *Server) collectFatalQueries(ch chan<- prometheus.Metric) error {
+	for _, query := range s.Collectors {
+		if !query.Fatal {
+			continue
+		}
+
+		if err := s.executeQuery(query, ch); err != nil {
+			logErrorf("query [%s] error: %s", query.Name, err)
+			return err
+		}
+	}
+	return nil
+}
+
+// collectNonFatalQueries executes all non-Fatal queries and logs errors without stopping
+func (s *Server) collectNonFatalQueries(ch chan<- prometheus.Metric) {
+	for _, query := range s.Collectors {
+		if query.Fatal {
+			continue
+		}
+
+		if err := s.executeQuery(query, ch); err != nil {
+			logWarnf("query [%s] error skipped: %s", query.Name, err)
+		}
+	}
+}
+
+// executeQuery runs a single query and updates its metrics
+func (s *Server) executeQuery(query *Collector, ch chan<- prometheus.Metric) error {
+	query.Collect(ch)
+	s.queryCacheTTL[query.Name] = query.cacheTTL()
+	s.queryScrapeTotalCount[query.Name]++
+	s.queryScrapeMetricCount[query.Name] = float64(query.ResultSize())
+	s.queryScrapeDuration[query.Name] = query.scrapeDuration.Seconds()
+
+	if query.Error() != nil {
+		s.queryScrapeErrorCount[query.Name]++
+		return query.Error()
+	}
+
+	if query.CacheHit() {
+		s.queryScrapeHitCount[query.Name]++
+	}
+
+	// Update predicate skip count if applicable
+	if len(query.PredicateQueries) > 0 {
+		skipped, _ := query.PredicateSkip()
+		if skipped {
+			s.queryScrapePredicateSkipCount[query.Name]++
+		} else {
+			s.queryScrapePredicateSkipCount[query.Name] = 0
+		}
+	}
+
+	return nil
 }
 
 // HasTag tells whether this server have specific tag
@@ -579,6 +611,7 @@ func NewServer(dsn string, opts ...ServerOpt) *Server {
 		s.PgbouncerMode = true
 		s.beforeScrape = PgbouncerPrecheck
 	}
+	s.MaxConn = 1
 	s.Databases = make(map[string]bool, 1)
 	s.serverInit = time.Now()
 	return s

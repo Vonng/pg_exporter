@@ -35,6 +35,7 @@
 * new metrics collector for citus dist node
 * bump dependencies to the latest version
 * new default metric `pg_exporter_build_info` / `pgbouncer_exporter_build_info`
+* execute fatal collectors ahead of all non-fatal collectors, and fail fast
 
 https://github.com/Vonng/pg_exporter/releases/tag/v0.9.0
 
