@@ -13,7 +13,6 @@
 * `pg_slot` overhaul: Add 16/17 pg_replication_slot metrics
   * allow `pg_slot` collector run on replica since 16/17
 * refactor `pg_wait` collector to agg from all processes
-* add wal file name metrics to `pg_archiver` collector
 * restrict pg_clustering, pg_indexing, pg_vacuuming run on primary
 * mark all `reset_time` as `GAUGE` rather than `COUNTER`
 * fix `pg_recovery_prefetch_skip_fpw` type from `GAUGE` to `COUNTER`
