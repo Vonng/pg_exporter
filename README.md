@@ -5,7 +5,7 @@
 # PG EXPORTER
 
 [![Webite: pigsty](https://img.shields.io/badge/website-pigsty.io-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io)
-[![Version: v0.8.1](https://img.shields.io/badge/version-v0.8.1-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v0.8.1)
+[![Version: 0.9.0](https://img.shields.io/badge/version-0.9.0-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v0.9.0)
 [![License: Apache-2.0](https://img.shields.io/github/license/pgsty/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/pgsty/pg_exporter/blob/main/LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/pgsty/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#pgsty/pg_exporter&Date)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pgsty/pg_exporter)](https://goreportcard.com/report/github.com/pgsty/pg_exporter)
@@ -42,6 +42,7 @@ Check [**https://demo.pigsty.cc**](https://demo.pigsty.cc) for live demo, which 
 - **Production-Ready**: Battle-tested in real-world environments across 12K+ cores for 6+ years
 - **Auto-discovery**: Automatically discover and monitor multiple databases within an instance
 - **Health Check APIs**: Comprehensive HTTP endpoints for service health and traffic routing
+- **Extension Support**: `timescaledb`, `citus`, `pg_stat_statements`, `pg_wait_sampling`,...
 
 
 --------
@@ -276,8 +277,9 @@ Current `pg_exporter` is shipped with the following metrics collector definition
 - [0920-pgbouncer_database.yml](config/0920-pgbouncer_database.yml)
 - [0930-pgbouncer_stat.yml](config/0930-pgbouncer_stat.yml)
 - [0940-pgbouncer_pool.yml](config/0940-pgbouncer_pool.yml)
-- [1000-pg_tsdb_hypertable.yml](config/1000-pg_tsdb_hypertable.yml)
-- [1010-pg_citus.yml](config/1010-pg_citus.yml)
+- [1000-pg_wait_event.yml](config/1000-pg_wait_event.yml)
+- [1800-pg_tsdb_hypertable.yml](config/1800-pg_tsdb_hypertable.yml)
+- [1900-pg_citus.yml](config/1900-pg_citus.yml)
 - [2000-pg_heartbeat.yml](config/2000-pg_heartbeat.yml)
 
 
@@ -525,3 +527,7 @@ Contributors: https://github.com/pgsty/pg_exporter/graphs/contributors
 License: [Apache-2.0](LICENSE)
 
 Copyright: 2018-2025 rh@vonng.com
+
+<p align="center">
+  <img src="logo.png" alt="PG Exporter Logo" height="128" align="middle">
+</p>
