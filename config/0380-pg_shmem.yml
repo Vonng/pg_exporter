@@ -17,3 +17,4 @@ pg_shmem:
     - size:            { usage: GAUGE ,description: Size of the allocation }
     - allocated_size:  { usage: GAUGE ,description: Size of the allocation including padding }
 
+

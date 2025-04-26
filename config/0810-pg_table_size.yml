@@ -24,3 +24,4 @@ pg_table_size:
     - indexsize:           { usage: GAUGE    ,default: 0  ,description: Bytes of all related indexes of this table }
     - toastsize:           { usage: GAUGE    ,default: 0  ,description: Bytes of toast tables of this table }
 
+

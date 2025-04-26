@@ -1,0 +1,28 @@
+#==============================================================#
+# 1000 pg_wait_event
+#==============================================================#
+pg_wait_event:
+  name: pg_wait_event
+  desc: PostgreSQL wait event sampling based on pg_wait_sampling extension
+  query: SELECT coalesce(event_type, 'Running') AS etype, coalesce(event, 'Running') AS event, sum(count) AS count FROM pg_wait_sampling_profile GROUP BY 1,2;
+  ttl: 10
+  min_version: 100000
+  tags: [ cluster, "extension:pg_wait_sampling" ]
+  metrics:
+    - etype: { usage: "LABEL"   ,description: "wait event type" }
+    - event: { usage: "LABEL"   ,description: "wait event name" }
+    - count: { usage: "COUNTER" ,description: "Total count of wait events sampled" }
+
+pg_wait_event_1s:
+  name: pg_wait_event_1s
+  desc: PostgreSQL wait event sampling based on pg_wait_sampling extension
+  query: SELECT coalesce(event_type, 'Running') AS etype, coalesce(event, 'Running') AS event, count(*) FROM pg_wait_sampling_history WHERE ts BETWEEN now() - '1s'::INTERVAL AND now() GROUP BY 1,2;
+  ttl: 10
+  min_version: 100000
+  tags: [ cluster, "extension:pg_wait_sampling" ]
+  metrics:
+    - etype: { usage: "LABEL"   ,description: "wait event type" }
+    - event: { usage: "LABEL"   ,description: "wait event name" }
+    - count: { usage: "GAUGE"   ,description: "Number of wait events in last second" }
+
+

@@ -19,3 +19,4 @@ pg_slru_13:
     - truncates:    { usage: COUNTER ,description: Number of truncates for this SLRU }
     - reset_time:   { usage: GAUGE   ,description: Time at which these statistics were last reset }
 
+

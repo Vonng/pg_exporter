@@ -2,7 +2,7 @@
 # Desc      :   pg_exporter metrics collector definition
 # Ver       :   PostgreSQL 10 ~ 17+ and pgbouncer 1.9~1.24+
 # Ctime     :   2019-12-09
-# Mtime     :   2025-04-23
+# Mtime     :   2025-04-26
 # Homepage  :   https://pigsty.io
 # Author    :   Ruohang Feng (rh@vonng.com)
 # License   :   Apache-2.0 @ https://github.com/pgsty/pg_exporter
@@ -227,7 +227,7 @@
 
 
 #==============================================================#
-# 110 pg
+# 0110 pg
 #==============================================================#
 pg_primary_only:
   name: pg
@@ -317,7 +317,7 @@ pg_replica_only:
 
 
 #==============================================================#
-# 120 pg_meta
+# 0120 pg_meta
 #==============================================================#
 pg_meta_13:
   name: pg_meta
@@ -398,7 +398,7 @@ pg_meta_10:
 
 
 #==============================================================#
-# 130 pg_setting
+# 0130 pg_setting
 #==============================================================#
 pg_setting:
   name: pg_setting
@@ -454,7 +454,7 @@ pg_setting:
 
 
 #==============================================================#
-# 210 pg_repl
+# 0210 pg_repl
 #==============================================================#
 pg_repl_12:
   name: pg_repl
@@ -540,8 +540,9 @@ pg_repl_10:
     - time:              { usage: COUNTER ,description: Current timestamp in unix epoch }
     - launch_time:       { usage: COUNTER ,description: Time when this process was started, i.e., when the client connected to this WAL sender }
 
+
 #==============================================================#
-# 220 pg_sync_standby
+# 0220 pg_sync_standby
 #==============================================================#
 pg_sync_standby:
   name: pg_sync_standby
@@ -556,9 +557,8 @@ pg_sync_standby:
     - enabled:           { usage: GAUGE ,description: Synchronous commit enabled, 1 if enabled, 0 if disabled }
 
 
-
 #==============================================================#
-# 230 pg_downstream
+# 0230 pg_downstream
 #==============================================================#
 pg_downstream:
   name: pg_downstream
@@ -574,7 +574,7 @@ pg_downstream:
 
 
 #==============================================================#
-# 240 pg_slot
+# 0240 pg_slot
 #==============================================================#
 pg_slot_17:
   name: pg_slot
@@ -775,7 +775,7 @@ pg_slot_10:
 
 
 #==============================================================#
-# 250 pg_recv
+# 0250 pg_recv
 #==============================================================#
 pg_recv_13:
   name: pg_recv
@@ -872,7 +872,7 @@ pg_recv_10:
 
 
 #==============================================================#
-# 260 pg_sub
+# 0260 pg_sub
 #==============================================================#
 pg_sub_15:
   name: pg_sub
@@ -935,7 +935,7 @@ pg_sub_10:
 
 
 #==============================================================#
-# 270 pg_origin
+# 0270 pg_origin
 #==============================================================#
 # skip by default, require additional privilege setup
 # GRANT SELECT ON pg_replication_origin, pg_replication_origin_status TO pg_monitor;
@@ -954,7 +954,7 @@ pg_origin:
 
 
 #==============================================================#
-# 300 pg_io
+# 0300 pg_io
 #==============================================================#
 pg_io:
   name: pg_io
@@ -990,7 +990,7 @@ pg_io:
 
 
 #==============================================================#
-# 310 pg_size
+# 0310 pg_size
 #==============================================================#
 pg_size:
   name: pg_size
@@ -1012,7 +1012,7 @@ pg_size:
 
 
 #==============================================================#
-# 320 pg_archiver
+# 0320 pg_archiver
 #==============================================================#
 pg_archiver:
   name: pg_archiver
@@ -1054,7 +1054,7 @@ pg_archiver:
 
 
 #==============================================================#
-# 330 pg_bgwriter
+# 0330 pg_bgwriter
 #==============================================================#
 # https://pgpedia.info/p/pg_stat_bgwriter.html
 pg_bgwriter_17:
@@ -1091,8 +1091,9 @@ pg_bgwriter_10:
     - buffers_alloc:         { usage: COUNTER              ,description: Number of buffers allocated }
     - reset_time:            { usage: GAUGE                ,description: Time at which bgwriter statistics were last reset }
 
+
 #==============================================================#
-# 331 pg_checkpointer
+# 0331 pg_checkpointer
 #==============================================================#
 pg_checkpointer_17:
   name: pg_checkpointer
@@ -1130,7 +1131,7 @@ pg_checkpointer_10:
 
 
 #==============================================================#
-# 340 pg_ssl
+# 0340 pg_ssl
 #==============================================================#
 pg_ssl:
   name: pg_ssl
@@ -1146,7 +1147,7 @@ pg_ssl:
 
 
 #==============================================================#
-# 350 pg_checkpoint
+# 0350 pg_checkpoint
 #==============================================================#
 pg_checkpoint:
   name: pg_checkpoint
@@ -1200,7 +1201,7 @@ pg_checkpoint:
 
 
 #==============================================================#
-# 360 pg_recovery
+# 0360 pg_recovery
 #==============================================================#
 pg_recovery:
   name: pg_recovery
@@ -1243,7 +1244,7 @@ pg_recovery_prefetch:
 
 
 #==============================================================#
-# 370 pg_slru
+# 0370 pg_slru
 #==============================================================#
 pg_slru_13:
   name: pg_slru
@@ -1263,8 +1264,9 @@ pg_slru_13:
     - truncates:    { usage: COUNTER ,description: Number of truncates for this SLRU }
     - reset_time:   { usage: GAUGE   ,description: Time at which these statistics were last reset }
 
+
 #==============================================================#
-# 380 pg_shmem
+# 0380 pg_shmem
 #==============================================================#
 # pg_shmem require su privilege to work. Disable it or create auxiliary function with su before use:
 # CREATE OR REPLACE FUNCTION monitor.pg_shmem() RETURNS SETOF pg_shmem_allocations AS $$ SELECT * FROM pg_shmem_allocations;$$ LANGUAGE SQL SECURITY DEFINER;
@@ -1282,8 +1284,9 @@ pg_shmem:
     - size:            { usage: GAUGE ,description: Size of the allocation }
     - allocated_size:  { usage: GAUGE ,description: Size of the allocation including padding }
 
+
 #==============================================================#
-# 390 pg_wal
+# 0390 pg_wal
 #==============================================================#
 pg_wal:
   name: pg_wal
@@ -1305,7 +1308,7 @@ pg_wal:
 
 
 #==============================================================#
-# 410 pg_activity
+# 0410 pg_activity
 #==============================================================#
 pg_activity:
   name: pg_activity
@@ -1325,25 +1328,27 @@ pg_activity:
     - max_duration:      { usage: GAUGE ,description: Max duration since last state change among (datname, state) }
     - max_tx_duration:   { usage: GAUGE ,description: Max transaction duration since state change among (datname, state) }
     - max_conn_duration: { usage: GAUGE ,description: Max backend session duration since state change among (datname, state) }
+
+
 #==============================================================#
-# 420 pg_wait
+# 0420 pg_wait
 #==============================================================#
 pg_wait:
   name: pg_wait
   desc: PostgreSQL backend client count group by wait event type since 9.6
   query: |
-    SELECT datname, wait_event_type AS event, count(*) AS count FROM pg_stat_activity WHERE datname NOT IN ('template0', 'template1') AND backend_type = 'client backend' AND pid <> pg_backend_pid() GROUP BY 1, 2;
+    SELECT coalesce(datname, '_system') AS datname, coalesce(wait_event_type, 'Running') AS event, count(*) AS count FROM pg_stat_activity GROUP BY 1, 2;
   ttl: 10
   min_version: 090600
   tags: [ cluster ]
   metrics:
-    - datname: { usage: LABEL ,description: Name of the database this backend is connected to }
-    - event:   { usage: LABEL ,description: Wait event type, LWLock, Lock, BufferPin, Activity, Extension, Client, IPC, Timeout, IO }
+    - datname: { usage: LABEL ,description: Name of the database, _system for global process }
+    - event:   { usage: LABEL ,description: Wait event type }
     - count:   { usage: GAUGE ,description: Count of WaitEvent on target database }
 
 
 #==============================================================#
-# 430 pg_backend
+# 0430 pg_backend
 #==============================================================#
 pg_backend:
   name: pg_backend
@@ -1358,7 +1363,7 @@ pg_backend:
 
 
 #==============================================================#
-# 440 pg_xact
+# 0440 pg_xact
 #==============================================================#
 pg_xact:
   name: pg_xact
@@ -1374,7 +1379,7 @@ pg_xact:
 
 
 #==============================================================#
-# 450 pg_lock
+# 0450 pg_lock
 #==============================================================#
 pg_lock:
   name: pg_lock
@@ -1393,7 +1398,7 @@ pg_lock:
 
 
 #==============================================================#
-# 460 pg_query
+# 0460 pg_query
 #==============================================================#
 pg_query_17:
   name: pg_query
@@ -1473,7 +1478,7 @@ pg_query_10:
 
 
 #==============================================================#
-# 510 pg_vacuuming
+# 0510 pg_vacuuming
 #==============================================================#
 pg_vacuuming:
   name: pg_vacuuming
@@ -1496,7 +1501,7 @@ pg_vacuuming:
 
 
 #==============================================================#
-# 520 pg_indexing
+# 0520 pg_indexing
 #==============================================================#
 pg_indexing:
   name: pg_indexing
@@ -1523,7 +1528,7 @@ pg_indexing:
 
 
 #==============================================================#
-# 530 pg_clustering
+# 0530 pg_clustering
 #==============================================================#
 pg_clustering:
   name: pg_clustering
@@ -1541,7 +1546,7 @@ pg_clustering:
 
 
 #==============================================================#
-# 540 pg_backup
+# 0540 pg_backup
 #==============================================================#
 pg_backup:
   name: pg_backup
@@ -1558,7 +1563,7 @@ pg_backup:
 
 
 #==============================================================#
-# 610 pg_db
+# 0610 pg_db
 #==============================================================#
 pg_db_14:
   name: pg_db
@@ -1697,7 +1702,7 @@ pg_db_10:
 
 
 #==============================================================#
-# 620 pg_db_confl
+# 0620 pg_db_confl
 #==============================================================#
 # https://pgpedia.info/p/pg_stat_database_conflicts.html
 
@@ -1737,7 +1742,7 @@ pg_db_confl_15:
 
 
 #==============================================================#
-# 640 pg_pubrel
+# 0640 pg_pubrel
 #==============================================================#
 pg_pubrel:
   name: pg_pubrel
@@ -1752,7 +1757,7 @@ pg_pubrel:
 
 
 #==============================================================#
-# 650 pg_subrel
+# 0650 pg_subrel
 #==============================================================#
 pg_subrel:
   name: pg_subrel
@@ -1768,7 +1773,7 @@ pg_subrel:
 
 
 #==============================================================#
-# 700 pg_table
+# 0700 pg_table
 #==============================================================#
 pg_table_16:
   name: pg_table
@@ -1957,7 +1962,7 @@ pg_table_10:
 
 
 #==============================================================#
-# 710 pg_index
+# 0710 pg_index
 #==============================================================#
 pg_index:
   name: pg_index
@@ -1988,7 +1993,7 @@ pg_index:
 
 
 #==============================================================#
-# 720 pg_func
+# 0720 pg_func
 #==============================================================#
 pg_func:
   desc: PostgreSQL function metrics
@@ -2004,7 +2009,7 @@ pg_func:
 
 
 #==============================================================#
-# 730 pg_seq
+# 0730 pg_seq
 #==============================================================#
 pg_seq:
   desc: PostgreSQL sequence metrics
@@ -2020,7 +2025,7 @@ pg_seq:
 
 
 #==============================================================#
-# 740 pg_relkind
+# 0740 pg_relkind
 #==============================================================#
 pg_relkind:
   name: pg_relkind
@@ -2036,7 +2041,7 @@ pg_relkind:
 
 
 #==============================================================#
-# 750 pg_defpart
+# 0750 pg_defpart
 #==============================================================#
 pg_defpart:
   name: pg_defpart
@@ -2052,7 +2057,7 @@ pg_defpart:
 
 
 #==============================================================#
-# 810 pg_table_size
+# 0810 pg_table_size
 #==============================================================#
 pg_table_size:
   desc: PostgreSQL table size metrics, quite slow
@@ -2077,8 +2082,9 @@ pg_table_size:
     - indexsize:           { usage: GAUGE    ,default: 0  ,description: Bytes of all related indexes of this table }
     - toastsize:           { usage: GAUGE    ,default: 0  ,description: Bytes of toast tables of this table }
 
+
 #==============================================================#
-# 820 pg_table_bloat
+# 0820 pg_table_bloat
 #==============================================================#
 # pg_table_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
 pg_table_bloat:
@@ -2097,7 +2103,7 @@ pg_table_bloat:
 
 
 #==============================================================#
-# 830 pg_index_bloat
+# 0830 pg_index_bloat
 #==============================================================#
 # pg_index_bloat require auxiliary view to work. Disable it or create auxiliary view before use:
 pg_index_bloat:
@@ -2116,7 +2122,7 @@ pg_index_bloat:
 
 
 #==============================================================#
-# 910 pgbouncer_list
+# 0910 pgbouncer_list
 #==============================================================#
 # http://www.pgbouncer.org/usage.html#show-lists
 pgbouncer_list:
@@ -2131,8 +2137,9 @@ pgbouncer_list:
     - list:                { usage: LABEL                 ,description: Pgbouncer internal list name }
     - items:               { usage: GAUGE                 ,description: Number of corresponding pgbouncer object }
 
+
 #==============================================================#
-# 920 pgbouncer_database
+# 0920 pgbouncer_database
 #==============================================================#
 # http://www.pgbouncer.org/usage.html#show-databases
 pgbouncer_database_124:
@@ -2232,7 +2239,7 @@ pgbouncer_database_108:
 
 
 #==============================================================#
-# 930 pgbouncer_stat
+# 0930 pgbouncer_stat
 #==============================================================#
 # http://www.pgbouncer.org/usage.html#show-stats
 pgbouncer_stat_124:
@@ -2321,7 +2328,7 @@ pgbouncer_stat_108:
 
 
 #==============================================================#
-# 940 pgbouncer_pool
+# 0940 pgbouncer_pool
 #==============================================================#
 # http://www.pgbouncer.org/usage.html#show-pools
 pgbouncer_pool_124:
@@ -2423,7 +2430,35 @@ pgbouncer_pool_108:
 
 
 #==============================================================#
-# 1000 pg_tsdb_hypertable
+# 1000 pg_wait_event
+#==============================================================#
+pg_wait_event:
+  name: pg_wait_event
+  desc: PostgreSQL wait event sampling based on pg_wait_sampling extension
+  query: SELECT coalesce(event_type, 'Running') AS etype, coalesce(event, 'Running') AS event, sum(count) AS count FROM pg_wait_sampling_profile GROUP BY 1,2;
+  ttl: 10
+  min_version: 100000
+  tags: [ cluster, "extension:pg_wait_sampling" ]
+  metrics:
+    - etype: { usage: "LABEL"   ,description: "wait event type" }
+    - event: { usage: "LABEL"   ,description: "wait event name" }
+    - count: { usage: "COUNTER" ,description: "Total count of wait events sampled" }
+
+pg_wait_event_1s:
+  name: pg_wait_event_1s
+  desc: PostgreSQL wait event sampling based on pg_wait_sampling extension
+  query: SELECT coalesce(event_type, 'Running') AS etype, coalesce(event, 'Running') AS event, count(*) FROM pg_wait_sampling_history WHERE ts BETWEEN now() - '1s'::INTERVAL AND now() GROUP BY 1,2;
+  ttl: 10
+  min_version: 100000
+  tags: [ cluster, "extension:pg_wait_sampling" ]
+  metrics:
+    - etype: { usage: "LABEL"   ,description: "wait event type" }
+    - event: { usage: "LABEL"   ,description: "wait event name" }
+    - count: { usage: "GAUGE"   ,description: "Number of wait events in last second" }
+
+
+#==============================================================#
+# 1800 pg_tsdb_hypertable
 #==============================================================#
 # this collector reqires timescaledb extension to be installed
 pg_tsdb_hypertable:
@@ -2452,7 +2487,7 @@ pg_tsdb_hypertable:
 
 
 #==============================================================#
-# 1010 pg_citus_node
+# 1900 pg_citus_node
 #==============================================================#
 # https://docs.citusdata.com/en/latest/develop/api_metadata.html#worker-node-table
 pg_citus_node:
@@ -2506,4 +2541,5 @@ pg_heartbeat:
     - ts:               { usage: GAUGE, description: unix timestamp of the heartbeat }
     - lsn:              { usage: GAUGE, description: lsn of the heartbeat }
     - txid:             { usage: GAUGE, description: txid of the heartbeat }
+
 

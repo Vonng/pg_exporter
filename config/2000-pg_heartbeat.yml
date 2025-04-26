@@ -22,3 +22,4 @@ pg_heartbeat:
     - lsn:              { usage: GAUGE, description: lsn of the heartbeat }
     - txid:             { usage: GAUGE, description: txid of the heartbeat }
 
+

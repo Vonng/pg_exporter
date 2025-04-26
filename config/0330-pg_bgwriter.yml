@@ -36,3 +36,4 @@ pg_bgwriter_10:
     - buffers_alloc:         { usage: COUNTER              ,description: Number of buffers allocated }
     - reset_time:            { usage: GAUGE                ,description: Time at which bgwriter statistics were last reset }
 
+

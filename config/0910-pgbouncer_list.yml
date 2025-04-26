@@ -14,3 +14,4 @@ pgbouncer_list:
     - list:                { usage: LABEL                 ,description: Pgbouncer internal list name }
     - items:               { usage: GAUGE                 ,description: Number of corresponding pgbouncer object }
 
+

@@ -14,4 +14,3 @@ pg_sync_standby:
     - enabled:           { usage: GAUGE ,description: Synchronous commit enabled, 1 if enabled, 0 if disabled }
 
 
-

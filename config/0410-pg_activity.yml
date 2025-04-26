@@ -19,3 +19,5 @@ pg_activity:
     - max_duration:      { usage: GAUGE ,description: Max duration since last state change among (datname, state) }
     - max_tx_duration:   { usage: GAUGE ,description: Max transaction duration since state change among (datname, state) }
     - max_conn_duration: { usage: GAUGE ,description: Max backend session duration since state change among (datname, state) }
+
+

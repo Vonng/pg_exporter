@@ -5,16 +5,21 @@
 
 ## 0.9.0
 
+**Default Collectors**
+
+* new metrics collector for `timescaledb` hypertable
+* new metrics collector for `citus` dist node
+* new metrics collector for `pg_wait_sampling` wait event profile
 * `pg_slot` overhaul: Add 16/17 pg_replication_slot metrics
-* allow `pg_slot` collector run on replica since 16/17
+  * allow `pg_slot` collector run on replica since 16/17
+* refactor `pg_wait` collector to agg from all processes
+* add wal file name metrics to `pg_archiver` collector
 * restrict pg_clustering, pg_indexing, pg_vacuuming run on primary
 * mark all `reset_time` as `GAUGE` rather than `COUNTER`
 * fix `pg_recovery_prefetch_skip_fpw` type from `GAUGE` to `COUNTER`
 * fix `pg_recv.state` type from `LABEL` to `GAUGE`
-* normalize collector branch name with min pg ver suffix
 * Format collector in compact mode
-* Add license file to binary packages
-* move `Vonng/pg_exporter` repo to `pgsty/pg_exporter`
+* new default metric `pg_exporter_build_info` / `pgbouncer_exporter_build_info`
 * add `server_encoding` to `pg_meta` collector
 * add 12 new setting metrics to `pg_setting` collector
   - wal_block_size
@@ -28,14 +33,17 @@
   - max_wal_size
   - min_wal_size
   - max_slot_wal_keep_size
-* add wal file name metrics to `pg_archiver` collector
+
+**Exporter Codebase**
+
+* normalize collector branch name with min pg ver suffix
+* Add license file to binary packages
+* move `Vonng/pg_exporter` repo to `pgsty/pg_exporter`
 * refactor `server.go` to reduce `Compatible` and `PostgresPrecheck` complexity
 * rename metrics collector with extra number prefix for better sorting
-* new metrics collector for timescaledb hypertable
-* new metrics collector for citus dist node
 * bump dependencies to the latest version
-* new default metric `pg_exporter_build_info` / `pgbouncer_exporter_build_info`
 * execute fatal collectors ahead of all non-fatal collectors, and fail fast
+
 
 https://github.com/Vonng/pg_exporter/releases/tag/v0.9.0
 
