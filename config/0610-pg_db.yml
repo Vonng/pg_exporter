@@ -1,6 +1,60 @@
 #==============================================================#
 # 0610 pg_db
 #==============================================================#
+pg_db_18:
+  name: pg_db
+  desc: PostgreSQL database stats from pg_stat_database v18
+  query: |-
+    SELECT d.datname, datid,age(datfrozenxid) AS age, datistemplate AS is_template, datallowconn AS allow_conn, datconnlimit AS conn_limit, datfrozenxid::TEXT::BIGINT as frozen_xid,
+      numbackends,xact_commit,xact_rollback,xact_rollback + xact_commit AS xact_total,blks_read,blks_hit,blks_read + blks_hit AS blks_access,tup_returned,tup_fetched,tup_inserted,tup_updated,tup_deleted,tup_inserted + tup_updated + tup_deleted AS tup_modified,
+      conflicts,temp_files,temp_bytes,deadlocks,coalesce(checksum_failures, -1) AS cks_fails, checksum_last_failure AS cks_fail_time,blk_read_time,blk_write_time,
+      session_time,active_time,idle_in_transaction_time AS ixact_time,sessions,sessions_abandoned,sessions_fatal,sessions_killed,parallel_workers_to_launch,parallel_workers_launched,
+      extract(EPOCH FROM stats_reset) AS reset_time
+    FROM pg_database d JOIN pg_stat_database sd ON d.oid = sd.datid;
+
+  ttl: 10
+  min_version: 180000
+  tags: [ cluster ]
+  metrics:
+    - datname:             { usage: LABEL  ,description: Name of the database }
+    - datid:               { usage: GAUGE  ,description: OID of the database }
+    - age:                 { usage: GAUGE  ,description: Age of database calculated from datfrozenxid }
+    - is_template:         { usage: GAUGE  ,description: If true(1), then this database can be cloned by any user with CREATEDB privileges }
+    - allow_conn:          { usage: GAUGE  ,description: If false(0) then no one can connect to this database. }
+    - conn_limit:          { usage: GAUGE  ,description: Sets maximum number of concurrent connections that can be made to this database. -1 means no limit. }
+    - frozen_xid:          { usage: GAUGE  ,description: All transaction IDs before this one have been frozened }
+    - numbackends:         { usage: GAUGE  ,description: Number of backends currently connected to this database }
+    - xact_commit:         { usage: COUNTER ,description: Number of transactions in this database that have been committed }
+    - xact_rollback:       { usage: COUNTER ,description: Number of transactions in this database that have been rolled back }
+    - xact_total:          { usage: COUNTER ,description: Number of transactions in this database }
+    - blks_read:           { usage: COUNTER ,description: Number of disk blocks read in this database }
+    - blks_hit:            { usage: COUNTER ,description: Number of times disk blocks were found already in the buffer cache }
+    - blks_access:         { usage: COUNTER ,description: Number of times disk blocks that accessed read+hit }
+    - tup_returned:        { usage: COUNTER ,description: Number of rows returned by queries in this database }
+    - tup_fetched:         { usage: COUNTER ,description: Number of rows fetched by queries in this database }
+    - tup_inserted:        { usage: COUNTER ,description: Number of rows inserted by queries in this database }
+    - tup_updated:         { usage: COUNTER ,description: Number of rows updated by queries in this database }
+    - tup_deleted:         { usage: COUNTER ,description: Number of rows deleted by queries in this database }
+    - tup_modified:        { usage: COUNTER ,description: Number of rows modified by queries in this database }
+    - conflicts:           { usage: COUNTER ,description: Number of queries canceled due to conflicts with recovery in this database }
+    - temp_files:          { usage: COUNTER ,description: Number of temporary files created by queries in this database }
+    - temp_bytes:          { usage: COUNTER ,description: Total amount of data written to temporary files by queries in this database. }
+    - deadlocks:           { usage: COUNTER ,description: Number of deadlocks detected in this database }
+    - cks_fails:           { usage: COUNTER ,description: Number of data page checksum failures detected in this database, -1 for not enabled }
+    - cks_fail_time:       { usage: GAUGE  ,description: Time at which the last data page checksum failure was detected in this database }
+    - blk_read_time:       { usage: COUNTER ,scale: 1e-3 ,description: Time spent reading data file blocks by backends in this database, in seconds }
+    - blk_write_time:      { usage: COUNTER ,scale: 1e-3 ,description: Time spent writing data file blocks by backends in this database, in seconds }
+    - session_time:        { usage: COUNTER ,scale: 1e-3 ,description: Time spent by database sessions in this database, in seconds }
+    - active_time:         { usage: COUNTER ,scale: 1e-3 ,description: Time spent executing SQL statements in this database, in seconds }
+    - ixact_time:          { usage: COUNTER ,scale: 1e-3 ,description: Time spent idling while in a transaction in this database, in seconds }
+    - sessions:            { usage: COUNTER ,description: Total number of sessions established to this database }
+    - sessions_abandoned:  { usage: COUNTER ,description: Number of database sessions to this database that were terminated because connection to the client was lost }
+    - sessions_fatal:      { usage: COUNTER ,description: Number of database sessions to this database that were terminated by fatal errors }
+    - sessions_killed:     { usage: COUNTER ,description: Number of database sessions to this database that were terminated by operator intervention }
+    - parallel_workers_to_launch: { usage: COUNTER ,description: Number of parallel workers planned to be launched by queries on this database }
+    - parallel_workers_launched:  { usage: COUNTER ,description: Number of parallel workers launched by queries on this database }
+    - reset_time:          { usage: GAUGE   ,description: Time at which database statistics were last reset }
+
 pg_db_14:
   name: pg_db
   desc: PostgreSQL database stats from pg_stat_database v14 (with 7 new time & session metrics)
@@ -13,6 +67,7 @@ pg_db_14:
 
   ttl: 10
   min_version: 140000
+  max_version: 180000
   tags: [ cluster ]
   metrics:
     - datname:             { usage: LABEL  ,description: Name of the database }
@@ -51,6 +106,7 @@ pg_db_14:
     - sessions_fatal:      { usage: COUNTER ,description: Number of database sessions to this database that were terminated by fatal errors }
     - sessions_killed:     { usage: COUNTER ,description: Number of database sessions to this database that were terminated by operator intervention }
     - reset_time:          { usage: GAUGE   ,description: Time at which database statistics were last reset }
+
 
 pg_db_12:
   name: pg_db

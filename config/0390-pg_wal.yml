@@ -1,13 +1,28 @@
 #==============================================================#
 # 0390 pg_wal
 #==============================================================#
-pg_wal:
+pg_wal_18:
+  name: pg_wal
+  desc: PostgreSQL WAL statistics since v18 with some col removed
+  query: SELECT wal_records AS records, wal_fpi AS fpi, wal_bytes AS bytes, wal_buffers_full AS buffers_full,extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_wal;
+  ttl: 10
+  tags: [ cluster ]
+  min_version: 180000
+  metrics:
+    - records:      { usage: COUNTER              ,description: Total number of WAL records generated }
+    - fpi:          { usage: COUNTER              ,description: Total number of WAL full page images generated }
+    - bytes:        { usage: COUNTER              ,description: Total amount of WAL generated in bytes }
+    - buffers_full: { usage: COUNTER              ,description: Number of times WAL data was written to disk because WAL buffers became full }
+    - reset_time:   { usage: GAUGE                ,description: When statistics were last reset }
+
+pg_wal_14:
   name: pg_wal
   desc: PostgreSQL WAL statistics since v14
   query: SELECT wal_records AS records, wal_fpi AS fpi, wal_bytes AS bytes, wal_buffers_full AS buffers_full, wal_write AS write, wal_sync AS sync, wal_write_time AS write_time, wal_sync_time AS sync_time, extract(EPOCH FROM stats_reset) AS reset_time FROM pg_stat_wal;
   ttl: 10
   tags: [ cluster ]
   min_version: 140000
+  max_version: 180000
   metrics:
     - records:      { usage: COUNTER              ,description: Total number of WAL records generated }
     - fpi:          { usage: COUNTER              ,description: Total number of WAL full page images generated }

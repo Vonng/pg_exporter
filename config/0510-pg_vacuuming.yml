@@ -1,7 +1,27 @@
 #==============================================================#
 # 0510 pg_vacuuming
 #==============================================================#
-pg_vacuuming:
+pg_vacuuming_18:
+  name: pg_vacuuming
+  desc: PostgreSQL vacuum progress 18+
+  query: |-
+    SELECT  datname, pid, relid::RegClass AS relname,
+      CASE phase WHEN 'scanning heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0.0 END)
+      WHEN 'vacuuming heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_vacuumed / heap_blks_total ELSE 0 END) ELSE NULL END AS progress, delay_time 
+    FROM pg_stat_progress_vacuum pspv;
+  
+  ttl: 10
+  min_version: 180000
+  tags: [ cluster, primary ]
+  metrics:
+    - datname:     { usage: LABEL   ,description: database name }
+    - pid:         { usage: LABEL   ,description: process id of indexing table }
+    - relname:     { usage: LABEL   ,description: relation name of indexed table }
+    - progress:    { usage: GAUGE   ,description: the actual progress }
+    - delay_time:  { usage: COUNTER ,scale: 1e-3 ,description: Total time spent sleeping due to cost-based delay }
+
+
+pg_vacuuming_12:
   name: pg_vacuuming
   desc: PostgreSQL vacuum progress since 12
   query: |-
@@ -10,9 +30,10 @@ pg_vacuuming:
       CASE phase WHEN 'scanning heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_scanned / heap_blks_total ELSE 0.0 END)
       WHEN 'vacuuming heap' THEN (CASE WHEN heap_blks_total > 0 THEN 1.0 * heap_blks_vacuumed / heap_blks_total ELSE 0 END)
       ELSE NULL END AS progress FROM pg_stat_progress_vacuum pspv;
-  
+
   ttl: 10
   min_version: 120000
+  max_version: 180000
   tags: [ cluster, primary ]
   metrics:
     - datname:     { usage: LABEL, description: database name }
