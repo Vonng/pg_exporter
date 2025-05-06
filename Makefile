@@ -4,7 +4,7 @@
 # License   :   Apache-2.0 @ https://github.com/pgsty/pg_exporter
 # Copyright :   2018-2025  Ruohang Feng / Vonng (rh@vonng.com)
 #==============================================================#
-VERSION      ?= v0.9.0
+VERSION      ?= v1.0.0
 BUILD_DATE   := $(shell date '+%Y%m%d%H%M%S')
 GIT_BRANCH   := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 GIT_REVISION := $(shell git rev-parse --short HEAD 2>/dev/null  || echo "HEAD")

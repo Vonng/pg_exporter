@@ -5,7 +5,7 @@
 # PG EXPORTER
 
 [![Webite: pigsty](https://img.shields.io/badge/website-pigsty.io-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io)
-[![Version: 0.9.0](https://img.shields.io/badge/version-0.9.0-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v0.9.0)
+[![Version: 1.0.0](https://img.shields.io/badge/version-1.0.0-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v1.0.0)
 [![License: Apache-2.0](https://img.shields.io/github/license/pgsty/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/pgsty/pg_exporter/blob/main/LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/pgsty/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#pgsty/pg_exporter&Date)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pgsty/pg_exporter)](https://goreportcard.com/report/github.com/pgsty/pg_exporter)
@@ -35,7 +35,7 @@ Check [**https://demo.pigsty.cc**](https://demo.pigsty.cc) for live demo, which 
 ## Features
 
 - **Highly Customizable**: Define almost all metrics through declarative YAML configs
-- **Full Coverage**: Monitor both PostgreSQL (10-17+) and pgBouncer (1.8-1.24+) in single exporter
+- **Full Coverage**: Monitor both PostgreSQL (10-18+) and pgBouncer (1.8-1.24+) in single exporter
 - **Fine-grained Control**: Configure timeout, caching, skip conditions, and fatality per collector
 - **Dynamic Planning**: Define multiple query branches based on different conditions
 - **Self-monitoring**: Rich metrics about pg_exporter [itself](https://demo.pigsty.cc/d/pgsql-exporter) for complete observability

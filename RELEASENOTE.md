@@ -3,6 +3,36 @@
 
 ------
 
+## 1.0.0
+
+Add PostgreSQL 18 metrics support
+
+- new collector branch `pg_wal_18`:
+  - remove `write`, `sync`, `write_time`, `sync_time` metrics
+  - move to `pg_stat_io`
+- new collector branch `pg_checkpointer_18`:
+  - new metric `num_done`
+  - new metric `slru_written`
+- new collector branch `pg_db_18`:
+  - new metric `parallel_workers_to_launch`
+  - new metric `parallel_workers_launched`
+- new collector branch `pg_table_18`:
+  - `table_parallel_workers_to_launch`
+  - `table_parallel_workers_launched`
+- new collector branch `pg_io_18`:
+  - new series about WAL statistics
+  - new metric `read_bytes`
+  - new metric `write_bytes`
+  - new metric `extend_bytes`
+  - remove `op_bytes` due to fixed value
+- new collector branch `pg_vacuuming_18`
+  - new metric `delay_time` 
+
+https://github.com/pgsty/pg_exporter/releases/tag/v1.0.0
+
+
+------
+
 ## 0.9.0
 
 **Default Collectors**
