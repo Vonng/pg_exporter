@@ -1,14 +1,14 @@
 name: "pg-exporter"
 arch: "amd64"
 platform: "linux"
-version: "v0.9.0"
+version: "v1.0.0"
 version_schema: semver
 maintainer: Ruohang Feng <rh@vonng.com>
 description: |
   Prometheus exporter for PostgreSQL / Pgbouncer server metrics.
   Supported version: Postgres9.4 - 17+ & Pgbouncer 1.8 - 1.24+
   Part of Project Pigsty -- Battery Included PostgreSQL Distribution
-  with ultimate observability support: https://pigsty.cc
+  with ultimate observability support: https://pigsty.io
 
 vendor: "Vonng"
 homepage: "https://github.com/pgsty/pg_exporter"
