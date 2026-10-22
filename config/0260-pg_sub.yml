@@ -1,12 +1,14 @@
 #==============================================================#
 # 0260 pg_sub
 #==============================================================#
+# PG10-13: grant SELECT (oid) ON pg_catalog.pg_subscription to the monitoring
+# role in the exporter's main connection database before using this collector.
 pg_sub_19:
   name: pg_sub
   desc: PostgreSQL subscription statistics (19+)
   query: |-
     SELECT
-      s2.subname, s2.subid AS id, s1.pid, s1.received_lsn, s1.reported_lsn,
+      d.datname, s2.subname, s2.subid AS id, s1.pid, s1.received_lsn, s1.reported_lsn,
       s1.msg_send_time, s1.msg_recv_time, s1.reported_time,
       (s1.pid IS NOT NULL)::int AS has_worker,
       coalesce(s2.apply_error_count, 0) AS apply_error_count,
@@ -32,12 +34,15 @@ pg_sub_19:
         extract(epoch from latest_end_time) AS reported_time
       FROM pg_stat_subscription
       WHERE relid IS NULL AND leader_pid IS NULL AND coalesce(worker_type, 'apply') = 'apply') s1
-    USING(subid);
+    USING(subid)
+    JOIN pg_catalog.pg_subscription s ON s.oid = s2.subid
+    JOIN pg_catalog.pg_database d ON d.oid = s.subdbid;
 
   ttl: 10
   min_version: 190000
   tags: [ cluster ]
   metrics:
+    - datname:                 { usage: LABEL   ,description: "Name of the database owning this subscription" }
     - subname:                 { usage: LABEL   ,description: "Name of this subscription" }
     - id:                      { usage: GAUGE   ,description: "OID of the subscription" }
     - pid:                     { usage: GAUGE   ,description: "Process ID of the subscription leader apply worker" }
@@ -66,7 +71,7 @@ pg_sub_16:
   desc: PostgreSQL subscription statistics (16-18)
   query: |-
     SELECT 
-      s1.subname, subid AS id, pid, received_lsn, reported_lsn,
+      d.datname, s1.subname, subid AS id, pid, received_lsn, reported_lsn,
       msg_send_time, msg_recv_time, reported_time,
       apply_error_count, sync_error_count
     FROM
@@ -78,13 +83,16 @@ pg_sub_16:
         extract(epoch from latest_end_time) AS reported_time
       FROM pg_stat_subscription 
       WHERE relid IS NULL AND leader_pid IS NULL) s1
-    LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid);
+    LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid)
+    JOIN pg_catalog.pg_subscription s ON s.oid = s1.subid
+    JOIN pg_catalog.pg_database d ON d.oid = s.subdbid;
 
   ttl: 10
   min_version: 160000
   max_version: 190000
   tags: [ cluster ]
   metrics:
+    - datname:             { usage: LABEL   ,description: "Name of the database owning this subscription" }
     - subname:             { usage: LABEL   ,description: "Name of this subscription" }
     - id:                  { usage: GAUGE   ,description: "OID of the subscription" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the subscription leader apply worker" }
@@ -101,7 +109,7 @@ pg_sub_15:
   desc: PostgreSQL subscription statistics (15)
   query: |-
     SELECT 
-      s1.subname, subid AS id, pid, received_lsn, reported_lsn,
+      d.datname, s1.subname, subid AS id, pid, received_lsn, reported_lsn,
       msg_send_time, msg_recv_time, reported_time,
       apply_error_count, sync_error_count
     FROM
@@ -112,13 +120,16 @@ pg_sub_15:
         extract(epoch from last_msg_receipt_time) AS msg_recv_time,
         extract(epoch from latest_end_time) AS reported_time
       FROM pg_stat_subscription WHERE relid ISNULL) s1
-    LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid);
+    LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid)
+    JOIN pg_catalog.pg_subscription s ON s.oid = s1.subid
+    JOIN pg_catalog.pg_database d ON d.oid = s.subdbid;
 
   ttl: 10
   min_version: 150000
   max_version: 160000
   tags: [ cluster ]
   metrics:
+    - datname:             { usage: LABEL   ,description: "Name of the database owning this subscription" }
     - subname:             { usage: LABEL   ,description: "Name of this subscription" }
     - id:                  { usage: GAUGE   ,description: "OID of the subscription" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the subscription main apply worker process" }
@@ -135,18 +146,22 @@ pg_sub_10:
   desc: PostgreSQL subscription statistics (10-14)
   query: |-
     SELECT 
-      subname, subid AS id, pid,
+      d.datname, st.subname, st.subid AS id, pid,
       received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
       extract(epoch from last_msg_send_time) AS msg_send_time,
       extract(epoch from last_msg_receipt_time) AS msg_recv_time,
       extract(epoch from latest_end_time) AS reported_time
-    FROM pg_stat_subscription WHERE relid ISNULL;
+    FROM pg_stat_subscription st
+    JOIN pg_catalog.pg_subscription s ON s.oid = st.subid
+    JOIN pg_catalog.pg_database d ON d.oid = s.subdbid
+    WHERE relid ISNULL;
 
   ttl: 10
   min_version: 100000
   max_version: 150000
   tags: [ cluster ]
   metrics:
+    - datname:             { usage: LABEL   ,description: "Name of the database owning this subscription" }
     - subname:             { usage: LABEL   ,description: "Name of this subscription" }
     - id:                  { usage: GAUGE   ,description: "OID of the subscription" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the subscription main apply worker process" }

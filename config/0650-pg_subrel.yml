@@ -3,14 +3,14 @@
 #==============================================================#
 pg_subrel:
   name: pg_subrel
-  desc: PostgreSQL subscripted relation group by state
+  desc: PostgreSQL subscribed relation count grouped by synchronization state
   query: SELECT CURRENT_CATALOG AS datname, ss.subname, sr.srsubstate::TEXT AS state, count(*) AS count FROM pg_catalog.pg_subscription_rel AS sr JOIN (SELECT DISTINCT subid, subname FROM pg_catalog.pg_stat_subscription) AS ss ON ss.subid = sr.srsubid GROUP BY ss.subname, sr.srsubstate;
   ttl: 10
   min_version: 100000
   metrics:
-    - datname:              { usage: LABEL  ,description: "Name of the database which publication belonged" }
+    - datname:              { usage: LABEL  ,description: "Name of the database owning this subscription" }
     - subname:              { usage: LABEL  ,description: "Name of the subscription" }
-    - state:                { usage: LABEL  ,description: "State of table in subscription, i=initialize, d=data copy, s=sync, r=ready" }
-    - count:                { usage: GAUGE  ,description: "Count of relation in this subscription and corresponding state" }
+    - state:                { usage: LABEL  ,description: "Synchronization state: tables i=initialize, d=data copy, f=finished table copy, s=synchronized, r=ready; PG19+ sequences use i or r" }
+    - count:                { usage: GAUGE  ,description: "Number of pg_subscription_rel entries for this subscription and state; tables and, on PG19+, sequences" }
 
 

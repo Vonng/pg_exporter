@@ -827,13 +827,14 @@ pg_slot_10:
 #==============================================================#
 # 0250 pg_recv
 #==============================================================#
+# Codes 1-3 were sender states, not receiver states; keep them reserved.
 pg_recv_13:
   name: pg_recv
   desc: PostgreSQL walreceiver metrics 13+
   query: |-
     SELECT 
       coalesce(sender_host, (regexp_match(conninfo, '.*host=(\S+).*'))[1]) AS sender_host, coalesce(sender_port::TEXT, (regexp_match(conninfo, '.*port=(\S+).*'))[1]) AS sender_port, coalesce(slot_name, 'NULL') AS slot_name,
-      pid, CASE status WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 WHEN 'connecting' THEN 5 ELSE -1 END AS state,
+      pid, CASE status WHEN 'streaming' THEN 0 WHEN 'stopping' THEN 4 WHEN 'connecting' THEN 5 WHEN 'starting' THEN 6 WHEN 'waiting' THEN 7 WHEN 'restarting' THEN 8 WHEN 'stopped' THEN 9 ELSE -1 END AS state,
       receive_start_lsn - '0/0' AS init_lsn,receive_start_tli AS init_tli,
       flushed_lsn - '0/0' AS flush_lsn,written_lsn - '0/0' AS write_lsn, received_tli AS flush_tli, latest_end_lsn - '0/0' AS reported_lsn,
       last_msg_send_time AS msg_send_time,last_msg_receipt_time AS msg_recv_time,latest_end_time AS reported_time,now() AS time FROM pg_stat_wal_receiver;
@@ -846,7 +847,7 @@ pg_recv_13:
     - sender_port:         { usage: LABEL   ,description: "Port number of the PostgreSQL instance this WAL receiver is connected to." }
     - slot_name:           { usage: LABEL   ,description: "Replication slot name used by this WAL receiver" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the WAL receiver process" }
-    - state:               { usage: GAUGE   ,description: "Encoded activity status of the WAL receiver process 0-5 for streaming|startup|catchup|backup|stopping|connecting" }
+    - state:               { usage: GAUGE   ,description: "WAL receiver state: 0=streaming, 4=stopping, 5=connecting (PG19+), 6=starting, 7=waiting, 8=restarting, 9=stopped, -1=unknown" }
     - init_lsn:            { usage: COUNTER ,description: "First write-ahead log location used when WAL receiver is started" }
     - init_tli:            { usage: COUNTER ,description: "First timeline number used when WAL receiver is started" }
     - flush_lsn:           { usage: COUNTER ,description: "Last write-ahead log location already received and flushed to disk" }
@@ -864,7 +865,7 @@ pg_recv_11:
   query: |-
     SELECT 
       coalesce(sender_host, (regexp_match(conninfo, '.*host=(\S+).*'))[1]) AS sender_host, coalesce(sender_port::TEXT, (regexp_match(conninfo, '.*port=(\S+).*'))[1]) AS sender_port, coalesce(slot_name, 'NULL') AS slot_name,
-      pid, CASE status WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
+      pid, CASE status WHEN 'streaming' THEN 0 WHEN 'stopping' THEN 4 WHEN 'connecting' THEN 5 WHEN 'starting' THEN 6 WHEN 'waiting' THEN 7 WHEN 'restarting' THEN 8 WHEN 'stopped' THEN 9 ELSE -1 END AS state,
       receive_start_lsn - '0/0' AS init_lsn,receive_start_tli AS init_tli,
       received_lsn - '0/0' AS flush_lsn, received_tli AS flush_tli, latest_end_lsn - '0/0' AS reported_lsn,
       last_msg_send_time AS msg_send_time,last_msg_receipt_time AS msg_recv_time,latest_end_time AS reported_time,now() AS time FROM pg_stat_wal_receiver;
@@ -878,7 +879,7 @@ pg_recv_11:
     - sender_port:         { usage: LABEL   ,description: "Port number of the PostgreSQL instance this WAL receiver is connected to." }
     - slot_name:           { usage: LABEL   ,description: "Replication slot name used by this WAL receiver" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the WAL receiver process" }
-    - state:               { usage: GAUGE   ,description: "Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping" }
+    - state:               { usage: GAUGE   ,description: "WAL receiver state: 0=streaming, 4=stopping, 5=connecting (PG19+), 6=starting, 7=waiting, 8=restarting, 9=stopped, -1=unknown" }
     - init_lsn:            { usage: COUNTER ,description: "First write-ahead log location used when WAL receiver is started" }
     - init_tli:            { usage: COUNTER ,description: "First timeline number used when WAL receiver is started" }
     - flush_lsn:           { usage: COUNTER ,description: "Last write-ahead log location already received and flushed to disk" }
@@ -895,7 +896,7 @@ pg_recv_10:
   query: |-
     SELECT 
       (regexp_match(conninfo, '.*host=(\S+).*'))[1] AS sender_host, (regexp_match(conninfo, '.*port=(\S+).*'))[1] AS sender_port, coalesce(slot_name, 'NULL') AS slot_name,
-      pid, CASE status WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
+      pid, CASE status WHEN 'streaming' THEN 0 WHEN 'stopping' THEN 4 WHEN 'connecting' THEN 5 WHEN 'starting' THEN 6 WHEN 'waiting' THEN 7 WHEN 'restarting' THEN 8 WHEN 'stopped' THEN 9 ELSE -1 END AS state,
       receive_start_lsn - '0/0' AS init_lsn,receive_start_tli AS init_tli,
       received_lsn - '0/0' AS flush_lsn, received_tli AS flush_tli, latest_end_lsn - '0/0' AS reported_lsn,
       last_msg_send_time AS msg_send_time,last_msg_receipt_time AS msg_recv_time,latest_end_time AS reported_time,now() AS time FROM pg_stat_wal_receiver;
@@ -909,7 +910,7 @@ pg_recv_10:
     - sender_port:         { usage: LABEL   ,description: "Port number of the PostgreSQL instance this WAL receiver is connected to." }
     - slot_name:           { usage: LABEL   ,description: "Replication slot name used by this WAL receiver" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the WAL receiver process" }
-    - state:               { usage: GAUGE   ,description: "Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping" }
+    - state:               { usage: GAUGE   ,description: "WAL receiver state: 0=streaming, 4=stopping, 5=connecting (PG19+), 6=starting, 7=waiting, 8=restarting, 9=stopped, -1=unknown" }
     - init_lsn:            { usage: COUNTER ,description: "First write-ahead log location used when WAL receiver is started" }
     - init_tli:            { usage: COUNTER ,description: "First timeline number used when WAL receiver is started" }
     - flush_lsn:           { usage: COUNTER ,description: "Last write-ahead log location already received and flushed to disk" }
@@ -923,12 +924,14 @@ pg_recv_10:
 #==============================================================#
 # 0260 pg_sub
 #==============================================================#
+# PG10-13: grant SELECT (oid) ON pg_catalog.pg_subscription to the monitoring
+# role in the exporter's main connection database before using this collector.
 pg_sub_19:
   name: pg_sub
   desc: PostgreSQL subscription statistics (19+)
   query: |-
     SELECT
-      s2.subname, s2.subid AS id, s1.pid, s1.received_lsn, s1.reported_lsn,
+      d.datname, s2.subname, s2.subid AS id, s1.pid, s1.received_lsn, s1.reported_lsn,
       s1.msg_send_time, s1.msg_recv_time, s1.reported_time,
       (s1.pid IS NOT NULL)::int AS has_worker,
       coalesce(s2.apply_error_count, 0) AS apply_error_count,
@@ -954,12 +957,15 @@ pg_sub_19:
         extract(epoch from latest_end_time) AS reported_time
       FROM pg_stat_subscription
       WHERE relid IS NULL AND leader_pid IS NULL AND coalesce(worker_type, 'apply') = 'apply') s1
-    USING(subid);
+    USING(subid)
+    JOIN pg_catalog.pg_subscription s ON s.oid = s2.subid
+    JOIN pg_catalog.pg_database d ON d.oid = s.subdbid;
 
   ttl: 10
   min_version: 190000
   tags: [ cluster ]
   metrics:
+    - datname:                 { usage: LABEL   ,description: "Name of the database owning this subscription" }
     - subname:                 { usage: LABEL   ,description: "Name of this subscription" }
     - id:                      { usage: GAUGE   ,description: "OID of the subscription" }
     - pid:                     { usage: GAUGE   ,description: "Process ID of the subscription leader apply worker" }
@@ -988,7 +994,7 @@ pg_sub_16:
   desc: PostgreSQL subscription statistics (16-18)
   query: |-
     SELECT 
-      s1.subname, subid AS id, pid, received_lsn, reported_lsn,
+      d.datname, s1.subname, subid AS id, pid, received_lsn, reported_lsn,
       msg_send_time, msg_recv_time, reported_time,
       apply_error_count, sync_error_count
     FROM
@@ -1000,13 +1006,16 @@ pg_sub_16:
         extract(epoch from latest_end_time) AS reported_time
       FROM pg_stat_subscription 
       WHERE relid IS NULL AND leader_pid IS NULL) s1
-    LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid);
+    LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid)
+    JOIN pg_catalog.pg_subscription s ON s.oid = s1.subid
+    JOIN pg_catalog.pg_database d ON d.oid = s.subdbid;
 
   ttl: 10
   min_version: 160000
   max_version: 190000
   tags: [ cluster ]
   metrics:
+    - datname:             { usage: LABEL   ,description: "Name of the database owning this subscription" }
     - subname:             { usage: LABEL   ,description: "Name of this subscription" }
     - id:                  { usage: GAUGE   ,description: "OID of the subscription" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the subscription leader apply worker" }
@@ -1023,7 +1032,7 @@ pg_sub_15:
   desc: PostgreSQL subscription statistics (15)
   query: |-
     SELECT 
-      s1.subname, subid AS id, pid, received_lsn, reported_lsn,
+      d.datname, s1.subname, subid AS id, pid, received_lsn, reported_lsn,
       msg_send_time, msg_recv_time, reported_time,
       apply_error_count, sync_error_count
     FROM
@@ -1034,13 +1043,16 @@ pg_sub_15:
         extract(epoch from last_msg_receipt_time) AS msg_recv_time,
         extract(epoch from latest_end_time) AS reported_time
       FROM pg_stat_subscription WHERE relid ISNULL) s1
-    LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid);
+    LEFT OUTER JOIN pg_stat_subscription_stats s2 USING(subid)
+    JOIN pg_catalog.pg_subscription s ON s.oid = s1.subid
+    JOIN pg_catalog.pg_database d ON d.oid = s.subdbid;
 
   ttl: 10
   min_version: 150000
   max_version: 160000
   tags: [ cluster ]
   metrics:
+    - datname:             { usage: LABEL   ,description: "Name of the database owning this subscription" }
     - subname:             { usage: LABEL   ,description: "Name of this subscription" }
     - id:                  { usage: GAUGE   ,description: "OID of the subscription" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the subscription main apply worker process" }
@@ -1057,18 +1069,22 @@ pg_sub_10:
   desc: PostgreSQL subscription statistics (10-14)
   query: |-
     SELECT 
-      subname, subid AS id, pid,
+      d.datname, st.subname, st.subid AS id, pid,
       received_lsn - '0/0' AS received_lsn, latest_end_lsn - '0/0' AS reported_lsn,
       extract(epoch from last_msg_send_time) AS msg_send_time,
       extract(epoch from last_msg_receipt_time) AS msg_recv_time,
       extract(epoch from latest_end_time) AS reported_time
-    FROM pg_stat_subscription WHERE relid ISNULL;
+    FROM pg_stat_subscription st
+    JOIN pg_catalog.pg_subscription s ON s.oid = st.subid
+    JOIN pg_catalog.pg_database d ON d.oid = s.subdbid
+    WHERE relid ISNULL;
 
   ttl: 10
   min_version: 100000
   max_version: 150000
   tags: [ cluster ]
   metrics:
+    - datname:             { usage: LABEL   ,description: "Name of the database owning this subscription" }
     - subname:             { usage: LABEL   ,description: "Name of this subscription" }
     - id:                  { usage: GAUGE   ,description: "OID of the subscription" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the subscription main apply worker process" }
@@ -1080,8 +1096,13 @@ pg_sub_10:
 #==============================================================#
 # 0270 pg_origin
 #==============================================================#
-# skip by default, require additional privilege setup
-# GRANT SELECT ON pg_replication_origin, pg_replication_origin_status TO pg_monitor;
+# Disabled by default. Provision access before explicitly setting skip: false.
+# PG14+ with standard catalog ACLs: run as an administrator in the exporter's
+# main connection database, replacing monitor with the actual monitoring role:
+# GRANT SELECT ON pg_catalog.pg_replication_origin_status TO monitor;
+# GRANT EXECUTE ON FUNCTION pg_catalog.pg_show_replication_origin_status() TO monitor;
+# PG13 and older: the function also checks for superuser internally; GRANT alone
+# is insufficient. Keep disabled for ordinary monitoring roles.
 pg_origin:
   name: pg_origin
   desc: PostgreSQL replay state (approximate) for a certain origin
@@ -2133,16 +2154,18 @@ pg_db_confl_15:
 #==============================================================#
 # 0640 pg_pubrel
 #==============================================================#
+# pg_get_publication_tables() excludes sequences. Empty and sequence-only
+# publications emit no row; the query does not synthesize a zero count.
 pg_pubrel:
   name: pg_pubrel
-  desc: PostgreSQL publication and relation count
+  desc: PostgreSQL publication table count
   query: SELECT CURRENT_CATALOG AS datname, pubname, count(*) AS count FROM pg_publication p, LATERAL pg_get_publication_tables(pubname) GROUP BY pubname;
   ttl: 10
   min_version: 100000
   metrics:
     - datname:              { usage: LABEL  ,description: "Name of the database which publication belonged" }
     - pubname:              { usage: LABEL  ,description: "Name of the publication" }
-    - count:                { usage: GAUGE  ,description: "Count of relation in the publication" }
+    - count:                { usage: GAUGE  ,description: "Number of table entries returned by pg_get_publication_tables for this publication; excludes sequences" }
 
 
 #==============================================================#
@@ -2150,15 +2173,15 @@ pg_pubrel:
 #==============================================================#
 pg_subrel:
   name: pg_subrel
-  desc: PostgreSQL subscripted relation group by state
+  desc: PostgreSQL subscribed relation count grouped by synchronization state
   query: SELECT CURRENT_CATALOG AS datname, ss.subname, sr.srsubstate::TEXT AS state, count(*) AS count FROM pg_catalog.pg_subscription_rel AS sr JOIN (SELECT DISTINCT subid, subname FROM pg_catalog.pg_stat_subscription) AS ss ON ss.subid = sr.srsubid GROUP BY ss.subname, sr.srsubstate;
   ttl: 10
   min_version: 100000
   metrics:
-    - datname:              { usage: LABEL  ,description: "Name of the database which publication belonged" }
+    - datname:              { usage: LABEL  ,description: "Name of the database owning this subscription" }
     - subname:              { usage: LABEL  ,description: "Name of the subscription" }
-    - state:                { usage: LABEL  ,description: "State of table in subscription, i=initialize, d=data copy, s=sync, r=ready" }
-    - count:                { usage: GAUGE  ,description: "Count of relation in this subscription and corresponding state" }
+    - state:                { usage: LABEL  ,description: "Synchronization state: tables i=initialize, d=data copy, f=finished table copy, s=synchronized, r=ready; PG19+ sequences use i or r" }
+    - count:                { usage: GAUGE  ,description: "Number of pg_subscription_rel entries for this subscription and state; tables and, on PG19+, sequences" }
 
 
 #==============================================================#

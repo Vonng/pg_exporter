@@ -1,8 +1,13 @@
 #==============================================================#
 # 0270 pg_origin
 #==============================================================#
-# skip by default, require additional privilege setup
-# GRANT SELECT ON pg_replication_origin, pg_replication_origin_status TO pg_monitor;
+# Disabled by default. Provision access before explicitly setting skip: false.
+# PG14+ with standard catalog ACLs: run as an administrator in the exporter's
+# main connection database, replacing monitor with the actual monitoring role:
+# GRANT SELECT ON pg_catalog.pg_replication_origin_status TO monitor;
+# GRANT EXECUTE ON FUNCTION pg_catalog.pg_show_replication_origin_status() TO monitor;
+# PG13 and older: the function also checks for superuser internally; GRANT alone
+# is insufficient. Keep disabled for ordinary monitoring roles.
 pg_origin:
   name: pg_origin
   desc: PostgreSQL replay state (approximate) for a certain origin

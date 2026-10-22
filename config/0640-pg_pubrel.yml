@@ -1,15 +1,17 @@
 #==============================================================#
 # 0640 pg_pubrel
 #==============================================================#
+# pg_get_publication_tables() excludes sequences. Empty and sequence-only
+# publications emit no row; the query does not synthesize a zero count.
 pg_pubrel:
   name: pg_pubrel
-  desc: PostgreSQL publication and relation count
+  desc: PostgreSQL publication table count
   query: SELECT CURRENT_CATALOG AS datname, pubname, count(*) AS count FROM pg_publication p, LATERAL pg_get_publication_tables(pubname) GROUP BY pubname;
   ttl: 10
   min_version: 100000
   metrics:
     - datname:              { usage: LABEL  ,description: "Name of the database which publication belonged" }
     - pubname:              { usage: LABEL  ,description: "Name of the publication" }
-    - count:                { usage: GAUGE  ,description: "Count of relation in the publication" }
+    - count:                { usage: GAUGE  ,description: "Number of table entries returned by pg_get_publication_tables for this publication; excludes sequences" }
 
 

@@ -1,8 +1,10 @@
 #==============================================================#
 # 0270 pg_origin
 #==============================================================#
-# skip by default, require additional privilege setup
-# GRANT SELECT ON pg_replication_origin, pg_replication_origin_status TO pg_monitor;
+# Disabled by default. PG9.5-9.6 checks for superuser inside
+# pg_show_replication_origin_status(); GRANT alone is insufficient.
+# Keep disabled for ordinary monitoring roles. Enable only after an administrator
+# has explicitly provisioned and verified access for the exporter connection.
 pg_origin:
   name: pg_origin
   desc: PostgreSQL replay state (approximate) for a certain origin

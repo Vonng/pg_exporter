@@ -666,16 +666,17 @@ pg_slot_94:
 #==============================================================#
 # 0250 pg_recv
 #==============================================================#
+# Codes 1-3 were sender states, not receiver states; keep them reserved.
 pg_recv_96:
   name: pg_recv
   desc: PostgreSQL walreceiver metrics (9.6 - 12)
   query: |-
     SELECT 
-      (regexp_match(conninfo, '.*host=(\S+).*'))[1] AS sender_host,
-      (regexp_match(conninfo, '.*port=(\S+).*'))[1] AS sender_port,
+      substring(conninfo FROM '.*host=(\S+).*') AS sender_host,
+      substring(conninfo FROM '.*port=(\S+).*') AS sender_port,
       coalesce(slot_name, 'NULL')                    AS slot_name,
       pid,
-      CASE status WHEN 'streaming' THEN 0 WHEN 'startup' THEN 1 WHEN 'catchup' THEN 2 WHEN 'backup' THEN 3 WHEN 'stopping' THEN 4 ELSE -1 END AS state,
+      CASE status WHEN 'streaming' THEN 0 WHEN 'stopping' THEN 4 WHEN 'connecting' THEN 5 WHEN 'starting' THEN 6 WHEN 'waiting' THEN 7 WHEN 'restarting' THEN 8 WHEN 'stopped' THEN 9 ELSE -1 END AS state,
       (('x' || lpad(split_part(receive_start_lsn::text, '/', 1), 8, '0'))::bit(32)::bigint * 4294967296
        + ('x' || lpad(split_part(receive_start_lsn::text, '/', 2), 8, '0'))::bit(32)::bigint) AS init_lsn,
       receive_start_tli AS init_tli,
@@ -699,7 +700,7 @@ pg_recv_96:
     - sender_port:         { usage: LABEL   ,description: "Port number of the PostgreSQL instance this WAL receiver is connected to." }
     - slot_name:           { usage: LABEL   ,description: "Replication slot name used by this WAL receiver" }
     - pid:                 { usage: GAUGE   ,description: "Process ID of the WAL receiver process" }
-    - state:               { usage: GAUGE   ,description: "Encoded activity status of the WAL receiver process 0-4 for streaming|startup|catchup|backup|stopping" }
+    - state:               { usage: GAUGE   ,description: "WAL receiver state: 0=streaming, 4=stopping, 5=connecting (PG19+), 6=starting, 7=waiting, 8=restarting, 9=stopped, -1=unknown" }
     - init_lsn:            { usage: COUNTER ,description: "First write-ahead log location used when WAL receiver is started" }
     - init_tli:            { usage: COUNTER ,description: "First timeline number used when WAL receiver is started" }
     - flush_lsn:           { usage: COUNTER ,description: "Last write-ahead log location already received and flushed to disk" }
@@ -714,8 +715,10 @@ pg_recv_96:
 #==============================================================#
 # 0270 pg_origin
 #==============================================================#
-# skip by default, require additional privilege setup
-# GRANT SELECT ON pg_replication_origin, pg_replication_origin_status TO pg_monitor;
+# Disabled by default. PG9.5-9.6 checks for superuser inside
+# pg_show_replication_origin_status(); GRANT alone is insufficient.
+# Keep disabled for ordinary monitoring roles. Enable only after an administrator
+# has explicitly provisioned and verified access for the exporter connection.
 pg_origin:
   name: pg_origin
   desc: PostgreSQL replay state (approximate) for a certain origin
