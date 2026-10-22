@@ -6,7 +6,7 @@
 
 [![Webite: https://pigsty.io/docs/pg_exporter](https://img.shields.io/badge/website-pigsty.io/docs/pg_exporter-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io/docs/pg_exporter)
 [![DockerHub: pgsty/pg_exporter](https://img.shields.io/badge/docker-pgsty/pg_exporter-slategray?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/pgsty/pg_exporter)
-[![Version: 1.4.1](https://img.shields.io/badge/version-1.4.1-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v1.4.1)
+[![Version: 1.5.0](https://img.shields.io/badge/version-1.5.0-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v1.5.0)
 [![License: Apache-2.0](https://img.shields.io/github/license/pgsty/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/pgsty/pg_exporter/blob/main/LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/pgsty/pg_exporter?style=flat&logo=github&logoColor=black&color=slategray)](https://star-history.com/#pgsty/pg_exporter&Date)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pgsty/pg_exporter)](https://goreportcard.com/report/github.com/pgsty/pg_exporter)
