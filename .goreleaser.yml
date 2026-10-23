@@ -77,7 +77,7 @@ nfpms:
     maintainer: Ruohang Feng <rh@vonng.com>
     description: |
       Prometheus exporter for PostgreSQL / Pgbouncer server metrics.
-      Supported version: Postgres9.x - 19+ & Pgbouncer 1.8 - 1.25+
+      Supported version: Postgres9.x - 19+ & Pgbouncer 1.8 - 1.26+
       Part of Project Pigsty -- Battery Included PostgreSQL Distribution
       with ultimate observability support: https://pigsty.io/docs/pg_exporter
     license: Apache-2.0
@@ -132,7 +132,7 @@ nfpms:
     maintainer: Ruohang Feng <rh@vonng.com>
     description: |
       Prometheus exporter for PostgreSQL / Pgbouncer server metrics.
-      Supported version: Postgres9.x - 19+ & Pgbouncer 1.8 - 1.25+
+      Supported version: Postgres9.x - 19+ & Pgbouncer 1.8 - 1.26+
       Part of Project Pigsty -- Battery Included PostgreSQL Distribution
       with ultimate observability support: https://pigsty.io/docs/pg_exporter
     license: Apache-2.0

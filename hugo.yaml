@@ -89,7 +89,7 @@ markup:
         enable: true
 
 params:
-  description: PG Exporter is an advanced PostgreSQL and pgBouncer metrics exporter for Prometheus, providing 600+ metrics with declarative YAML configuration.
+  description: PG Exporter is an advanced PostgreSQL and pgBouncer metrics exporter for Prometheus, providing 460 metric definitions with declarative YAML configuration.
 
   sidebar:
     autoCollapse: false

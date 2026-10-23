@@ -1,14 +1,42 @@
 package exporter
 
 import (
+	"errors"
 	"net/url"
 	"os"
 	"strings"
+	"unicode"
+
+	"github.com/lib/pq"
 )
 
 // GetPGURL will retrieve, parse, modify postgres connection string
 func GetPGURL() string {
-	return ProcessPGURL(RetrievePGURL())
+	result := ProcessPGURL(RetrievePGURL())
+	if result == "" {
+		logFatalf("invalid PostgreSQL connection URL")
+	}
+	return result
+}
+
+// Do not return url.Parse errors: they can contain the complete URL and password.
+func parsePGURL(input string) (*url.URL, url.Values, error) {
+	u, err := url.Parse(input)
+	if err != nil || (!strings.HasPrefix(input, "postgres://") && !strings.HasPrefix(input, "postgresql://")) || strings.Contains(input, "#") {
+		return nil, nil, errors.New("invalid PostgreSQL URL syntax")
+	}
+	qs, err := url.ParseQuery(u.RawQuery)
+	if err != nil {
+		return nil, nil, errors.New("invalid PostgreSQL URL query parameters")
+	}
+	// lib/pq converts URL parameters to key=value form, where whitespace and
+	// '=' delimit keys. Reject names that it would interpret differently.
+	for key := range qs {
+		if key == "" || strings.ContainsRune(key, '=') || strings.IndexFunc(key, unicode.IsSpace) >= 0 {
+			return nil, nil, errors.New("invalid PostgreSQL URL query parameter name")
+		}
+	}
+	return u, qs, nil
 }
 
 // RetrievePGURL retrieve pg target url from multiple sources according to precedence
@@ -60,14 +88,13 @@ func RetrievePGURL() (res string) {
 // without meaningful security benefit. Users can always override by passing an
 // explicit sslmode in the URL.
 func ProcessPGURL(pgurl string) string {
-	u, err := url.Parse(pgurl)
+	u, qs, err := parsePGURL(pgurl)
 	if err != nil {
-		logErrorf("invalid url format %s", pgurl)
+		logErrorf("%s", err)
 		return ""
 	}
 
 	// add sslmode = disable if not exists
-	qs := u.Query()
 	if sslmode := qs.Get(`sslmode`); sslmode == "" {
 		qs.Set(`sslmode`, `disable`)
 	}
@@ -77,17 +104,15 @@ func ProcessPGURL(pgurl string) string {
 
 // ShadowPGURL will hide password part of dsn
 func ShadowPGURL(pgurl string) string {
-	parsedURL, err := url.Parse(pgurl)
-	// That means we got a bad connection string. Fail early
+	parsedURL, qs, err := parsePGURL(pgurl)
 	if err != nil {
-		logFatalf("Could not parse connection string %s", err.Error())
+		return "<invalid PostgreSQL URL>"
 	}
 
 	// We need to handle two cases:
 	// 1. The password is in the format postgresql://localhost:5432/postgres?sslmode=disable&user=<user>&password=<pass>
 	// 2. The password is in the format postgresql://<user>:<pass>@localhost:5432/postgres?sslmode=disable
 
-	qs := parsedURL.Query()
 	for k, values := range qs {
 		if strings.EqualFold(k, "password") {
 			for i := range values {
@@ -102,34 +127,24 @@ func ShadowPGURL(pgurl string) string {
 
 // ParseDatname extract database name part of a pgurl
 func ParseDatname(pgurl string) string {
-	u, err := url.Parse(pgurl)
+	cfg, err := pq.NewConfig(pgurl)
 	if err != nil {
 		return ""
 	}
-	if datname := strings.TrimLeft(u.Path, "/"); datname != "" {
-		return datname
-	}
-	if datname := strings.TrimSpace(u.Query().Get("dbname")); datname != "" {
-		return datname
-	}
-	return ""
+	return cfg.Database
 }
 
 // ReplaceDatname will replace pgurl with new database name
 func ReplaceDatname(pgurl, datname string) string {
-	u, err := url.Parse(pgurl)
+	u, qs, err := parsePGURL(pgurl)
 	if err != nil {
-		logErrorf("invalid url format %s", pgurl)
+		logErrorf("%s", err)
 		return ""
 	}
-	if strings.TrimLeft(u.Path, "/") == "" {
-		qs := u.Query()
-		if qs.Get("dbname") != "" {
-			qs.Set("dbname", datname)
-			u.RawQuery = qs.Encode()
-			return u.String()
-		}
-	}
+	// Conflicting query parameters can override the path in lib/pq.
+	qs.Del("dbname")
+	qs.Del("database")
+	u.RawQuery = qs.Encode()
 	u.Path = "/" + datname
 	return u.String()
 }

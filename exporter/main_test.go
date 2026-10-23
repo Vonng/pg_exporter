@@ -1,6 +1,8 @@
 package exporter
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -31,6 +33,46 @@ func TestClearLibPQEnvironment(t *testing.T) {
 	}
 }
 
+func TestValidatedTelemetryPathReachesMetrics(t *testing.T) {
+	// Detect the active mux independently of the validator and GODEBUG text.
+	probe := http.NewServeMux()
+	probe.Handle("/{path}", http.NotFoundHandler())
+	_, pattern := probe.Handler(httptest.NewRequest(http.MethodGet, "/probe", nil))
+	modernMux := pattern == "/{path}"
+	for _, tt := range []struct {
+		path   string
+		wantOK bool
+	}{
+		{"/metrics", true},
+		{"/custom/metrics", true},
+		{"/custom/metrics/", true},
+		{"/%6detrics", modernMux},
+		{"/custom%2Fmetrics", modernMux},
+		{"/%2e/metrics", modernMux},
+		{"/^/%2f", false},
+		{"/%5E/%2f", modernMux},
+	} {
+		t.Run(tt.path, func(t *testing.T) {
+			err := validateTelemetryPath(tt.path)
+			if (err == nil) != tt.wantOK {
+				t.Fatalf("validateTelemetryPath(%q) error = %v, want accepted = %v (modern mux = %v)", tt.path, err, tt.wantOK, modernMux)
+			}
+			if err != nil {
+				return
+			}
+			mux := http.NewServeMux()
+			registerHTTPRoutes(mux, &Exporter{}, tt.path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = w.Write([]byte("metrics handler"))
+			}))
+			w := httptest.NewRecorder()
+			mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, tt.path, nil))
+			if w.Code != http.StatusOK || w.Body.String() != "metrics handler" {
+				t.Fatalf("accepted path reaches HTTP %d, body %q", w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
 func TestValidateTelemetryPath(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -38,6 +80,9 @@ func TestValidateTelemetryPath(t *testing.T) {
 		wantErr string
 	}{
 		{name: "default", path: "/metrics"},
+		{name: "custom", path: "/custom/metrics"},
+		{name: "subtree", path: "/custom/metrics/"},
+		{name: "redirect instead of metrics", path: "/^/%2f", wantErr: "cannot reach the metrics handler"},
 		{name: "empty", path: "", wantErr: "must not be empty"},
 		{name: "missing leading slash", path: "metrics", wantErr: "must start with '/'"},
 		{name: "reserved endpoint", path: "/up", wantErr: "invalid or conflicting"},

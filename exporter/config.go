@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"go.yaml.in/yaml/v3"
 )
@@ -54,12 +55,18 @@ func ParseConfig(content []byte) (queries map[string]*Query, err error) {
 		if query.TTL < 0 {
 			return nil, fmt.Errorf("query %q has negative ttl: %v", branch, query.TTL)
 		}
+		if !validDurationSeconds(query.TTL) || !validDurationSeconds(query.Timeout) {
+			return nil, fmt.Errorf("query %q ttl and timeout must be finite and fit in time.Duration", branch)
+		}
 		for i, pq := range query.PredicateQueries {
 			if strings.TrimSpace(pq.SQL) == "" {
 				return nil, fmt.Errorf("query %q has empty predicate_query at index %d", branch, i)
 			}
 			if pq.TTL < 0 {
 				return nil, fmt.Errorf("query %q has negative predicate_queries[%d].ttl: %v", branch, i, pq.TTL)
+			}
+			if !validDurationSeconds(pq.TTL) {
+				return nil, fmt.Errorf("query %q predicate_queries[%d].ttl must be finite and fit in time.Duration", branch, i)
 			}
 		}
 		if len(query.Metrics) == 0 {
@@ -178,6 +185,12 @@ func ParseConfig(content []byte) (queries map[string]*Query, err error) {
 		}
 	}
 	return
+}
+
+func validDurationSeconds(seconds float64) bool {
+	// Negative finite timeouts disable the deadline and are never converted.
+	// The float64 representation of MaxInt64 rounds up, so equality is unsafe.
+	return !math.IsNaN(seconds) && !math.IsInf(seconds, 0) && seconds < float64(math.MaxInt64)/float64(time.Second)
 }
 
 // validateHistogramBuckets validates the finite inclusive upper boundaries

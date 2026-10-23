@@ -4,7 +4,7 @@
 
 # PG EXPORTER
 
-[![Webite: https://pigsty.io/docs/pg_exporter](https://img.shields.io/badge/website-pigsty.io/docs/pg_exporter-slategray?style=flat&logo=cilium&logoColor=white)](https://pigsty.io/docs/pg_exporter)
+[![Website: exp.pgsty.com](https://img.shields.io/badge/website-exp.pgsty.com-slategray?style=flat&logo=cilium&logoColor=white)](https://exp.pgsty.com)
 [![DockerHub: pgsty/pg_exporter](https://img.shields.io/badge/docker-pgsty/pg_exporter-slategray?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/pgsty/pg_exporter)
 [![Version: 1.5.0](https://img.shields.io/badge/version-1.5.0-slategray?style=flat&logo=cilium&logoColor=white)](https://github.com/pgsty/pg_exporter/releases/tag/v1.5.0)
 [![License: Apache-2.0](https://img.shields.io/github/license/pgsty/pg_exporter?logo=opensourceinitiative&logoColor=green&color=slategray)](https://github.com/pgsty/pg_exporter/blob/main/LICENSE)
@@ -14,12 +14,13 @@
 > **Advanced [PostgreSQL](https://www.postgresql.org) & [pgBouncer](https://www.pgbouncer.org/) metrics [exporter](https://prometheus.io/docs/instrumenting/exporters/) for [Prometheus](https://prometheus.io/)**
 
 PG Exporter brings ultimate monitoring experience to your PostgreSQL with **declarative config**, **dynamic planning**, and **customizable collectors**. 
-It provides **600+** metrics and ~3K time series per instance, covers everything you'll need for PostgreSQL observability.
+The bundled configuration defines **460 distinct metrics** across **96 collector branches** and **59 namespaces**.
+Actual time-series counts depend on the PostgreSQL version, enabled collectors, databases, objects, and labels.
 
 Check [**https://demo.pigsty.io**](https://demo.pigsty.io/ui/) for live demo, which is built upon this exporter by [**Pigsty**](https://pigsty.io).
 
 <div align="center">
-    <a href="https://pigsty.io/docs/pg_exporter">Docs</a> •    
+    <a href="https://exp.pgsty.com/docs/">Docs</a> •
     <a href="#quick-start">Quick Start</a> •
     <a href="#features">Features</a> •
     <a href="#usage">Usage</a> •
@@ -37,7 +38,7 @@ Check [**https://demo.pigsty.io**](https://demo.pigsty.io/ui/) for live demo, wh
 ## Features
 
 - **Highly Customizable**: Define almost all metrics through declarative YAML configs
-- **Full Coverage**: Monitor PostgreSQL (10-19+) and pgBouncer (1.8-1.25+) in a single exporter
+- **Version Coverage**: PostgreSQL 10–18 and 19 RC1 verified with the regular configuration; PostgreSQL 9.1–9.6 with the legacy configuration; PgBouncer verified through 1.26.1
 - **Fine-grained Control**: Configure timeout, caching, skip conditions, and fatality per collector
 - **Dynamic Planning**: Define multiple query branches based on different conditions
 - **Self-monitoring**: Rich metrics about pg_exporter [itself](https://demo.pigsty.io/d/pgsql-exporter) for complete observability
@@ -48,6 +49,13 @@ Check [**https://demo.pigsty.io**](https://demo.pigsty.io/ui/) for live demo, wh
 - **Local-first URL behavior**: Built for on-host deployment, with implicit local target fallback and automatic `sslmode=disable` when omitted
 
 > Also support PG 9.x with [legacy config bundle](legacy/).
+
+### v1.5.0
+
+Built with **Go 1.27.3** and updated Prometheus, HTTP/2, compression, and YAML dependencies.
+This release corrects replication metric identities and state mappings, protects malformed connection URLs,
+and fixes database discovery, concurrent health responses, metadata replanning, duration validation, and custom metrics routes.
+See the [release notes](https://exp.pgsty.com/release/v1.5.0/) for security fixes and upgrade notes, including the new `datname` label on `pg_sub_*` and PostgreSQL 10–13 monitoring grants.
 
 
 --------
@@ -189,6 +197,8 @@ curl localhost:9630/read
 
 ## Build
 
+Use **Go 1.27.3** or later, as declared in [`go.mod`](go.mod).
+
 To build a static stand-alone binary for docker scratch
 
 ```bash
@@ -241,7 +251,7 @@ Configs lie in the core of `pg_exporter`. Actually, this project contains more l
 * A monolith battery-included config file: [`pg_exporter.yml`](pg_exporter.yml)
 * Separated metrics definition in [`config/`](config/)
 * Example of how to write a config file:  [`doc.yml`](config/0000-doc.yml)
-* Authoritative Histogram design: [`docs/design/histogram.md`](docs/design/histogram.md)
+* Authoritative Histogram design: [SQL Histogram contract](https://exp.pgsty.com/design/snapshot-histograms/)
 * Legacy config bundle for PostgreSQL 9.1 - 9.6: [`legacy/`](legacy/) ([`legacy/README.md`](legacy/README.md))
 
 Current `pg_exporter` ships 58 collector definition files in [`config/`](config/). They are merged into [`pg_exporter.yml`](pg_exporter.yml) by `make conf`.
@@ -311,12 +321,13 @@ Current `pg_exporter` ships 58 collector definition files in [`config/`](config/
 
 > #### Note
 >
-> Supported version: PostgreSQL 10, 11, 12, 13, 14, 15, 16, 17, 18, 19+
+> Regular configuration: PostgreSQL 10–18, with PostgreSQL 19 branches verified against 19 RC1.
 >
 > But you can still get PostgreSQL 9.1 - 9.6 support by switching to the [`legacy/pg_exporter.yml`](legacy/pg_exporter.yml) config
 
-`pg_exporter` will generate approximately 600 metrics for a completely new database cluster.
-For a real-world database with 10 ~ 100 tables, it may generate several 1k ~ 10k metrics. 
+The regular bundle has **58 YAML files** (including the schema reference), **96 query branches**, **59 collector namespaces**, and **460 distinct metric definitions**.
+Definitions are counted by the final `<collector>_<column or rename>` name across GAUGE, COUNTER, and HISTOGRAM columns; each SQL Histogram counts once before expansion into bucket/count/sum series. Built-in exporter metrics are separate.
+These counts describe the configuration, not one scrape. Version and tag selection determine which definitions run, while database objects and label values determine the number of time series.
 
 You may need to modify or disable some database-level metrics on a database with several thousand or more tables to complete the scrape in time.
 
@@ -457,7 +468,7 @@ Config files are using YAML format, there are lots of examples in the [config](h
 #    # +Inf is automatic; the first finite bucket implicitly contains every lower value.
 #    # Signed domains should configure finite negative boundaries and zero; do not configure -Inf.
 #    # Do NOT apply rate(), irate(), or increase() to snapshot Histogram series.
-#    # See docs/design/histogram.md for the authoritative contract.
+#    # See https://exp.pgsty.com/design/snapshot-histograms/ for the authoritative contract.
 
 #==============================================================#
 # 4. Collector Presets

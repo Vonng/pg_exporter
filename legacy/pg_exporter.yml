@@ -1,6 +1,6 @@
 #==============================================================#
 # Desc      :   pg_exporter metrics collector definition (Legacy)
-# Ver       :   PostgreSQL 9.1 ~ 9.6 and pgbouncer 1.9~1.25+
+# Ver       :   PostgreSQL 9.1 ~ 9.6 and pgbouncer 1.9~1.26+
 # Ctime     :   2019-12-09
 # Mtime     :   2026-02-07
 # Homepage  :   https://pigsty.io

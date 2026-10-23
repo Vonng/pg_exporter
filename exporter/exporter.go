@@ -81,9 +81,7 @@ type Exporter struct {
 	queryScrapeHitCountDesc           *prometheus.Desc // {datname,query} query level: cache hit count
 
 	// lock-free health snapshot for high-frequency probes
-	healthUp       atomic.Bool
-	healthRecovery atomic.Bool
-	healthStatus   atomic.Int32
+	healthStatus atomic.Int32
 
 	healthLoopLock sync.Mutex
 	healthLoopStop chan struct{}
@@ -92,17 +90,22 @@ type Exporter struct {
 
 // Up will delegate aliveness check to primary server
 func (e *Exporter) Up() bool {
-	return e.healthUp.Load()
+	status := e.healthStatus.Load()
+	return status == healthStatusPrimary || status == healthStatusReplica
 }
 
 // Recovery will delegate primary/replica check to primary server
 func (e *Exporter) Recovery() bool {
-	return e.healthRecovery.Load()
+	return e.healthStatus.Load() == healthStatusReplica
 }
 
 // Status will report available status: primary|replica|starting|down|unknown
 func (e *Exporter) Status() string {
-	switch e.healthStatus.Load() {
+	return healthStatusText(e.healthStatus.Load())
+}
+
+func healthStatusText(status int32) string {
+	switch status {
 	case healthStatusPrimary:
 		return `primary`
 	case healthStatusReplica:
@@ -121,28 +124,20 @@ func (e *Exporter) updateHealthState(up, recovery bool) {
 }
 
 func (e *Exporter) updateHealthStateWithStartup(up, recovery, starting bool) {
-	e.healthUp.Store(up)
+	status := healthStatusDown
 	if starting {
-		e.healthRecovery.Store(false)
-		e.healthStatus.Store(healthStatusStarting)
-		return
+		status = healthStatusStarting
+	} else if up {
+		status = healthStatusPrimary
+		if recovery {
+			status = healthStatusReplica
+		}
 	}
-	e.healthRecovery.Store(up && recovery)
-	if !up {
-		e.healthStatus.Store(healthStatusDown)
-		return
-	}
-	if recovery {
-		e.healthStatus.Store(healthStatusReplica)
-		return
-	}
-	e.healthStatus.Store(healthStatusPrimary)
+	e.healthStatus.Store(status)
 }
 
 func (e *Exporter) updateHealthStateFromServer() {
 	if e.server == nil {
-		e.healthUp.Store(false)
-		e.healthRecovery.Store(false)
 		e.healthStatus.Store(healthStatusUnknown)
 		return
 	}
@@ -155,8 +150,6 @@ func (e *Exporter) updateHealthStateFromServer() {
 
 func (e *Exporter) probeAndUpdateHealthState() error {
 	if e.server == nil {
-		e.healthUp.Store(false)
-		e.healthRecovery.Store(false)
 		e.healthStatus.Store(healthStatusUnknown)
 		return errors.New("primary server is nil")
 	}
@@ -849,8 +842,9 @@ func (e *Exporter) UpCheckFunc(w http.ResponseWriter, r *http.Request) {
 
 	// Note: /up reports the latest state from the background health loop.
 	// It does not actively probe the target on each HTTP request.
-	status := target.Status()
-	if target.Up() {
+	state := target.healthStatus.Load()
+	status := healthStatusText(state)
+	if state == healthStatusPrimary || state == healthStatusReplica {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(status))
 	} else {
@@ -869,9 +863,10 @@ func (e *Exporter) PrimaryCheckFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := target.Status()
-	if target.Up() {
-		if target.Recovery() {
+	state := target.healthStatus.Load()
+	status := healthStatusText(state)
+	if state == healthStatusPrimary || state == healthStatusReplica {
+		if state == healthStatusReplica {
 			w.WriteHeader(404)
 			_, _ = w.Write([]byte(status))
 		} else {
@@ -894,9 +889,10 @@ func (e *Exporter) ReplicaCheckFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := target.Status()
-	if target.Up() {
-		if target.Recovery() {
+	state := target.healthStatus.Load()
+	status := healthStatusText(state)
+	if state == healthStatusPrimary || state == healthStatusReplica {
+		if state == healthStatusReplica {
 			w.WriteHeader(200)
 			_, _ = w.Write([]byte(status))
 		} else {

@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"sort"
 	"strconv"
@@ -318,6 +319,9 @@ func PostgresPrecheck(s *Server) (err error) {
 		s.Planned = false
 	}
 	s.Recovery = recovery
+	if s.Username != username {
+		s.Planned = false
+	}
 	s.Username = username
 	if s.Database != datname {
 		logInfof("server [%s] datname changed: from [%s] to [%s]", s.Name(), s.Database, datname)
@@ -327,14 +331,18 @@ func PostgresPrecheck(s *Server) (err error) {
 	s.Databases[datname] = true
 
 	// update schema & extension list
-	s.Namespaces = make(map[string]bool, len(namespaces))
+	newNamespaces := make(map[string]bool, len(namespaces))
 	for _, nsname := range namespaces {
-		s.Namespaces[nsname] = true
+		newNamespaces[nsname] = true
 	}
-	s.Extensions = make(map[string]bool, len(extensions))
+	newExtensions := make(map[string]bool, len(extensions))
 	for _, extname := range extensions {
-		s.Extensions[extname] = true
+		newExtensions[extname] = true
 	}
+	if !maps.Equal(s.Namespaces, newNamespaces) || !maps.Equal(s.Extensions, newExtensions) {
+		s.Planned = false
+	}
+	s.Namespaces, s.Extensions = newNamespaces, newExtensions
 
 	// detect db change
 	s.dblistLock.Lock()

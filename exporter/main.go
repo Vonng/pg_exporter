@@ -52,6 +52,14 @@ func validateTelemetryPath(path string) (err error) {
 	// Debian dh-golang) never unescapes patterns and only panics on exact
 	// duplicates, so "/%75p" would slip past a check on the raw path
 	registerHTTPRoutes(http.NewServeMux(), &Exporter{}, decoded, http.NotFoundHandler())
+	// Verify handler identity: older muxes may select the index for escaped
+	// paths, and a redirect handler can report the metrics pattern itself.
+	mux := http.NewServeMux()
+	probe := http.HandlerFunc(http.NotFound)
+	registerHTTPRoutes(mux, &Exporter{}, path, &probe)
+	if handler, _ := mux.Handler(&http.Request{Method: http.MethodGet, URL: uri}); handler != &probe {
+		return fmt.Errorf("web.telemetry-path %q cannot reach the metrics handler; use a literal unescaped path", path)
+	}
 	return nil
 }
 
